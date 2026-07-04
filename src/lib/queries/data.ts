@@ -165,6 +165,22 @@ export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =
     },
   });
 
+export const sequencesQO = (opts: { classeId?: string; periodeId?: string } = {}) =>
+  queryOptions({
+    queryKey: ["sequences", opts.classeId ?? "-", opts.periodeId ?? "-"],
+    queryFn: async (): Promise<Array<Sequence & { classe: { nom: string; code: string; ecole_id: string } | null; periode: { label: string } | null }>> => {
+      let q = supabase
+        .from("sequences_programme")
+        .select("*, classe:classes(nom, code, ecole_id), periode:periodes(label)")
+        .order("ordre");
+      if (opts.classeId) q = q.eq("classe_id", opts.classeId);
+      if (opts.periodeId) q = q.eq("periode_id", opts.periodeId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as Array<Sequence & { classe: { nom: string; code: string; ecole_id: string } | null; periode: { label: string } | null }>;
+    },
+  });
+
 export async function requireUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();
   if (!data.user) throw new Error("Session expirée");
