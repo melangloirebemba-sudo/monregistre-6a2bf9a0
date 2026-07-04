@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { PLAN_LABEL, upgradeWhatsAppHref } from "@/config/support";
 import { ThemeToggle } from "@/components/app/theme-toggle";
+import { SyncStatusCard } from "@/components/app/sync-status-card";
 
 export const Route = createFileRoute("/_authenticated/parametres")({
   head: () => ({ meta: [{ title: "Paramètres — MonRegistre" }] }),
