@@ -610,6 +610,10 @@ function AdminAccountCard() {
               className={pwdErrors.pwd ? "border-destructive focus-visible:ring-destructive/40" : ""}
             />
             <FieldError>{pwdErrors.pwd}</FieldError>
+            <div className="pt-1">
+              <PasswordStrengthMeter analysis={pwdAnalysis} empty={password.length === 0} />
+            </div>
+            <PasswordRulesList rules={pwdAnalysis.rules} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="admin-pwd2" className="text-xs">
