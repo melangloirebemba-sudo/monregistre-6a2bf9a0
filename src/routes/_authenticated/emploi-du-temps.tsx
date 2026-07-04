@@ -295,4 +295,3 @@ function EmploiDuTempsPage() {
   );
 }
 
-export { Clock };
