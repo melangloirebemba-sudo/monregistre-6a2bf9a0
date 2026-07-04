@@ -52,6 +52,7 @@ function ElevesPage() {
   const { data: classes = [] } = useQuery(classesQO());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: profil } = useQuery(profilQueryOptions());
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const { data: eleves = [], isLoading } = useQuery(
     elevesQO(classeFilter === "all" ? undefined : classeFilter),
@@ -64,12 +65,17 @@ function ElevesPage() {
   const [open, setOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Eleve | null>(null);
 
+  const classesForEcole = useMemo(
+    () => (ecoleFilter === "all" ? classes : classes.filter((c) => c.ecole_id === ecoleFilter)),
+    [classes, ecoleFilter],
+  );
+
   const filtered = useMemo(
     () =>
-      eleves.filter((e) =>
-        `${e.nom} ${e.prenom}`.toLowerCase().includes(q.toLowerCase()),
-      ),
-    [eleves, q],
+      eleves
+        .filter((e) => ecoleFilter === "all" || e.ecole_id === ecoleFilter)
+        .filter((e) => `${e.nom} ${e.prenom}`.toLowerCase().includes(q.toLowerCase())),
+    [eleves, q, ecoleFilter],
   );
 
   const moyennesByEleve = useMemo(() => {
@@ -88,7 +94,22 @@ function ElevesPage() {
   }, [notes]);
 
   const classeById = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c])), [classes]);
+  const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
   const canAdd = classes.length > 0;
+
+  const grouped = useMemo(() => {
+    if (ecoleFilter !== "all") return null;
+    const map = new Map<string, typeof filtered>();
+    filtered.forEach((e) => {
+      const list = map.get(e.ecole_id) ?? [];
+      list.push(e);
+      map.set(e.ecole_id, list);
+    });
+    return Array.from(map.entries()).sort((a, b) =>
+      (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+    );
+  }, [filtered, ecoleFilter, ecoleById]);
+
 
   return (
     <div className="px-5 pb-24 pt-5">
@@ -107,19 +128,34 @@ function ElevesPage() {
         </div>
       </header>
 
-      <div className="mb-3 space-y-2">
-        <Select value={classeFilter} onValueChange={setClasseFilter}>
-          <SelectTrigger><SelectValue placeholder="Filtrer par classe" /></SelectTrigger>
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        <Select
+          value={ecoleFilter}
+          onValueChange={(v) => {
+            setEcoleFilter(v);
+            const cls = classes.find((c) => c.id === classeFilter);
+            if (v !== "all" && cls && cls.ecole_id !== v) setClasseFilter("all");
+          }}
+        >
+          <SelectTrigger><SelectValue placeholder="École" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les classes</SelectItem>
-            {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+            <SelectItem value="all">Toutes les écoles</SelectItem>
+            {ecoles.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>)}
           </SelectContent>
         </Select>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un élève…" className="pl-9" />
-        </div>
+        <Select value={classeFilter} onValueChange={setClasseFilter}>
+          <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les classes</SelectItem>
+            {classesForEcole.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
+      <div className="relative mb-3">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un élève…" className="pl-9" />
+      </div>
+
 
       {!canAdd ? (
         <div className="card-elevated p-6 text-center text-sm text-muted-foreground">
@@ -141,8 +177,8 @@ function ElevesPage() {
           </Button>
         </div>
       ) : (
-        <ul className="space-y-2">
-          {filtered.map((e) => {
+        (() => {
+          const renderItem = (e: Eleve) => {
             const moy = moyennesByEleve.get(e.id);
             const cls = classeById[e.classe_id];
             const isChef = cls?.chef_id === e.id;
@@ -167,7 +203,10 @@ function ElevesPage() {
                       )}
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate">
-                      {cls?.nom ?? "Classe inconnue"}
+                      <span className="rounded-sm bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
+                        {ecoleById[e.ecole_id] ?? "École ?"}
+                      </span>
+                      {" · "}{cls?.nom ?? "Classe inconnue"}
                       {e.numero_eleve ? ` · ${e.numero_eleve}` : ""}
                       {e.tuteur_numero ? ` · Tuteur ${e.tuteur_numero}` : ""}
                     </div>
@@ -186,9 +225,27 @@ function ElevesPage() {
                 </div>
               </li>
             );
-          })}
-        </ul>
+          };
+          if (grouped) {
+            return (
+              <div className="space-y-4">
+                {grouped.map(([ecoleId, list]) => (
+                  <section key={ecoleId}>
+                    <h2 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+                      {ecoleById[ecoleId] ?? "École ?"}
+                      <span className="ml-auto text-[10px] font-normal">{list.length}</span>
+                    </h2>
+                    <ul className="space-y-2">{list.map(renderItem)}</ul>
+                  </section>
+                ))}
+              </div>
+            );
+          }
+          return <ul className="space-y-2">{filtered.map(renderItem)}</ul>;
+        })()
       )}
+
 
       {canAdd && (
         <button
