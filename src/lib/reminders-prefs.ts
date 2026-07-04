@@ -16,6 +16,8 @@ export interface ReminderPrefs {
   absencesUnj: boolean;
   /** Fenêtre (en jours) pour les absences non justifiées. */
   absencesWindowDays: number;
+  /** Envoyer une notification locale quand un rappel devient actif. */
+  notificationsEnabled: boolean;
 }
 
 export const DEFAULT_REMINDER_PREFS: ReminderPrefs = {
@@ -25,6 +27,7 @@ export const DEFAULT_REMINDER_PREFS: ReminderPrefs = {
   staleNotesDays: 14,
   absencesUnj: true,
   absencesWindowDays: 7,
+  notificationsEnabled: false,
 };
 
 const STORAGE_KEY = "monregistre.reminderPrefs";
@@ -52,6 +55,10 @@ function coerce(raw: unknown): ReminderPrefs {
       90,
       DEFAULT_REMINDER_PREFS.absencesWindowDays,
     ),
+    notificationsEnabled:
+      typeof r.notificationsEnabled === "boolean"
+        ? r.notificationsEnabled
+        : DEFAULT_REMINDER_PREFS.notificationsEnabled,
   };
 }
 
