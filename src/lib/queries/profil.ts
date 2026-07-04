@@ -1,6 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type PlanKey = "gratuit" | "lite" | "premium";
+export type PlanPeriode = "mensuelle" | "trimestrielle" | "annuelle";
+
 export interface Profil {
   id: string;
   user_id: string;
@@ -14,11 +17,16 @@ export interface Profil {
   email: string | null;
   matiere_principale: string | null;
   etablissement: string | null;
-  plan?: "gratuit" | "lite" | "premium";
+  plan?: PlanKey;
+  plan_periode?: PlanPeriode | null;
+  plan_started_at?: string | null;
+  plan_expires_at?: string | null;
 }
 
 export interface PlanCapabilities {
-  plan: "gratuit" | "lite" | "premium";
+  plan: PlanKey;
+  /** Plan enregistré en base avant vérification d'expiration. */
+  storedPlan: PlanKey;
   isAdmin: boolean;
   bulletins_pdf: boolean;
   rapports: boolean;
@@ -26,7 +34,17 @@ export interface PlanCapabilities {
   max_ecoles: number;
   max_classes_par_ecole: number;
   max_eleves: number;
+  periode: PlanPeriode | null;
+  startedAt: string | null;
+  expiresAt: string | null;
+  /** Jours restants avant expiration (peut être négatif). null si pas d'expiration. */
+  daysRemaining: number | null;
+  /** True si le plan payant est arrivé à échéance. */
+  isExpired: boolean;
+  /** True si un plan payant est actif et expire dans ≤ 10 jours. */
+  isExpiringSoon: boolean;
 }
+
 
 export interface PlanLimitsRow {
   plan: "gratuit" | "lite" | "premium";
@@ -60,18 +78,44 @@ export function planCapabilitiesQO() {
     staleTime: 60_000,
     queryFn: async (): Promise<PlanCapabilities> => {
       const fallback: PlanCapabilities = {
-        plan: "gratuit", isAdmin: false, bulletins_pdf: false, rapports: false, progression: false,
+        plan: "gratuit", storedPlan: "gratuit", isAdmin: false,
+        bulletins_pdf: false, rapports: false, progression: false,
         max_ecoles: 1, max_classes_par_ecole: 1, max_eleves: 25,
+        periode: null, startedAt: null, expiresAt: null,
+        daysRemaining: null, isExpired: false, isExpiringSoon: false,
       };
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
       if (!uid) return fallback;
       const [{ data: prof }, { data: roles }] = await Promise.all([
-        supabase.from("profils_enseignant").select("plan").eq("user_id", uid).maybeSingle(),
+        supabase.from("profils_enseignant")
+          .select("plan, plan_periode, plan_started_at, plan_expires_at")
+          .eq("user_id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid),
       ]);
       const isAdmin = (roles ?? []).some((r) => r.role === "admin");
-      const plan = ((prof as { plan?: string } | null)?.plan ?? "gratuit") as "gratuit" | "lite" | "premium";
+      const profRow = (prof ?? {}) as {
+        plan?: string;
+        plan_periode?: PlanPeriode | null;
+        plan_started_at?: string | null;
+        plan_expires_at?: string | null;
+      };
+      const storedPlan = (profRow.plan ?? "gratuit") as PlanKey;
+      const expiresAt = profRow.plan_expires_at ?? null;
+      const startedAt = profRow.plan_started_at ?? null;
+      const periode = profRow.plan_periode ?? null;
+
+      const now = Date.now();
+      const expTs = expiresAt ? new Date(expiresAt).getTime() : null;
+      const daysRemaining = expTs !== null
+        ? Math.ceil((expTs - now) / 86_400_000)
+        : null;
+      const isPaid = storedPlan !== "gratuit";
+      const isExpired = isPaid && expTs !== null && expTs <= now;
+      const isExpiringSoon = isPaid && !isExpired && daysRemaining !== null && daysRemaining <= 10;
+      // Plan effectif : gratuit si expiré
+      const plan: PlanKey = isExpired ? "gratuit" : storedPlan;
+
       const { data: limits } = await supabase
         .from("plan_limits")
         .select("bulletins_pdf, rapports, progression, max_ecoles, max_classes_par_ecole, max_eleves")
@@ -80,6 +124,7 @@ export function planCapabilitiesQO() {
       const l = (limits ?? {}) as Partial<PlanCapabilities>;
       return {
         plan,
+        storedPlan,
         isAdmin,
         bulletins_pdf: isAdmin || Boolean(l.bulletins_pdf),
         rapports: isAdmin || Boolean(l.rapports),
@@ -87,6 +132,12 @@ export function planCapabilitiesQO() {
         max_ecoles: l.max_ecoles ?? fallback.max_ecoles,
         max_classes_par_ecole: l.max_classes_par_ecole ?? fallback.max_classes_par_ecole,
         max_eleves: l.max_eleves ?? fallback.max_eleves,
+        periode,
+        startedAt,
+        expiresAt,
+        daysRemaining,
+        isExpired,
+        isExpiringSoon,
       };
     },
   });

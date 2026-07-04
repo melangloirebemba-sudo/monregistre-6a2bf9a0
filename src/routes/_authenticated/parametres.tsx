@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles, ArrowUpRight, Crown, Zap, Mail } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles, ArrowUpRight, Crown, Zap, Mail, Clock, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -261,6 +261,25 @@ function fmtLimit(n: number | null | undefined) {
   return String(n);
 }
 
+const PERIODE_LABEL: Record<"mensuelle" | "trimestrielle" | "annuelle", string> = {
+  mensuelle: "Mensuelle (30 j)",
+  trimestrielle: "Trimestrielle (90 j)",
+  annuelle: "Annuelle (300 j)",
+};
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return "—";
+  }
+}
+
 function PlanCard({ caps }: { caps: PlanCapabilities }) {
   const isFree = caps.plan === "gratuit" && !caps.isAdmin;
   const features: { label: string; enabled: boolean; note?: string }[] = [
@@ -268,6 +287,22 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
     { label: "Rapports détaillés (moyennes, distribution, classements)", enabled: caps.rapports },
     { label: "Suivi de progression dans le temps", enabled: caps.progression },
   ];
+
+  // Notification d'expiration (une fois par session)
+  useEffect(() => {
+    if (caps.isAdmin) return;
+    const key = "plan-expiry-toast";
+    if (sessionStorage.getItem(key)) return;
+    if (caps.isExpired && caps.storedPlan !== "gratuit") {
+      toast.error(`Votre plan ${PLAN_LABEL[caps.storedPlan]} a expiré. Vous êtes revenu au plan Gratuit.`);
+      sessionStorage.setItem(key, "1");
+    } else if (caps.isExpiringSoon && caps.daysRemaining !== null) {
+      toast.warning(
+        `Votre plan ${PLAN_LABEL[caps.storedPlan]} expire dans ${caps.daysRemaining} jour${caps.daysRemaining > 1 ? "s" : ""}.`,
+      );
+      sessionStorage.setItem(key, "1");
+    }
+  }, [caps.isAdmin, caps.isExpired, caps.isExpiringSoon, caps.daysRemaining, caps.storedPlan]);
 
   return (
     <section className="card-elevated mb-6 p-5">
@@ -285,6 +320,52 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
         </div>
         {caps.plan !== "premium" && !caps.isAdmin && <UpgradeDialog currentPlan={caps.plan} />}
       </div>
+
+      {/* Statut d'abonnement */}
+      {!caps.isAdmin && caps.storedPlan !== "gratuit" && caps.expiresAt && (
+        <div
+          className={`mt-4 rounded-lg border p-3 text-xs ${
+            caps.isExpired
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : caps.isExpiringSoon
+                ? "border-gold/50 bg-gold/10 text-ink"
+                : "border-border bg-background/60 text-ink/80"
+          }`}
+        >
+          <div className="flex items-center gap-1.5 font-semibold">
+            {caps.isExpired ? (
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : caps.isExpiringSoon ? (
+              <AlertTriangle className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
+            ) : (
+              <Clock className="h-3.5 w-3.5 text-teal" aria-hidden="true" />
+            )}
+            {caps.isExpired
+              ? "Abonnement expiré"
+              : caps.isExpiringSoon
+                ? `Expire dans ${caps.daysRemaining} jour${(caps.daysRemaining ?? 0) > 1 ? "s" : ""}`
+                : `${caps.daysRemaining} jour${(caps.daysRemaining ?? 0) > 1 ? "s" : ""} restants`}
+          </div>
+          <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+            {caps.periode && (
+              <>
+                <dt className="text-muted-foreground">Période</dt>
+                <dd className="text-right font-medium">{PERIODE_LABEL[caps.periode]}</dd>
+              </>
+            )}
+            <dt className="text-muted-foreground">Activé le</dt>
+            <dd className="text-right font-medium">{fmtDate(caps.startedAt)}</dd>
+            <dt className="text-muted-foreground">Expire le</dt>
+            <dd className="text-right font-medium">{fmtDate(caps.expiresAt)}</dd>
+          </dl>
+          {caps.isExpiringSoon && (
+            <div className="mt-2">
+              <UpgradeDialog currentPlan={caps.storedPlan} variant="inline" />
+            </div>
+          )}
+        </div>
+      )}
+
 
       <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
         <div className="rounded-lg border border-border bg-background/60 p-2.5">

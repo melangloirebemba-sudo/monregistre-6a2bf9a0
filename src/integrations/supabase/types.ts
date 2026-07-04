@@ -460,6 +460,9 @@ export type Database = {
           nom_affiche: string
           nom_famille: string | null
           plan: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at: string | null
+          plan_periode: Database["public"]["Enums"]["plan_periode"] | null
+          plan_started_at: string | null
           prenom: string | null
           statut: Database["public"]["Enums"]["user_statut"]
           telephone: string | null
@@ -478,6 +481,9 @@ export type Database = {
           nom_affiche?: string
           nom_famille?: string | null
           plan?: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at?: string | null
+          plan_periode?: Database["public"]["Enums"]["plan_periode"] | null
+          plan_started_at?: string | null
           prenom?: string | null
           statut?: Database["public"]["Enums"]["user_statut"]
           telephone?: string | null
@@ -496,6 +502,9 @@ export type Database = {
           nom_affiche?: string
           nom_famille?: string | null
           plan?: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at?: string | null
+          plan_periode?: Database["public"]["Enums"]["plan_periode"] | null
+          plan_started_at?: string | null
           prenom?: string | null
           statut?: Database["public"]["Enums"]["user_statut"]
           telephone?: string | null
@@ -593,6 +602,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_plan: {
+        Args: {
+          _periode: Database["public"]["Enums"]["plan_periode"]
+          _plan: Database["public"]["Enums"]["app_plan"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      expire_plans: { Args: never; Returns: number }
       get_user_plan: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_plan"]
@@ -604,10 +622,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      plan_periode_days: {
+        Args: { _periode: Database["public"]["Enums"]["plan_periode"] }
+        Returns: number
+      }
     }
     Enums: {
       app_plan: "gratuit" | "lite" | "premium"
       app_role: "admin" | "user"
+      plan_periode: "mensuelle" | "trimestrielle" | "annuelle"
       user_statut: "actif" | "suspendu"
     }
     CompositeTypes: {
@@ -738,6 +761,7 @@ export const Constants = {
     Enums: {
       app_plan: ["gratuit", "lite", "premium"],
       app_role: ["admin", "user"],
+      plan_periode: ["mensuelle", "trimestrielle", "annuelle"],
       user_statut: ["actif", "suspendu"],
     },
   },
