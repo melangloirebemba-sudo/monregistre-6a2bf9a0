@@ -259,7 +259,7 @@ function AccueilPage() {
 
       {/* Aujourd'hui */}
       <section className="mt-6 rounded-2xl border border-border bg-card p-5">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-teal">
             <CalendarDays className="h-4 w-4" />
             <span className="text-xs font-semibold uppercase tracking-widest">
@@ -270,9 +270,21 @@ function AccueilPage() {
             Voir tout →
           </Link>
         </div>
+        {ecoles.length > 1 && (
+          <div className="mb-3">
+            <EcoleFilter
+              value={ecoleFilter}
+              onValueChange={setEcoleFilter}
+              ecoles={ecoles}
+              placeholder="École"
+            />
+          </div>
+        )}
         {todayCreneaux.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Aucun créneau prévu aujourd'hui.
+            {ecoleFilter !== "all"
+              ? `Aucun créneau aujourd'hui pour ${selectedEcole?.nom ?? "cette école"}.`
+              : "Aucun créneau prévu aujourd'hui."}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -306,10 +318,10 @@ function AccueilPage() {
                         <span className="text-ink/60 font-normal"> · {c.matiere}</span>
                       )}
                     </p>
-                    <p className="text-xs text-ink/60 truncate">
-                      {c.ecole?.nom}
+                    <p className="text-xs text-ink/60 truncate flex items-center gap-1.5 flex-wrap">
+                      <EcoleBadge name={c.ecole?.nom} />
                       {c.salle && (
-                        <span className="inline-flex items-center gap-0.5 ml-1">
+                        <span className="inline-flex items-center gap-0.5">
                           <MapPin className="h-3 w-3" />
                           {c.salle}
                         </span>
