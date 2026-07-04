@@ -35,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/ecoles")({
 
 function EcolesPage() {
   const { data: ecoles = [], isLoading } = useQuery(ecolesQO());
+  const { data: caps } = useQuery(planCapabilitiesQO());
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Ecole | null>(null);
   const [open, setOpen] = useState(false);
@@ -47,6 +48,21 @@ function EcolesPage() {
       ),
     [ecoles, q],
   );
+
+  const maxEcoles = caps?.max_ecoles ?? 0;
+  const atLimit = !caps?.isAdmin && maxEcoles > 0 && ecoles.length >= maxEcoles;
+  const planLabel = PLAN_LABEL[caps?.plan ?? "gratuit"];
+
+  const handleAdd = () => {
+    if (atLimit) {
+      toast.error(
+        `Plan ${planLabel} : limite de ${maxEcoles} école${maxEcoles > 1 ? "s" : ""} atteinte. Passez à un plan supérieur pour en ajouter davantage.`,
+      );
+      return;
+    }
+    setEditing(null);
+    setOpen(true);
+  };
 
   return (
     <div className="px-5 pb-24 pt-5">
