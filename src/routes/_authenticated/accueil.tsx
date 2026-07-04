@@ -9,8 +9,10 @@ import {
   Plus,
   CalendarDays,
   BookOpen,
+  MapPin,
 } from "lucide-react";
 import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
+import { creneauxQO } from "@/lib/queries/data";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   head: () => ({
@@ -25,9 +27,23 @@ export const Route = createFileRoute("/_authenticated/accueil")({
 function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: counts } = useQuery(countsQueryOptions());
+  const { data: creneaux = [] } = useQuery(creneauxQO());
 
   const nom = profil?.nom_affiche?.split(" ")[0] || "Enseignant";
   const annee = profil?.annee_active || "Aucune année active";
+
+  // ISO day: Mon=1 ... Sun=7
+  const jsDay = new Date().getDay();
+  const todayIso = jsDay === 0 ? 7 : jsDay;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const todayCreneaux = creneaux
+    .filter((c) => c.jour_semaine === todayIso)
+    .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut));
 
   const badges = [
     { label: "Écoles", value: counts?.ecoles ?? 0 },
@@ -148,18 +164,75 @@ function AccueilPage() {
         </div>
       </section>
 
-      {/* Aujourd'hui — placeholder */}
-      <section className="mt-6 rounded-2xl border border-dashed border-border bg-card/60 p-5">
-        <div className="mb-2 flex items-center gap-2 text-teal">
-          <CalendarDays className="h-4 w-4" />
-          <span className="text-xs font-semibold uppercase tracking-widest">
-            Aujourd'hui
-          </span>
+      {/* Aujourd'hui */}
+      <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-teal">
+            <CalendarDays className="h-4 w-4" />
+            <span className="text-xs font-semibold uppercase tracking-widest">
+              Aujourd'hui
+            </span>
+          </div>
+          <Link to="/emploi-du-temps" className="text-xs text-teal hover:underline">
+            Voir tout →
+          </Link>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Vos créneaux du jour apparaîtront ici dès que vous aurez configuré votre emploi du
-          temps.
-        </p>
+        {todayCreneaux.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aucun créneau prévu aujourd'hui.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {todayCreneaux.map((c) => {
+              const isNow =
+                toMin(c.heure_debut) <= nowMinutes && nowMinutes < toMin(c.heure_fin);
+              const isPast = toMin(c.heure_fin) <= nowMinutes;
+              return (
+                <li
+                  key={c.id}
+                  className={`flex items-center gap-3 rounded-xl border p-2.5 ${
+                    isNow
+                      ? "border-teal bg-teal/10"
+                      : isPast
+                        ? "border-border bg-card opacity-50"
+                        : "border-border bg-card"
+                  }`}
+                >
+                  <div className="shrink-0 w-14 text-center">
+                    <div className="text-sm font-semibold text-ink">
+                      {c.heure_debut.slice(0, 5)}
+                    </div>
+                    <div className="text-[10px] text-ink/50">
+                      {c.heure_fin.slice(0, 5)}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-ink truncate">
+                      {c.classe?.nom ?? "—"}
+                      {c.matiere && (
+                        <span className="text-ink/60 font-normal"> · {c.matiere}</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-ink/60 truncate">
+                      {c.ecole?.nom}
+                      {c.salle && (
+                        <span className="inline-flex items-center gap-0.5 ml-1">
+                          <MapPin className="h-3 w-3" />
+                          {c.salle}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  {isNow && (
+                    <span className="shrink-0 rounded-full bg-teal px-2 py-0.5 text-[10px] font-semibold text-cream">
+                      En cours
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       {/* Grille menu */}

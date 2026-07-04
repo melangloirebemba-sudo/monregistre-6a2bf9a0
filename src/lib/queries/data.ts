@@ -54,6 +54,18 @@ export interface Note {
   user_id: string;
 }
 
+export interface Creneau {
+  id: string;
+  classe_id: string;
+  ecole_id: string;
+  jour_semaine: number; // 1=Lun ... 7=Dim
+  heure_debut: string; // "HH:MM:SS"
+  heure_fin: string;
+  matiere: string | null;
+  salle: string | null;
+  user_id: string;
+}
+
 export const ecolesQO = () =>
   queryOptions({
     queryKey: ["ecoles"],
@@ -119,6 +131,23 @@ export const notesQO = (opts: { classeId?: string; eleveId?: string; periodeId?:
       let rows = (data ?? []) as Array<Note & { eleve: { nom: string; prenom: string; classe_id: string } | null }>;
       if (opts.classeId) rows = rows.filter((r) => r.eleve?.classe_id === opts.classeId);
       return rows;
+    },
+  });
+
+export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =>
+  queryOptions({
+    queryKey: ["creneaux", opts.ecoleId ?? "-", opts.classeId ?? "-"],
+    queryFn: async (): Promise<Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>> => {
+      let q = supabase
+        .from("creneaux")
+        .select("*, classe:classes(nom, code), ecole:ecoles(nom)")
+        .order("jour_semaine")
+        .order("heure_debut");
+      if (opts.ecoleId) q = q.eq("ecole_id", opts.ecoleId);
+      if (opts.classeId) q = q.eq("classe_id", opts.classeId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>;
     },
   });
 
