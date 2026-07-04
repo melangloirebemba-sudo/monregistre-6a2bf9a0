@@ -21,6 +21,7 @@ import {
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { moyennePonderee, noteColorClass } from "@/lib/format";
 import { generateBulletinPDF } from "@/lib/pdf/bulletin";
+import { generateClasseRapportPDF } from "@/lib/pdf/classe-rapport";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
