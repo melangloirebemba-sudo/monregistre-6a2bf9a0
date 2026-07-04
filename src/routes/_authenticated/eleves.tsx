@@ -276,7 +276,7 @@ function EleveDialog({
         prenom: form.prenom.trim(),
         sexe: form.sexe,
         classe_id: form.classe_id,
-        ecole_id: classe.ecole_id,
+        ecole_id: form.ecole_id,
         numero_eleve: form.numero_eleve.trim() || null,
         adresse: form.adresse.trim() || null,
         tuteur_nom: form.tuteur_nom.trim() || null,
