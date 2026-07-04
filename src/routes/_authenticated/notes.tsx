@@ -269,11 +269,20 @@ function NoteDialog({
         ecole_id,
       };
       if (note) {
-        const { error } = await supabase.from("notes").update(payload).eq("id", note.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "notes",
+          op: "update",
+          payload,
+          match: { id: note.id },
+          label: `Modifier note ${form.libelle}`,
+        });
       } else {
-        const { error } = await supabase.from("notes").insert({ ...payload, user_id });
-        if (error) throw error;
+        await enqueueWrite({
+          table: "notes",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID(), user_id },
+          label: `Ajouter note ${form.libelle}`,
+        });
       }
     },
     onSuccess: () => {
