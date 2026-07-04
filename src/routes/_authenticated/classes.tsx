@@ -144,28 +144,47 @@ function ClassesPage() {
               </div>
             </li>
           );
-          if (ecoleFilter === "all") {
-            const map = new Map<string, Classe[]>();
-            filtered.forEach((c) => {
-              const list = map.get(c.ecole_id) ?? [];
-              list.push(c);
-              map.set(c.ecole_id, list);
-            });
-            const grouped = Array.from(map.entries()).sort((a, b) =>
-              (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
-            );
-            return (
-              <div className="space-y-4">
-                {grouped.map(([ecoleId, list]) => (
-                  <section key={ecoleId}>
-                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                    <ul className="space-y-3">{list.map(renderItem)}</ul>
-                  </section>
-                ))}
-              </div>
-            );
-          }
-          return <ul className="space-y-3">{filtered.map(renderItem)}</ul>;
+          const listView = (() => {
+            if (ecoleFilter === "all") {
+              const map = new Map<string, Classe[]>();
+              paged.forEach((c) => {
+                const list = map.get(c.ecole_id) ?? [];
+                list.push(c);
+                map.set(c.ecole_id, list);
+              });
+              const grouped = Array.from(map.entries()).sort((a, b) =>
+                (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+              );
+              return (
+                <div className="space-y-4">
+                  {grouped.map(([ecoleId, list]) => (
+                    <section key={ecoleId}>
+                      <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
+                      <ul className="space-y-3">{list.map(renderItem)}</ul>
+                    </section>
+                  ))}
+                </div>
+              );
+            }
+            return <ul className="space-y-3">{paged.map(renderItem)}</ul>;
+          })();
+          return (
+            <div className="space-y-3">
+              {listView}
+              <DataPagination
+                page={pg.page}
+                totalPages={pg.totalPages}
+                pageSize={pg.pageSize}
+                totalCount={classes.length}
+                filteredCount={filtered.length}
+                start={pg.start}
+                end={pg.end}
+                onPageChange={pg.setPage}
+                onPageSizeChange={pg.setPageSize}
+                itemLabel="classes"
+              />
+            </div>
+          );
         })()
       )}
 
