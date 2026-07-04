@@ -495,6 +495,14 @@ function AdminContent() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog historique d'activations */}
+      <HistoryDialog
+        target={historyTarget}
+        onClose={() => setHistoryTarget(null)}
+      />
+
+
+
       {/* Dialog reset password */}
       <Dialog open={!!pwdTarget} onOpenChange={(v) => !v && setPwdTarget(null)}>
         <DialogContent className="max-w-md">
