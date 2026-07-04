@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles, ArrowUpRight, Crown, Zap, Mail, Clock, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles, ArrowUpRight, Crown, Zap, Mail, Clock, AlertTriangle, History } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -151,6 +151,7 @@ function ParametresPage() {
       </div>
 
       {caps && <PlanCard caps={caps} />}
+      {caps && !caps.isAdmin && <PlanActivationsHistory />}
 
 
       <form
@@ -531,6 +532,91 @@ function UpgradeTier({
         ))}
       </ul>
     </div>
+  );
+}
+
+type PlanActivationRow = {
+  id: string;
+  plan: "gratuit" | "lite" | "premium";
+  periode: "mensuelle" | "trimestrielle" | "annuelle" | null;
+  plan_started_at: string | null;
+  plan_expires_at: string | null;
+  created_at: string;
+  activated_by_email: string | null;
+};
+
+function PlanActivationsHistory() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["mes-plan-activations"],
+    staleTime: 30_000,
+    queryFn: async (): Promise<PlanActivationRow[]> => {
+      const uid = await requireUserId();
+      const { data, error } = await supabase
+        .from("plan_activations")
+        .select("id, plan, periode, plan_started_at, plan_expires_at, created_at, activated_by_email")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as PlanActivationRow[];
+    },
+  });
+
+  const rows = data ?? [];
+
+  return (
+    <section className="card-elevated mb-6 p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <History className="h-4 w-4 text-teal" aria-hidden="true" />
+        <div>
+          <h2 className="font-display text-lg font-semibold text-foreground">Historique des activations</h2>
+          <p className="text-xs text-muted-foreground">Toutes les activations de plan effectuées sur votre compte.</p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Chargement…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Aucune activation enregistrée pour le moment.</p>
+      ) : (
+        <ul className="space-y-2">
+          {rows.map((r) => (
+            <li
+              key={r.id}
+              className="rounded-lg border border-border bg-background/60 p-3 text-xs"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${PLAN_BADGE[r.plan]}`}
+                  >
+                    {PLAN_LABEL[r.plan]}
+                  </span>
+                  {r.periode && (
+                    <span className="text-ink/80">{PERIODE_LABEL[r.periode]}</span>
+                  )}
+                </div>
+                <span className="font-mono text-[10px] text-muted-foreground" title={r.id}>
+                  #{r.id.slice(0, 8)}
+                </span>
+              </div>
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                <dt className="text-muted-foreground">Début</dt>
+                <dd className="text-right font-medium">{fmtDate(r.plan_started_at ?? r.created_at)}</dd>
+                <dt className="text-muted-foreground">Expiration</dt>
+                <dd className="text-right font-medium">{fmtDate(r.plan_expires_at)}</dd>
+                {r.activated_by_email && (
+                  <>
+                    <dt className="text-muted-foreground">Activé par</dt>
+                    <dd className="truncate text-right font-medium">{r.activated_by_email}</dd>
+                  </>
+                )}
+              </dl>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
