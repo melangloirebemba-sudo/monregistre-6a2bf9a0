@@ -68,7 +68,7 @@ export function AdminShell({ children }: AdminShellProps) {
             </div>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+        <nav aria-label="Sections admin" className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
           {adminNav.map((t) => {
             const active = isActive(pathname, t.to);
             const Icon = t.icon;
@@ -76,14 +76,16 @@ export function AdminShell({ children }: AdminShellProps) {
               <Link
                 key={t.to}
                 to={t.to}
+                aria-current={active ? "page" : undefined}
                 className={[
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ink",
                   active
                     ? "bg-teal/25 text-gold-soft"
-                    : "text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground",
+                    : "text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground",
                 ].join(" ")}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{t.label}</span>
               </Link>
             );
