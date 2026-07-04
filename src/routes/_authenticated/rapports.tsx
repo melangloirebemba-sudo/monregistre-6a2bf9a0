@@ -21,6 +21,7 @@ import {
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { moyennePonderee, noteColorClass } from "@/lib/format";
 import { generateBulletinPDF } from "@/lib/pdf/bulletin";
+import { generateClasseRapportPDF } from "@/lib/pdf/classe-rapport";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -118,14 +119,20 @@ function RapportsPage() {
   }
 
   function handleExportAll() {
-    if (!stats.moyennes.length) {
-      toast.error("Aucun bulletin à générer.");
+    if (!eleves.length) {
+      toast.error("Aucun élève à exporter.");
       return;
     }
-    stats.moyennes.forEach((m, i) => {
-      setTimeout(() => handleExport(m.eleve.id), i * 150);
+    generateClasseRapportPDF({
+      ecole,
+      classe,
+      periode,
+      eleves,
+      notes,
+      enseignant: profil?.nom_affiche ?? undefined,
+      echelle,
     });
-    toast.success(`${stats.moyennes.length} bulletin(s) en cours de génération`);
+    toast.success("Rapport de classe généré");
   }
 
   return (
