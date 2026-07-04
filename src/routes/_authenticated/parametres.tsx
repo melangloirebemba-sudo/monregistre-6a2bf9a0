@@ -352,7 +352,7 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
     `École : ${ecoleNom || "(non renseignée)"}`,
     `Plan actuel : ${PLAN_LABEL[currentPlan]}`,
   ].join("\n");
-  const waHref = `https://wa.me/242069626540?text=${encodeURIComponent(waMessage)}`;
+  const waHref = `https://wa.me/24269626540?text=${encodeURIComponent(waMessage)}`;
 
   const trigger =
     variant === "header" ? (
