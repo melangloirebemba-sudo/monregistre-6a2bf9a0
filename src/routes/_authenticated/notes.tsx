@@ -99,6 +99,11 @@ function NotesPage() {
     [notes, q, ecoleFilter, classeById],
   );
 
+  const pg = usePagination(filtered.length, 20, [q, ecoleFilter, classeFilter, periodeFilter]);
+  const paged = pg.slice(filtered);
+
+
+
 
   const canAdd = eleves.length > 0 || classes.length > 0;
 
