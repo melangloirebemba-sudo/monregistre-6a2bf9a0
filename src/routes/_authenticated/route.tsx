@@ -54,6 +54,7 @@ function AuthenticatedLayout() {
     <AppShell>
       <SuspendedGate />
       <AnneeScolaireGate />
+      <PlanUpgradeNotice />
       <Outlet />
     </AppShell>
   );
