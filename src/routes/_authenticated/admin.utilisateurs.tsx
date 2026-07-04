@@ -124,10 +124,11 @@ function AdminContent() {
   const activatePlan = useMutation({
     mutationFn: (v: { userId: string; plan: "lite" | "premium"; periode: PlanPeriode }) =>
       adminApi.activatePlan(v.userId, v.plan, v.periode),
-    onSuccess: (r) => {
+    onSuccess: (r, v) => {
       const d = new Date(r.plan_expires_at).toLocaleDateString("fr-FR");
       toast.success(`Plan activé — expire le ${d}`);
       invalidate();
+      qc.invalidateQueries({ queryKey: ["admin-activations", v.userId] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
