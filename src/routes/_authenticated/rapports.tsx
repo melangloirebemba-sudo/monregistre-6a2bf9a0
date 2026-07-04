@@ -102,6 +102,10 @@ function RapportsPage() {
   }, [notes, eleves, echelle]);
 
   function handleExport(eleveId: string) {
+    if (!canPdf) {
+      toast.error("Export PDF réservé aux plans Lite et Premium.");
+      return;
+    }
     const el = eleves.find((e) => e.id === eleveId);
     if (!el) return;
     const eleveNotes = notes.filter((n) => n.eleve_id === eleveId);
@@ -122,6 +126,10 @@ function RapportsPage() {
   }
 
   function handleExportAll() {
+    if (!canPdf) {
+      toast.error("Export PDF réservé aux plans Lite et Premium.");
+      return;
+    }
     if (!eleves.length) {
       toast.error("Aucun élève à exporter.");
       return;
@@ -141,6 +149,7 @@ function RapportsPage() {
     toast.success("Rapport de classe généré");
 
   }
+
 
   return (
     <div className="space-y-5">
