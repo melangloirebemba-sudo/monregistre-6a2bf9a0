@@ -96,15 +96,18 @@ function EcolesPage() {
             <p className="mt-0.5 text-ink/80">
               Le plan {planLabel} autorise {maxEcoles} école{maxEcoles > 1 ? "s" : ""}. Passez à un plan supérieur pour en ajouter davantage.
             </p>
-            <Link
-              to="/support"
-              className="mt-1 inline-block text-teal underline-offset-2 hover:underline"
+            <button
+              type="button"
+              onClick={() => setUpgradeOpen(true)}
+              className="mt-1 inline-flex items-center gap-1 text-teal underline-offset-2 hover:underline"
             >
-              Contacter le support
-            </Link>
+              <Sparkles className="h-3 w-3" aria-hidden="true" />
+              Mettre à niveau
+            </button>
           </div>
         </div>
       )}
+
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
