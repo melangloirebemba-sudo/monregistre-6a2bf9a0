@@ -8,6 +8,7 @@ import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
 import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 
 import { Button } from "@/components/ui/button";
+import { DataPagination, usePagination } from "@/components/ui/data-pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
