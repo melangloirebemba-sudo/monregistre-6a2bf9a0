@@ -121,6 +121,17 @@ function AdminContent() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const activatePlan = useMutation({
+    mutationFn: (v: { userId: string; plan: "lite" | "premium"; periode: PlanPeriode }) =>
+      adminApi.activatePlan(v.userId, v.plan, v.periode),
+    onSuccess: (r) => {
+      const d = new Date(r.plan_expires_at).toLocaleDateString("fr-FR");
+      toast.success(`Plan activé — expire le ${d}`);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const toggleSuspend = useMutation({
     mutationFn: (v: { userId: string; suspendre: boolean }) => adminApi.setSuspension(v.userId, v.suspendre),
     onSuccess: (_r, v) => {
