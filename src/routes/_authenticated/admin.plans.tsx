@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Crown, School, GraduationCap, Users, FileText, BookOpen, Save, Infinity as InfinityIcon } from "lucide-react";
+import { Crown, School, GraduationCap, Users, FileText, BookOpen, Save, Infinity as InfinityIcon, Coins } from "lucide-react";
 import { toast } from "sonner";
-import { adminApi, type PlanLimit } from "@/lib/admin-api";
+import { adminApi, type PlanLimit, type PlanPrice, type PlanPeriode } from "@/lib/admin-api";
 import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans & limites — Console admin" }, { name: "robots", content: "noindex" }] }),
@@ -60,6 +61,8 @@ function PlansPage() {
         })}
       </div>
 
+      <PricesSection />
+
       <div className="card-elevated p-4 text-sm text-muted-foreground">
         <p>
           <strong className="text-foreground">Astuce :</strong> pour « illimité », laissez le champ vide ou entrez 0.
@@ -69,6 +72,121 @@ function PlansPage() {
     </div>
   );
 }
+
+/* ============================== PRIX ============================== */
+
+const PERIODES: { key: PlanPeriode; label: string }[] = [
+  { key: "mensuelle", label: "Mensuelle" },
+  { key: "trimestrielle", label: "Trimestrielle" },
+  { key: "annuelle", label: "Annuelle" },
+];
+
+function PricesSection() {
+  const qc = useQueryClient();
+  const { data: prices = [], isLoading } = useQuery({
+    queryKey: ["admin-plan-prices"],
+    queryFn: () => adminApi.pricesList(),
+    staleTime: 15_000,
+  });
+
+  const byKey = new Map<string, PlanPrice>();
+  for (const p of prices) byKey.set(`${p.plan}|${p.periode}`, p);
+
+  return (
+    <section className="card-elevated p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Coins className="h-5 w-5 text-gold" />
+        <div>
+          <h2 className="font-display text-lg font-semibold text-foreground">Tarifs (FCFA)</h2>
+          <p className="text-xs text-muted-foreground">
+            Prix appliqué automatiquement lors de l'activation d'un plan pour un utilisateur.
+          </p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground">Chargement…</div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(["lite", "premium"] as const).map((plan) => (
+            <div key={plan} className="rounded-lg border border-border bg-background/60 p-4">
+              <div className="mb-3 text-sm font-semibold text-foreground">{PLAN_LABELS[plan]}</div>
+              <div className="space-y-2.5">
+                {PERIODES.map((per) => {
+                  const row = byKey.get(`${plan}|${per.key}`);
+                  return (
+                    <PriceRow
+                      key={per.key}
+                      plan={plan}
+                      periode={per.key}
+                      label={per.label}
+                      initial={row?.montant ?? 0}
+                      onSaved={() => qc.invalidateQueries({ queryKey: ["admin-plan-prices"] })}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PriceRow({
+  plan, periode, label, initial, onSaved,
+}: {
+  plan: "lite" | "premium";
+  periode: PlanPeriode;
+  label: string;
+  initial: number;
+  onSaved: () => void;
+}) {
+  const [val, setVal] = useState(String(initial));
+  useEffect(() => { setVal(String(initial)); }, [initial]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const n = Number(val.trim());
+      if (!Number.isFinite(n) || n < 0) throw new Error("Montant invalide");
+      return adminApi.pricesUpdate({ plan, periode, montant: Math.floor(n), devise: "XAF" });
+    },
+    onSuccess: () => { toast.success("Tarif enregistré"); onSaved(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const changed = val.trim() !== String(initial);
+
+  return (
+    <div className="flex items-center gap-2">
+      <Label className="w-24 shrink-0 text-xs text-muted-foreground">{label}</Label>
+      <div className="relative flex-1">
+        <Input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          step={100}
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          className="pr-14"
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-muted-foreground">
+          FCFA
+        </span>
+      </div>
+      <Button
+        size="sm"
+        variant={changed ? "default" : "outline"}
+        disabled={!changed || save.isPending}
+        onClick={() => save.mutate()}
+      >
+        <Save className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
 
 function PlanCard({ row, onSaved }: { row: PlanLimit; onSaved: () => void }) {
   const [ecoles, setEcoles] = useState("");

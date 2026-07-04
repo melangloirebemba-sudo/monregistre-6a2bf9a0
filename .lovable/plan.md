@@ -1,87 +1,53 @@
-# MonRegistre — Plan de construction
+## Ce qu'on ajoute
 
-Application mobile-first pour enseignants : écoles, classes, élèves, notes, bulletins, emplois du temps et progression pédagogique.
+### 1. Base de données (migration)
+- **`plan_prices`** — clé `(plan, periode)`, colonnes `montant` (int), `devise` (`XAF` par défaut), `updated_at`, `updated_by`. Seed initial à `0` pour les 6 combinaisons `lite/premium × mensuelle/trimestrielle/annuelle`.
+- **`paiements`** — un reçu par activation :
+  - `id`, `user_id` (FK auth.users), `plan_activation_id` (FK plan_activations, unique), `plan`, `periode`, `montant`, `devise`, `numero_recu` (unique, ex. `REC-2026-000042`), `paye_le`, `moyen_paiement` (`manuel` / `en_ligne` / …), `note`, `created_at`.
+  - Séquence Postgres `paiements_recu_seq` + trigger pour composer `REC-{année}-{6 chiffres}` à l'insert si `numero_recu` est nul.
+- GRANTs + RLS :
+  - `plan_prices` : lecture pour `authenticated` ; écriture réservée `admin` via `has_role`.
+  - `paiements` : chaque user lit ses propres lignes ; admin lit/insère tout ; `service_role` full.
 
-## Approche
+### 2. Edge function `admin-api`
+- Nouvelles actions :
+  - `prices.list` → renvoie la grille des 6 tarifs.
+  - `prices.update` → `{ plan, periode, montant, devise }`.
+- `activatePlan` étendu : après l'`UPDATE profils_enseignant` et l'insert dans `plan_activations`, on va chercher le prix courant dans `plan_prices` et on **insère automatiquement une ligne `paiements`** rattachée à l'activation (montant 0 accepté si prix non configuré ; note admin propagée).
 
-Le périmètre est très large (14 groupes de fonctionnalités). Je propose de livrer par **phases fonctionnelles cohérentes**, chacune testable de bout en bout, plutôt que de tout construire d'un coup. À la fin de chaque phase tu valides et je passe à la suivante.
+### 3. Écran admin — Prix des plans
+Dans `admin.plans.tsx`, ajouter un panneau **« Tarifs »** juste après les limites : un tableau plans × périodes avec input montant + bouton « Enregistrer ». Devise fixée à `XAF` (affichée, non éditable pour l'instant).
 
-## Stack
+### 4. Écran utilisateur — « Facturation & paiements »
+Nouveau route `src/routes/_authenticated/facturation.tsx` :
+- En-tête + total payé cumulé.
+- Recherche + filtre (plan) + tri + pagination via `usePaginatedQuery` (cohérent avec les autres listes).
+- Chaque ligne : plan, période, montant (`format XAF`), date de paiement, date d'expiration/renouvellement, moyen, bouton **« Télécharger le reçu »** (PDF).
+- États : `ListSkeleton`, `NoResults`.
+- Ajout d'un lien vers cette page depuis `parametres.tsx` (bloc « Historique des activations » gagne un CTA « Voir factures & reçus »), et depuis le menu de navigation si présent.
 
-- TanStack Start + React 19 + TypeScript (stack du template, équivalent à React Router pour la nav)
-- Tailwind v4 + shadcn/ui
-- Lovable Cloud (Supabase managé) pour auth + base de données + RLS
-- jsPDF pour bulletins, recharts pour graphiques, PapaParse pour CSV
+### 5. Génération du reçu PDF
+Nouveau `src/lib/pdf/recu-paiement.ts` (jsPDF, déjà installé) — reçu A5 sobre :
+- Ent-tête : `MonRegistre — Reçu de paiement n° REC-2026-000042`.
+- Bloc bénéficiaire : nom affiché de l'enseignant + email.
+- Bloc paiement : plan (label), période, date de paiement, date d'expiration, moyen.
+- Montant en gros, format XAF (`fr-FR` groupé, suffixe `FCFA`).
+- Pied : mention « Reçu généré automatiquement — devise XAF ».
 
-## Design system (défini une seule fois, phase 1)
-
-- Palette crème/encre/or/sarcelle en tokens `oklch` dans `src/styles.css`
-- Fonts : Playfair Display (serif titres) + DM Sans (body) via `<link>` dans `__root.tsx`
-- Variantes shadcn : cartes 16px, bottom-sheet, badges de note colorés, top bar sombre, hero dégradé
-- Layout : container mobile max ~430px + nav bottom 5 onglets, responsive tablette/desktop
-- Mode sombre optionnel (phase tardive)
-
-## Phases
-
-### Phase 1 — Fondations (design + auth + persistance)
-- Design system complet (tokens, fonts, variantes shadcn, top bar, bottom nav, bottom-sheet, toasts)
-- Lovable Cloud activé
-- Auth email/mot de passe (`/auth`) + route protégée `_authenticated`
-- Schéma DB complet avec RLS `user_id = auth.uid()` sur toutes les tables
-- Table `profils_enseignant` (nom affiché, initiales, échelle de notation, année active)
-- Écran Accueil vide mais avec hero, badges compteurs, actions rapides, grille menu
-
-### Phase 2 — CRUD principal
-- Écoles : liste + recherche + ajout + fiche détail (onglets Classes/Élèves/Notes)
-- Classes : idem + rattachement école
-- Élèves : idem + fiche avec moyenne / bulletin
-- Notes : saisie rapide, badges colorés (≥14 vert, ≥10 or, <10 rouge)
-- Périodes scolaires (trimestres/semestres) + sélecteur année
-- Coefficients + moyenne pondérée
-- Recherche transversale + filtres
-
-### Phase 3 — Rapports & bulletins
-- Écran Rapports : moyenne générale, min/max, classement
-- Bulletins PDF par élève/période (jsPDF)
-- Export classement PDF + export notes CSV
-- Statistiques : histogramme notes par classe, courbe évolution élève, comparaison classes (recharts)
-
-### Phase 4 — Emploi du temps
-- Table `creneaux` + CRUD (jour, horaires, classe, matière, salle)
-- Vue hebdo grille jours × créneaux, cartes colorées par classe
-- Onglet Emploi du temps sur fiches école et classe
-- Détection chevauchements avec alerte visuelle
-- Bloc "Aujourd'hui" sur Accueil avec créneau en cours surligné
-
-### Phase 5 — Progression pédagogique
-- Table `sequences_programme` + CRUD par classe/trimestre
-- Statut auto (à venir / en cours / terminée / en retard)
-- Barre de progression par classe/trimestre
-- Tableau de bord "Où j'en suis" multi-classes
-- Lien optionnel note ↔ séquence, notes libres
-
-### Phase 6 — Absences & import/export
-- Table `absences` + marquage présence + compteur sur fiche élève
-- Import élèves CSV/Excel (PapaParse)
-- Export notes CSV
-
-### Phase 7 — Polissage
-- Mode sombre
-- Rappels (notes non saisies, fin de période) — via requêtes clientes, pas de push natif
-- Mode hors-ligne basique (cache TanStack Query + file d'attente mutations) — **best effort**, une vraie sync offline robuste dépasse le cadre raisonnable ici
+### 6. Cohérence & sécurité
+- Le montant du reçu est **figé au moment de l'activation** (pas de recalcul si l'admin change le prix plus tard).
+- Les utilisateurs ne peuvent pas insérer/modifier de `paiements` (RLS SELECT-only pour `authenticated`).
+- Le lien `plan_activation_id` `unique` évite les doublons de reçu si `activatePlan` est rejoué.
 
 ## Détails techniques
 
-- Routes TanStack : `/`, `/auth`, `/_authenticated/{ecoles,classes,eleves,notes,rapports,emploi-du-temps,progression,parametres}` + routes détail `$id`
-- Toutes les tables ont `user_id uuid not null` + policies RLS `user_id = auth.uid()` + GRANT authenticated
-- Sécurité : jamais de rôle stocké sur profil (pas de rôles nécessaires ici, mono-utilisateur par compte)
-- Server functions TanStack pour PDF (jsPDF côté client suffit en fait — plus simple)
-- Nav bottom 5 onglets : Accueil / Écoles / Classes / Élèves / Plus (menu vers Notes, Rapports, EDT, Progression, Paramètres)
+- **Migration** (dans l'ordre requis) : `CREATE TABLE` → `GRANT` → `ENABLE RLS` → `CREATE POLICY` → séquence + fonction `set_numero_recu()` + trigger `BEFORE INSERT` sur `paiements`.
+- **Devise** : stockée par ligne pour supporter un futur multi-devise ; UI restreinte à `XAF`.
+- **Séquentialité annuelle** : la fonction lit `date_part('year', now())` et concatène avec `nextval` — simple et suffisant (pas de reset annuel automatique du compteur ; le préfixe année suffit à l'humain).
+- **Route** ajoutée sous `_authenticated`, donc `routeTree.gen.ts` sera régénéré par le plugin Vite.
+- **Types Supabase** : `src/integrations/supabase/types.ts` sera régénéré automatiquement après la migration.
 
-## Questions avant de démarrer
-
-1. **Commence-t-on par la Phase 1 seule** (fondations + accueil vide + auth) pour valider le design et la structure avant d'enchaîner ? C'est ce que je recommande fortement vu l'ampleur.
-2. **Nav bottom** : 5 onglets ne suffisent pas pour 9 sections — OK avec le regroupement "Plus" proposé ci-dessus ?
-3. **Mode hors-ligne** (point 8) : ambition réaliste = cache lecture + retry mutations, pas une vraie base locale synchronisée. Confirmes-tu ?
-
-Réponds "go phase 1" (ou ajuste) et je démarre.
+## Hors périmètre (pour cette étape)
+- Le **paiement en ligne** (Stripe/Paddle) n'est pas branché maintenant — on prépare la table `paiements` (`moyen_paiement`, `plan_activation_id` nullable pour un futur paiement autonome) pour que l'intégration en ligne s'y greffe plus tard sans refonte.
+- Pas de facture numérotée avec TVA — reçu simple uniquement, comme convenu.
+- Pas d'entête d'entreprise personnalisable (nom, adresse) — un panneau « Coordonnées facturation » côté admin pourra être ajouté ensuite si besoin.

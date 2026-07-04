@@ -12,6 +12,7 @@ import {
   Shield,
   LifeBuoy,
   CalendarX,
+  Receipt,
 } from "lucide-react";
 import { currentUserRolesQO } from "@/lib/queries/admin";
 
@@ -28,9 +29,11 @@ const baseItems = [
   { to: "/rapports", label: "Rapports & bulletins", desc: "Moyennes, classements, PDF", icon: BarChart3 },
   { to: "/emploi-du-temps", label: "Emploi du temps", desc: "Créneaux par classe et école", icon: CalendarDays },
   { to: "/progression", label: "Progression pédagogique", desc: "Séquences par trimestre", icon: BookOpen },
+  { to: "/facturation", label: "Facturation & paiements", desc: "Reçus, plan, renouvellement", icon: Receipt },
   { to: "/parametres", label: "Paramètres", desc: "Année scolaire, notation, périodes", icon: Settings },
   { to: "/support", label: "Support & aide", desc: "WhatsApp, e-mail, FAQ", icon: LifeBuoy },
 ] as const;
+
 
 
 const adminItem = {
