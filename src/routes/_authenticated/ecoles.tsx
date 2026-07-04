@@ -118,58 +118,72 @@ function EcolesPage() {
       ) : filtered.length === 0 ? (
         <EmptyState onAdd={handleAdd} locked={atLimit} />
       ) : (
-        <ul className="space-y-3">
-          {filtered.map((e) => (
-            <li key={e.id} className="card-elevated p-4">
-              <div className="flex items-start gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold/15 text-ink">
-                  <SchoolIcon className="h-5 w-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate font-display text-base font-semibold text-foreground">
-                      {e.nom}
-                    </h3>
-                    {e.numero && (
-                      <span className="rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-semibold text-teal">
-                        {e.numero}
-                      </span>
-                    )}
+        <div className="space-y-3">
+          <ul className="space-y-3">
+            {paged.map((e) => (
+              <li key={e.id} className="card-elevated p-4">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold/15 text-ink">
+                    <SchoolIcon className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate font-display text-base font-semibold text-foreground">
+                        {e.nom}
+                      </h3>
+                      {e.numero && (
+                        <span className="rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-semibold text-teal">
+                          {e.numero}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      {e.adresse && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3 w-3" /> {e.adresse}
+                        </div>
+                      )}
+                      {e.telephone && (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="h-3 w-3" /> {e.telephone}
+                        </div>
+                      )}
+                      {e.directeur_etudes && <div>Directeur : {e.directeur_etudes}</div>}
+                    </div>
                   </div>
-                  <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                    {e.adresse && (
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="h-3 w-3" /> {e.adresse}
-                      </div>
-                    )}
-                    {e.telephone && (
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="h-3 w-3" /> {e.telephone}
-                      </div>
-                    )}
-                    {e.directeur_etudes && <div>Directeur : {e.directeur_etudes}</div>}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => { setEditing(e); setOpen(true); }}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground"
+                      aria-label="Modifier"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setToDelete(e)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="Supprimer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <button
-                    onClick={() => { setEditing(e); setOpen(true); }}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground"
-                    aria-label="Modifier"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setToDelete(e)}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+          <DataPagination
+            page={pg.page}
+            totalPages={pg.totalPages}
+            pageSize={pg.pageSize}
+            totalCount={ecoles.length}
+            filteredCount={filtered.length}
+            start={pg.start}
+            end={pg.end}
+            onPageChange={pg.setPage}
+            onPageSizeChange={pg.setPageSize}
+            itemLabel="écoles"
+          />
+        </div>
       )}
 
       <FloatingAdd onClick={handleAdd} locked={atLimit} />
