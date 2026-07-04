@@ -275,6 +275,8 @@ function NoteDialog({
           payload,
           match: { id: note.id },
           label: `Modifier note ${form.libelle}`,
+          baseUpdatedAt: note.updated_at,
+          conflictStrategy: "merge",
         });
       } else {
         await enqueueWrite({
