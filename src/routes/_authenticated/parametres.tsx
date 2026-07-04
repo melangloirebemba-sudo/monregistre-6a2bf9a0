@@ -237,3 +237,96 @@ function ParametresPage() {
     </div>
   );
 }
+
+const PLAN_LABEL: Record<PlanCapabilities["plan"], string> = {
+  gratuit: "Gratuit",
+  lite: "Lite",
+  premium: "Premium",
+};
+
+const PLAN_BADGE: Record<PlanCapabilities["plan"], string> = {
+  gratuit: "bg-muted text-muted-foreground",
+  lite: "bg-gold/25 text-ink",
+  premium: "bg-teal text-cream",
+};
+
+function fmtLimit(n: number | null | undefined) {
+  if (n === null || n === undefined) return "—";
+  if (n <= 0) return "Illimité";
+  return String(n);
+}
+
+function PlanCard({ caps }: { caps: PlanCapabilities }) {
+  const isFree = caps.plan === "gratuit" && !caps.isAdmin;
+  const features: { label: string; enabled: boolean; note?: string }[] = [
+    { label: "Export PDF des bulletins & rapports de classe", enabled: caps.bulletins_pdf },
+    { label: "Rapports détaillés (moyennes, distribution, classements)", enabled: caps.rapports },
+    { label: "Suivi de progression dans le temps", enabled: caps.progression },
+  ];
+
+  return (
+    <section className="card-elevated mb-6 p-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Votre plan</div>
+          <div className="mt-1 flex items-center gap-2">
+            <h2 className="font-display text-xl font-semibold text-foreground">
+              {PLAN_LABEL[caps.plan]}
+            </h2>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${PLAN_BADGE[caps.plan]}`}>
+              {caps.isAdmin ? "Admin" : PLAN_LABEL[caps.plan]}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
+        <div className="rounded-lg border border-border bg-background/60 p-2.5">
+          <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Écoles</dt>
+          <dd className="mt-1 font-serif text-base text-ink">{fmtLimit(caps.max_ecoles)}</dd>
+        </div>
+        <div className="rounded-lg border border-border bg-background/60 p-2.5">
+          <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Classes/école</dt>
+          <dd className="mt-1 font-serif text-base text-ink">{fmtLimit(caps.max_classes_par_ecole)}</dd>
+        </div>
+        <div className="rounded-lg border border-border bg-background/60 p-2.5">
+          <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Élèves</dt>
+          <dd className="mt-1 font-serif text-base text-ink">{fmtLimit(caps.max_eleves)}</dd>
+        </div>
+      </dl>
+
+      <ul className="mt-4 space-y-2">
+        {features.map((f) => (
+          <li key={f.label} className="flex items-start gap-2 text-sm">
+            {f.enabled ? (
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-teal" aria-hidden="true" />
+            ) : (
+              <X className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+            )}
+            <span className={f.enabled ? "text-foreground" : "text-muted-foreground line-through"}>
+              {f.label}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {isFree && (
+        <div className="mt-4 rounded-lg border border-gold/40 bg-gold/10 p-3 text-xs text-ink/80">
+          <div className="flex items-center gap-1.5 font-semibold text-ink">
+            <Sparkles className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
+            Plan Gratuit — fonctionnalités limitées
+          </div>
+          <ul className="mt-1.5 list-disc space-y-0.5 pl-4">
+            <li>1 école, 1 classe par école, 25 élèves maximum.</li>
+            <li>Pas d'export PDF des bulletins ni des rapports de classe.</li>
+            <li>Rapports avancés et suivi de progression indisponibles.</li>
+          </ul>
+          <p className="mt-2 text-ink/70">
+            Passez au plan <strong>Lite</strong> ou <strong>Premium</strong> pour débloquer les exports PDF et les rapports détaillés.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
