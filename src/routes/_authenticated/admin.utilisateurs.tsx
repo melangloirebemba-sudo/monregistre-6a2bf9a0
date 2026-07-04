@@ -392,6 +392,16 @@ function AdminContent() {
                           <Button
                             size="sm"
                             variant="outline"
+                            aria-label={`Voir l'historique d'activations de ${displayName}`}
+                            onClick={() => setHistoryTarget(u)}
+                          >
+                            <History aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> Historique
+                          </Button>
+
+
+                          <Button
+                            size="sm"
+                            variant="outline"
                             aria-label={`Réinitialiser le mot de passe de ${displayName}`}
                             onClick={() => { setPwdTarget(u); setNewPwd(""); }}
                           >
