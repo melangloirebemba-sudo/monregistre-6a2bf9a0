@@ -341,7 +341,7 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
   );
 }
 
-const UPGRADE_EMAIL = "contact@monregistre.app";
+
 
 function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanCapabilities["plan"]; variant?: "header" | "inline" }) {
   const trigger =
@@ -406,13 +406,16 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
 
         <DialogFooter className="gap-2 sm:justify-between">
           <a
-            href={`mailto:${UPGRADE_EMAIL}?subject=${encodeURIComponent("Demande de mise à niveau MonRegistre")}&body=${encodeURIComponent(`Bonjour,\n\nJe souhaite passer du plan ${PLAN_LABEL[currentPlan]} à un plan supérieur.\n\nMerci.`)}`}
+            href={`https://wa.me/242069626540?text=${encodeURIComponent(`Bonjour, je souhaite passer du plan ${PLAN_LABEL[currentPlan]} à un plan supérieur sur MonRegistre.`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-1.5 rounded-md bg-teal px-3 py-2 text-sm font-medium text-cream hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
           >
             <Mail className="h-4 w-4" aria-hidden="true" />
-            Nous contacter
+            Nous contacter sur WhatsApp
           </a>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
