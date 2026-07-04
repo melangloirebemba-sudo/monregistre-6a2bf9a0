@@ -309,44 +309,71 @@ function PasswordChangesLogCard() {
       )}
 
       {filtered.length > 0 && (
-        <ul className="mt-4 divide-y divide-border/60 rounded-xl border border-border/60 bg-cream-deep/10">
-          {filtered.map((entry) => {
-            const s = sourceLabel(entry.source);
-            const isSelf =
-              entry.changed_by && entry.user_id && entry.changed_by === entry.user_id;
-            return (
-              <li
-                key={entry.id}
-                className="flex flex-col gap-1 p-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-foreground">
-                    {entry.user_email ?? "(compte supprimé)"}
-                  </div>
-                  <div className="mt-0.5 text-[11.5px] text-muted-foreground">
-                    {isSelf ? (
-                      <>Par lui-même</>
-                    ) : (
-                      <>
-                        Par{" "}
-                        <span className="text-foreground/80">
-                          {entry.changed_by_email ?? "admin"}
-                        </span>
-                      </>
-                    )}
-                  </div>
+        <>
+          <PaginatedLog entries={filtered} totalCount={data?.length ?? 0} />
+        </>
+      )}
+    </section>
+  );
+}
+
+function PaginatedLog({
+  entries,
+  totalCount,
+}: {
+  entries: Array<{
+    id: string;
+    user_id: string | null;
+    user_email: string | null;
+    changed_by: string | null;
+    changed_by_email: string | null;
+    source: string;
+    created_at: string;
+  }>;
+  totalCount: number;
+}) {
+  const pg = usePagination(entries.length);
+  const paged = pg.slice(entries);
+  return (
+    <>
+      <ul className="mt-4 divide-y divide-border/60 rounded-xl border border-border/60 bg-cream-deep/10">
+        {paged.map((entry) => {
+          const s = sourceLabel(entry.source);
+          const isSelf =
+            entry.changed_by && entry.user_id && entry.changed_by === entry.user_id;
+          return (
+            <li
+              key={entry.id}
+              className="flex flex-col gap-1 p-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium text-foreground">
+                  {entry.user_email ?? "(compte supprimé)"}
                 </div>
-                <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0.5">
-                  <span
-                    className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium ${s.tone}`}
-                  >
-                    {s.label}
-                  </span>
-                  <time
-                    dateTime={entry.created_at}
-                    className="text-[11px] text-muted-foreground"
-                  >
-                    {formatDate(entry.created_at)}
+                <div className="mt-0.5 text-[11.5px] text-muted-foreground">
+                  {isSelf ? (
+                    <>Par lui-même</>
+                  ) : (
+                    <>
+                      Par{" "}
+                      <span className="text-foreground/80">
+                        {entry.changed_by_email ?? "admin"}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0.5">
+                <span
+                  className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium ${s.tone}`}
+                >
+                  {s.label}
+                </span>
+                <time
+                  dateTime={entry.created_at}
+                  className="text-[11px] text-muted-foreground"
+                >
+                  {formatDate(entry.created_at)}
                   </time>
                 </div>
               </li>
