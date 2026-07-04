@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { THEME_INIT_SCRIPT, applyTheme, getStoredTheme } from "@/lib/theme";
 import { InstallPwaPrompt } from "@/components/app/install-pwa-prompt";
+import { AppUpdateNotifier } from "@/components/app/app-update-notifier";
 
 function NotFoundComponent() {
   return (
@@ -160,6 +161,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <InstallPwaPrompt />
+      <AppUpdateNotifier />
       <Toaster />
     </QueryClientProvider>
   );

@@ -7,7 +7,28 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-const SESSION_DISMISS_KEY = "monregistre.installPromptDismissed";
+const LAST_SHOWN_KEY = "monregistre.installPromptLastShownAt";
+const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 h
+
+function wasShownRecently(): boolean {
+  try {
+    const raw = localStorage.getItem(LAST_SHOWN_KEY);
+    if (!raw) return false;
+    const ts = Number(raw);
+    if (!Number.isFinite(ts)) return false;
+    return Date.now() - ts < COOLDOWN_MS;
+  } catch {
+    return false;
+  }
+}
+
+function markShown() {
+  try {
+    localStorage.setItem(LAST_SHOWN_KEY, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+}
 
 function isPreviewOrIframe(): boolean {
   if (typeof window === "undefined") return true;
@@ -54,12 +75,17 @@ export function InstallPwaPrompt() {
     if (typeof window === "undefined") return;
     if (isPreviewOrIframe()) return;
     if (isStandalone()) return;
-    if (sessionStorage.getItem(SESSION_DISMISS_KEY) === "1") return;
+    if (wasShownRecently()) return;
+
+    const show = () => {
+      markShown();
+      setVisible(true);
+    };
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);
-      setVisible(true);
+      show();
     };
     const onInstalled = () => {
       setVisible(false);
@@ -74,7 +100,7 @@ export function InstallPwaPrompt() {
       const inSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
       if (inSafari) {
         setIosHint(true);
-        setVisible(true);
+        show();
       }
     }
 
@@ -86,11 +112,7 @@ export function InstallPwaPrompt() {
 
   const close = () => {
     setVisible(false);
-    try {
-      sessionStorage.setItem(SESSION_DISMISS_KEY, "1");
-    } catch {
-      /* ignore */
-    }
+    markShown();
   };
 
   const install = async () => {
