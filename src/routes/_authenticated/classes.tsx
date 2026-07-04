@@ -8,6 +8,7 @@ import { enqueueWrite } from "@/lib/offline-queue";
 import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
 import { Button } from "@/components/ui/button";
 import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -100,20 +101,30 @@ function ClassesPage() {
           </p>
         </div>
       ) : isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement…</p>
+        <ListSkeleton rows={4} />
       ) : filtered.length === 0 ? (
-        <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
-            <GraduationCap className="h-6 w-6" />
-          </span>
-          <div>
-            <div className="font-display text-lg font-semibold">Aucune classe</div>
-            <p className="mt-1 text-sm text-muted-foreground">Créez votre première classe.</p>
+        classes.length === 0 ? (
+          <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
+              <GraduationCap className="h-6 w-6" />
+            </span>
+            <div>
+              <div className="font-display text-lg font-semibold">Aucune classe</div>
+              <p className="mt-1 text-sm text-muted-foreground">Créez votre première classe.</p>
+            </div>
+            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+              <Plus className="mr-1 h-4 w-4" /> Ajouter une classe
+            </Button>
           </div>
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
-            <Plus className="mr-1 h-4 w-4" /> Ajouter une classe
-          </Button>
-        </div>
+        ) : (
+          <NoResults
+            query={q}
+            onReset={() => {
+              setQ("");
+              setEcoleFilter("all");
+            }}
+          />
+        )
       ) : (
         (() => {
           const renderItem = (c: Classe) => (

@@ -9,6 +9,7 @@ import { planCapabilitiesQO } from "@/lib/queries/profil";
 import { PLAN_LABEL, upgradeWhatsAppHref, type PlanKey } from "@/config/support";
 import { Button } from "@/components/ui/button";
 import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -114,9 +115,13 @@ function EcolesPage() {
 
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement…</p>
+        <ListSkeleton rows={4} />
       ) : filtered.length === 0 ? (
-        <EmptyState onAdd={handleAdd} locked={atLimit} />
+        ecoles.length === 0 ? (
+          <EmptyState onAdd={handleAdd} locked={atLimit} />
+        ) : (
+          <NoResults query={q} onReset={() => setQ("")} resetLabel="Effacer la recherche" />
+        )
       ) : (
         <div className="space-y-3">
           <ul className="space-y-3">

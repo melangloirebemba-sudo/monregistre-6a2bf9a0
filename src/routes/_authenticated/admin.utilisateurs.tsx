@@ -9,6 +9,7 @@ import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/compon
 
 import { Button } from "@/components/ui/button";
 import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -239,10 +240,26 @@ function AdminContent() {
 
       {/* Table des utilisateurs */}
       <div className="card-elevated overflow-hidden">
-        {isLoading && <div className="p-6 text-sm text-muted-foreground">Chargement…</div>}
+        {isLoading && (
+          <div className="p-4">
+            <ListSkeleton rows={6} />
+          </div>
+        )}
         {error && <div className="p-6 text-sm text-destructive">Erreur : {(error as Error).message}</div>}
         {!isLoading && !error && filtered.length === 0 && (
-          <div className="p-6 text-sm text-muted-foreground">Aucun utilisateur.</div>
+          <div className="p-4">
+            <NoResults
+              query={q}
+              onReset={q ? () => setQ("") : undefined}
+              resetLabel="Effacer la recherche"
+              title={users.length === 0 ? "Aucun utilisateur" : "Aucun résultat"}
+              description={
+                users.length === 0
+                  ? "Aucun utilisateur enregistré pour l'instant."
+                  : undefined
+              }
+            />
+          </div>
         )}
 
         {!isLoading && !error && filtered.length > 0 && (
