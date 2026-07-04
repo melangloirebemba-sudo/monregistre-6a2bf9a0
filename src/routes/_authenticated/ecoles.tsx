@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2, Lock, Sparkles, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
