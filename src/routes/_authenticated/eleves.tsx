@@ -349,23 +349,64 @@ function EleveDialog({
               <Input id="enom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label>Sexe</Label>
+            <Select value={form.sexe} onValueChange={(v) => setForm({ ...form, sexe: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="M">Masculin</SelectItem>
+                <SelectItem value="F">Féminin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Sexe</Label>
-              <Select value={form.sexe} onValueChange={(v) => setForm({ ...form, sexe: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>École *</Label>
+              <Select
+                value={form.ecole_id}
+                onValueChange={(v) =>
+                  setForm({
+                    ...form,
+                    ecole_id: v,
+                    classe_id:
+                      classes.find((c) => c.id === form.classe_id)?.ecole_id === v
+                        ? form.classe_id
+                        : "",
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={ecoles.length ? "Choisir" : "Aucune école"} />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="M">Masculin</SelectItem>
-                  <SelectItem value="F">Féminin</SelectItem>
+                  {ecoles.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Classe *</Label>
-              <Select value={form.classe_id} onValueChange={(v) => setForm({ ...form, classe_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+              <Select
+                value={form.classe_id}
+                onValueChange={(v) => setForm({ ...form, classe_id: v })}
+                disabled={!form.ecole_id || classesForEcole.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !form.ecole_id
+                        ? "École d'abord"
+                        : classesForEcole.length === 0
+                          ? "Aucune classe"
+                          : "Choisir"
+                    }
+                  />
+                </SelectTrigger>
                 <SelectContent>
-                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+                  {classesForEcole.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
