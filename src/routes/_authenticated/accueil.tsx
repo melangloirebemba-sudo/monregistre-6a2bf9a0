@@ -344,6 +344,8 @@ function AccueilPage() {
         </section>
       )}
 
+      <SyncStatusCard className="mt-6" />
+
       {/* Grille menu */}
       <section className="mt-6">
         <h2 className="mb-3 font-display text-base font-semibold text-foreground">
