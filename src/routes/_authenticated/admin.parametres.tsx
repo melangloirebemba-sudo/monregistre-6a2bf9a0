@@ -312,19 +312,133 @@ function SupportSettingsCard() {
 
 /* ------------------------- Compte administrateur ------------------------- */
 
-// Password policy — kept in sync with server side (8 char min).
-// We also nudge users toward mixed classes without hard-blocking (Supabase HIBP
-// gives the definitive rejection on submit).
-function scorePassword(pwd: string): { ok: boolean; hint?: string } {
-  if (pwd.length < 8) return { ok: false, hint: "8 caractères minimum." };
-  const classes =
-    (/[a-z]/.test(pwd) ? 1 : 0) +
-    (/[A-Z]/.test(pwd) ? 1 : 0) +
-    (/\d/.test(pwd) ? 1 : 0) +
-    (/[^A-Za-z0-9]/.test(pwd) ? 1 : 0);
-  if (classes < 2)
-    return { ok: false, hint: "Mélangez lettres, chiffres et/ou symboles." };
-  return { ok: true };
+/** Password policy: rules + strength score 0..4 aligned with server side (8 char min).
+ *  Supabase HIBP gives the definitive rejection on submit. */
+type PasswordRule = { key: string; label: string; ok: boolean };
+type PasswordAnalysis = {
+  rules: PasswordRule[];
+  requiredOk: boolean;
+  score: 0 | 1 | 2 | 3 | 4;
+  label: string;
+  color: string;
+  hint?: string;
+};
+
+const COMMON_PASSWORDS = new Set([
+  "password", "motdepasse", "azerty", "azerty123", "qwerty", "qwerty123",
+  "12345678", "123456789", "1234567890", "abcdef", "abcdefgh",
+  "admin", "admin123", "administrator", "welcome", "iloveyou", "monregistre",
+]);
+
+function analyzePassword(pwd: string): PasswordAnalysis {
+  const hasLen = pwd.length >= 8;
+  const hasLower = /[a-z]/.test(pwd);
+  const hasUpper = /[A-Z]/.test(pwd);
+  const hasDigit = /\d/.test(pwd);
+  const hasSymbol = /[^A-Za-z0-9]/.test(pwd);
+  const hasNoSpace = pwd.length === 0 || !/^\s|\s$/.test(pwd);
+  const classes = [hasLower, hasUpper, hasDigit, hasSymbol].filter(Boolean).length;
+
+  const rules: PasswordRule[] = [
+    { key: "len", label: "Au moins 8 caractères", ok: hasLen },
+    { key: "case", label: "Minuscule et majuscule", ok: hasLower && hasUpper },
+    { key: "digit", label: "Au moins un chiffre", ok: hasDigit },
+    { key: "sym", label: "Au moins un symbole (!?@#…)", ok: hasSymbol },
+    { key: "space", label: "Sans espace en début ou fin", ok: hasNoSpace },
+  ];
+
+  // Baseline "acceptable" = length + at least 2 classes + no leading/trailing space.
+  const requiredOk = hasLen && classes >= 2 && hasNoSpace;
+
+  // Strength score
+  let raw = 0;
+  if (hasLen) raw++;
+  if (pwd.length >= 12) raw++;
+  if (pwd.length >= 16) raw++;
+  raw += Math.max(0, classes - 1); // up to +3
+  if (COMMON_PASSWORDS.has(pwd.toLowerCase())) raw = 0;
+  if (/^(.)\1+$/.test(pwd)) raw = Math.min(raw, 1); // "aaaaaaa"
+  if (/^(0123|1234|2345|3456|4567|5678|6789|abcd|qwer|azer)/i.test(pwd))
+    raw = Math.min(raw, 1);
+
+  const score = (Math.max(0, Math.min(4, raw)) as 0 | 1 | 2 | 3 | 4);
+  const labels = ["Très faible", "Faible", "Moyen", "Bon", "Excellent"];
+  const colors = [
+    "bg-destructive",
+    "bg-destructive/80",
+    "bg-gold",
+    "bg-teal/80",
+    "bg-teal",
+  ];
+
+  let hint: string | undefined;
+  if (!hasLen) hint = "8 caractères minimum.";
+  else if (classes < 2) hint = "Mélangez lettres, chiffres et/ou symboles.";
+  else if (!hasNoSpace) hint = "Retirez les espaces en début ou fin.";
+  else if (COMMON_PASSWORDS.has(pwd.toLowerCase())) hint = "Mot de passe trop courant.";
+
+  return { rules, requiredOk, score, label: labels[score], color: colors[score], hint };
+}
+
+function PasswordStrengthMeter({ analysis, empty }: { analysis: PasswordAnalysis; empty: boolean }) {
+  const filled = empty ? 0 : analysis.score + 1;
+  return (
+    <div className="space-y-2" aria-live="polite">
+      <div className="flex items-center gap-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              i < filled ? analysis.color : "bg-border/60"
+            }`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between text-[11px]">
+        <span className="text-muted-foreground">Robustesse</span>
+        <span
+          className={`font-medium ${
+            empty
+              ? "text-muted-foreground"
+              : analysis.score <= 1
+              ? "text-destructive"
+              : analysis.score === 2
+              ? "text-gold"
+              : "text-teal"
+          }`}
+        >
+          {empty ? "—" : analysis.label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function PasswordRulesList({ rules }: { rules: PasswordRule[] }) {
+  return (
+    <ul className="mt-1 grid gap-1 text-[11.5px]">
+      {rules.map((r) => (
+        <li
+          key={r.key}
+          className={`flex items-center gap-1.5 ${
+            r.ok ? "text-teal" : "text-muted-foreground"
+          }`}
+        >
+          <span
+            aria-hidden
+            className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[10px] font-bold ${
+              r.ok
+                ? "bg-teal/15 text-teal"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {r.ok ? "✓" : "•"}
+          </span>
+          {r.label}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function AdminAccountCard() {
