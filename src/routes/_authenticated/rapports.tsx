@@ -237,18 +237,48 @@ function RapportsPage() {
 
           {/* Distribution */}
           <div className="card-elevated p-4">
-            <h2 className="font-serif text-lg text-ink mb-3">Distribution des moyennes</h2>
+            <h2 className="font-serif text-lg text-foreground mb-1">Distribution des moyennes</h2>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Répartition des élèves par tranche de moyenne — teinte selon le niveau.
+            </p>
+            {/* Légende palette or/sarcelle — cohérente clair / sombre */}
+            <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-teal" />
+                Bien ({(echelle * 0.7).toFixed(0)}+/{echelle})
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-gold" />
+                Moyen ({(echelle * 0.5).toFixed(0)}–{(echelle * 0.7).toFixed(0)})
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden="true" className="inline-block h-2.5 w-2.5 rounded-sm bg-destructive" />
+                À accompagner (&lt; {(echelle * 0.5).toFixed(0)})
+              </span>
+            </div>
             <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.buckets}>
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#1a1a2e" }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#1a1a2e" }} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    stroke="var(--border)"
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    stroke="var(--border)"
+                  />
                   <Tooltip
+                    cursor={{ fill: "var(--muted)", opacity: 0.4 }}
                     contentStyle={{
-                      background: "#f5f0e8",
-                      border: "1px solid #1a1a2e",
+                      background: "var(--popover)",
+                      color: "var(--popover-foreground)",
+                      border: "1px solid var(--border)",
                       borderRadius: 8,
+                      boxShadow: "var(--shadow-card)",
                     }}
+                    labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
                   />
                   <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                     {stats.buckets.map((b, i) => (
@@ -256,10 +286,10 @@ function RapportsPage() {
                         key={i}
                         fill={
                           b.min >= echelle * 0.7
-                            ? "#1a7a6e"
+                            ? "var(--teal)"
                             : b.min >= echelle * 0.5
-                              ? "#c9a84c"
-                              : "#c94c4c"
+                              ? "var(--gold)"
+                              : "var(--destructive)"
                         }
                       />
                     ))}
@@ -268,6 +298,7 @@ function RapportsPage() {
               </ResponsiveContainer>
             </div>
           </div>
+
 
           {/* Top / Bottom */}
           <div className="grid gap-3 sm:grid-cols-2">
