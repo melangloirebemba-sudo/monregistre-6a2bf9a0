@@ -204,16 +204,16 @@ function QuickLink({
   return (
     <Link
       to={to}
-      className="card-elevated flex items-center gap-3 p-4 transition-colors hover:bg-cream-deep/40"
+      className="card-elevated flex items-center gap-3 p-4 transition-colors hover:bg-cream-deep/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal/15 text-teal">
+      <span aria-hidden="true" className="grid h-11 w-11 place-items-center rounded-xl bg-teal/15 text-teal">
         <Icon className="h-5 w-5" />
       </span>
       <span className="flex-1">
         <span className="block font-display text-sm font-semibold text-foreground">{title}</span>
         <span className="block text-xs text-muted-foreground">{desc}</span>
       </span>
-      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+      <ArrowRight aria-hidden="true" className="h-5 w-5 text-muted-foreground" />
     </Link>
   );
 }

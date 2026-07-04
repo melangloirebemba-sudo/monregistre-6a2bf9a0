@@ -54,9 +54,9 @@ export function AdminShell({ children }: AdminShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
+    <div className="min-h-dvh bg-background lg:flex">
       {/* Sidebar desktop — palette identique aux enseignants */}
-      <aside className="topbar-ink hidden shrink-0 lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col xl:w-72">
+      <aside aria-label="Navigation admin" className="topbar-ink hidden shrink-0 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-64 lg:flex-col xl:w-72">
         <div className="flex items-center gap-3 px-5 py-6">
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-teal text-cream shadow-soft">
             <ShieldCheck className="h-5 w-5" />
@@ -68,7 +68,7 @@ export function AdminShell({ children }: AdminShellProps) {
             </div>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+        <nav aria-label="Sections admin" className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
           {adminNav.map((t) => {
             const active = isActive(pathname, t.to);
             const Icon = t.icon;
@@ -76,14 +76,16 @@ export function AdminShell({ children }: AdminShellProps) {
               <Link
                 key={t.to}
                 to={t.to}
+                aria-current={active ? "page" : undefined}
                 className={[
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ink",
                   active
                     ? "bg-teal/25 text-gold-soft"
-                    : "text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground",
+                    : "text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground",
                 ].join(" ")}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="truncate">{t.label}</span>
               </Link>
             );
@@ -92,7 +94,11 @@ export function AdminShell({ children }: AdminShellProps) {
         <div className="border-t border-white/10 p-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground">
+              <button
+                type="button"
+                aria-label={`Compte : ${nom}`}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+              >
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-teal font-display text-xs font-semibold text-cream">
                   {initiales}
                 </span>
@@ -102,7 +108,7 @@ export function AdminShell({ children }: AdminShellProps) {
                     Administrateur
                   </span>
                 </span>
-                <MoreHorizontal className="h-4 w-4 shrink-0" />
+                <MoreHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -118,12 +124,12 @@ export function AdminShell({ children }: AdminShellProps) {
       </aside>
 
       {/* Zone principale */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         {/* Topbar mobile/tablet */}
         <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 lg:hidden">
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-teal font-semibold text-cream shadow-soft">
-              <Shield className="h-5 w-5" />
+              <Shield className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 leading-tight">
               <div className="font-display text-lg font-semibold">Console admin</div>
@@ -136,10 +142,11 @@ export function AdminShell({ children }: AdminShellProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                aria-label="Menu"
-                className="shrink-0 rounded-full p-2 text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground"
+                type="button"
+                aria-label="Ouvrir le menu du compte"
+                className="shrink-0 rounded-full p-2 text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
               >
-                <MoreHorizontal className="h-5 w-5" />
+                <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -161,7 +168,7 @@ export function AdminShell({ children }: AdminShellProps) {
         </main>
 
         {/* Bottom nav mobile */}
-        <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
+        <nav aria-label="Navigation admin mobile" className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
           <ul className="mx-auto grid max-w-2xl grid-cols-4">
             {adminNav.map((t) => {
               const active = isActive(pathname, t.to);
@@ -172,12 +179,15 @@ export function AdminShell({ children }: AdminShellProps) {
                 <li key={t.to}>
                   <Link
                     to={t.to}
+                    aria-current={active ? "page" : undefined}
+                    aria-label={t.label}
                     className={[
-                      "flex flex-col items-center gap-1 px-1 py-2.5 text-[10.5px] font-medium leading-tight transition-colors",
+                      "flex min-h-11 flex-col items-center justify-center gap-1 px-1 py-2 text-[10.5px] font-medium leading-tight transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal",
                       active ? "text-teal" : "text-muted-foreground hover:text-foreground",
                     ].join(" ")}
                   >
-                    <Icon className={["h-5 w-5", active ? "scale-110" : ""].join(" ")} />
+                    <Icon className={["h-5 w-5", active ? "scale-110" : ""].join(" ")} aria-hidden="true" />
                     <span className="truncate">{short}</span>
                   </Link>
                 </li>
