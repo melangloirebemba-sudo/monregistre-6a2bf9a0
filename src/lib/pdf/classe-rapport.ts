@@ -130,6 +130,52 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
     margin: { left: 15, right: 15 },
   });
 
+  // Signature block
+  const finalY = (doc as unknown as { lastAutoTable: { finalY: number } })
+    .lastAutoTable.finalY;
+  const sigBlockH = 34;
+  let sigY = finalY + 10;
+  if (sigY + sigBlockH > pageH - 15) {
+    doc.addPage();
+    sigY = 20;
+  }
+
+  doc.setTextColor(26, 26, 46);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(
+    `Fait le ${new Date().toLocaleDateString("fr-FR")}`,
+    pageW - 15,
+    sigY,
+    { align: "right" },
+  );
+
+  const boxW = 75;
+  const boxH = 26;
+  const boxX = pageW - 15 - boxW;
+  const boxY = sigY + 4;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Signature de l'enseignant", boxX, boxY - 1);
+
+  doc.setDrawColor(26, 26, 46);
+  doc.setLineWidth(0.3);
+  doc.rect(boxX, boxY, boxW, boxH);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  if (ctx.enseignant) {
+    doc.text(ctx.enseignant, boxX + 2, boxY + boxH + 5);
+  }
+  if (ctx.telephone) {
+    doc.setFontSize(8);
+    doc.setTextColor(90);
+    doc.text(ctx.telephone, boxX + 2, boxY + boxH + 10);
+  }
+
+
+
   // Footer on all pages
   const pageCount = doc.getNumberOfPages();
   for (let p = 1; p <= pageCount; p++) {
