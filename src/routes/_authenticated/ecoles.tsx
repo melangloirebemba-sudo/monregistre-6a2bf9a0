@@ -51,6 +51,9 @@ function EcolesPage() {
     [ecoles, q],
   );
 
+  const pg = usePagination(filtered.length);
+  const paged = pg.slice(filtered);
+
   const maxEcoles = caps?.max_ecoles ?? 0;
   const atLimit = !caps?.isAdmin && maxEcoles > 0 && ecoles.length >= maxEcoles;
   const currentPlan: PlanKey = caps?.plan ?? "gratuit";
