@@ -249,7 +249,7 @@ function AdminContent() {
           <>
             {/* Cartes empilées — mobile */}
             <ul className="divide-y divide-border sm:hidden">
-              {filtered.map((u) => {
+              {paged.map((u) => {
                 const displayName = u.nom_affiche || u.email;
                 const isAdmin = u.roles.includes("admin");
                 const suspended = u.statut === "suspendu";
