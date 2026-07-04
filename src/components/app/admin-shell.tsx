@@ -94,7 +94,11 @@ export function AdminShell({ children }: AdminShellProps) {
         <div className="border-t border-white/10 p-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground">
+              <button
+                type="button"
+                aria-label={`Compte : ${nom}`}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
+              >
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-teal font-display text-xs font-semibold text-cream">
                   {initiales}
                 </span>
@@ -104,7 +108,7 @@ export function AdminShell({ children }: AdminShellProps) {
                     Administrateur
                   </span>
                 </span>
-                <MoreHorizontal className="h-4 w-4 shrink-0" />
+                <MoreHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
