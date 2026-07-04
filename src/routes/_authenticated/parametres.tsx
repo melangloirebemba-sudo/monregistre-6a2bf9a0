@@ -341,7 +341,7 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
   );
 }
 
-const UPGRADE_EMAIL = "contact@monregistre.app";
+
 
 function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanCapabilities["plan"]; variant?: "header" | "inline" }) {
   const trigger =
