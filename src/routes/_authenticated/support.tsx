@@ -119,10 +119,19 @@ function SupportPage() {
 
 
   const ecoleNom = profil?.etablissement?.trim() ?? "";
-  const planLabel = caps ? PLAN_LABEL[caps.plan] : "Gratuit";
+  const currentPlan = caps?.plan ?? "gratuit";
+  const planLabel = PLAN_LABEL[currentPlan];
+  const isGratuit = currentPlan === "gratuit";
   const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     buildWhatsAppMessage(ecoleNom, planLabel),
   )}`;
+  const upgradeMsg = [
+    `Bonjour, je souhaite passer du plan ${planLabel} à un plan supérieur sur MonRegistre.`,
+    "",
+    `École : ${ecoleNom || "(non renseignée)"}`,
+    `Plan actuel : ${planLabel}`,
+  ].join("\n");
+  const upgradeWaHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(upgradeMsg)}`;
   const mailHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
     "Support MonRegistre",
   )}&body=${encodeURIComponent(buildWhatsAppMessage(ecoleNom, planLabel))}`;
