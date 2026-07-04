@@ -1,10 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { ecolesQO, requireUserId, type Ecole } from "@/lib/queries/data";
+import { planCapabilitiesQO } from "@/lib/queries/profil";
+import { PLAN_LABEL } from "@/config/support";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/ecoles")({
 
 function EcolesPage() {
   const { data: ecoles = [], isLoading } = useQuery(ecolesQO());
+  const { data: caps } = useQuery(planCapabilitiesQO());
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Ecole | null>(null);
   const [open, setOpen] = useState(false);
@@ -45,6 +48,21 @@ function EcolesPage() {
       ),
     [ecoles, q],
   );
+
+  const maxEcoles = caps?.max_ecoles ?? 0;
+  const atLimit = !caps?.isAdmin && maxEcoles > 0 && ecoles.length >= maxEcoles;
+  const planLabel = PLAN_LABEL[caps?.plan ?? "gratuit"];
+
+  const handleAdd = () => {
+    if (atLimit) {
+      toast.error(
+        `Plan ${planLabel} : limite de ${maxEcoles} école${maxEcoles > 1 ? "s" : ""} atteinte. Passez à un plan supérieur pour en ajouter davantage.`,
+      );
+      return;
+    }
+    setEditing(null);
+    setOpen(true);
+  };
 
   return (
     <div className="px-5 pb-24 pt-5">
@@ -68,10 +86,30 @@ function EcolesPage() {
         />
       </div>
 
+      {atLimit && (
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-ink">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-ink/70" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold">
+              Limite atteinte — plan {planLabel}
+            </div>
+            <p className="mt-0.5 text-ink/80">
+              Le plan {planLabel} autorise {maxEcoles} école{maxEcoles > 1 ? "s" : ""}. Passez à un plan supérieur pour en ajouter davantage.
+            </p>
+            <Link
+              to="/support"
+              className="mt-1 inline-block text-teal underline-offset-2 hover:underline"
+            >
+              Contacter le support
+            </Link>
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : filtered.length === 0 ? (
-        <EmptyState onAdd={() => { setEditing(null); setOpen(true); }} />
+        <EmptyState onAdd={handleAdd} disabled={atLimit} />
       ) : (
         <ul className="space-y-3">
           {filtered.map((e) => (
@@ -127,7 +165,8 @@ function EcolesPage() {
         </ul>
       )}
 
-      <FloatingAdd onClick={() => { setEditing(null); setOpen(true); }} />
+      <FloatingAdd onClick={handleAdd} disabled={atLimit} />
+
 
       <EcoleDialog
         open={open}
@@ -145,7 +184,7 @@ function EcolesPage() {
   );
 }
 
-function EmptyState({ onAdd }: { onAdd: () => void }) {
+function EmptyState({ onAdd, disabled }: { onAdd: () => void; disabled?: boolean }) {
   return (
     <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-ink">
@@ -157,24 +196,31 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           Commencez par ajouter l'école où vous enseignez.
         </p>
       </div>
-      <Button onClick={onAdd} className="mt-2">
+      <Button onClick={onAdd} disabled={disabled} className="mt-2">
         <Plus className="mr-1 h-4 w-4" /> Ajouter une école
       </Button>
     </div>
   );
 }
 
-function FloatingAdd({ onClick }: { onClick: () => void }) {
+function FloatingAdd({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
-      aria-label="Ajouter"
-      className="fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-teal text-teal-foreground shadow-[var(--shadow-hero)] transition-transform hover:scale-105 lg:bottom-8"
+      disabled={disabled}
+      aria-label={disabled ? "Limite atteinte — plan actuel" : "Ajouter"}
+      aria-disabled={disabled}
+      className={`fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full shadow-[var(--shadow-hero)] transition-transform lg:bottom-8 ${
+        disabled
+          ? "cursor-not-allowed bg-muted text-muted-foreground opacity-70"
+          : "bg-teal text-teal-foreground hover:scale-105"
+      }`}
     >
-      <Plus className="h-6 w-6" />
+      {disabled ? <Lock className="h-5 w-5" /> : <Plus className="h-6 w-6" />}
     </button>
   );
 }
+
 
 function EcoleDialog({
   open,
