@@ -100,6 +100,8 @@ function AbsencesPage() {
         </div>
       </header>
 
+      <SyncStatusInline className="mb-3" />
+
       <div className="mb-3 space-y-2">
         <Select value={classeFilter} onValueChange={setClasseFilter}>
           <SelectTrigger>
