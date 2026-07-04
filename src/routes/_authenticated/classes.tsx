@@ -209,13 +209,20 @@ function ClasseDialog({
       if (!payload.nom || !payload.code) throw new Error("Nom et code obligatoires");
       if (!payload.ecole_id) throw new Error("Sélectionnez une école");
       if (classe) {
-        const { error } = await supabase.from("classes").update(payload).eq("id", classe.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "classes",
+          op: "update",
+          payload,
+          match: { id: classe.id },
+          label: `Modifier classe ${payload.nom}`,
+        });
       } else {
-        const { error } = await supabase
-          .from("classes")
-          .insert({ ...payload, user_id, annee_scolaire });
-        if (error) throw error;
+        await enqueueWrite({
+          table: "classes",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID(), user_id, annee_scolaire },
+          label: `Ajouter classe ${payload.nom}`,
+        });
       }
     },
 
