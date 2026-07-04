@@ -1,0 +1,9 @@
+
+ALTER TABLE public.eleves
+  ADD COLUMN IF NOT EXISTS tuteur_nom TEXT,
+  ADD COLUMN IF NOT EXISTS tuteur_numero TEXT,
+  ADD COLUMN IF NOT EXISTS adresse TEXT,
+  ADD COLUMN IF NOT EXISTS numero_eleve TEXT;
+
+ALTER TABLE public.classes
+  ADD COLUMN IF NOT EXISTS chef_id UUID REFERENCES public.eleves(id) ON DELETE SET NULL;
