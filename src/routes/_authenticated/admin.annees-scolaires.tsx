@@ -1,19 +1,39 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { CalendarClock, Archive, Trash2, Users } from "lucide-react";
-import { toast } from "sonner";
 import {
-  listAnneesGlobal,
-  bulkArchiveAnnee,
-  bulkDeleteAnnee,
-} from "@/lib/admin.functions";
+  CalendarClock,
+  Archive,
+  Trash2,
+  Users,
+  Plus,
+  Pencil,
+  Play,
+  RotateCcw,
+} from "lucide-react";
+import { toast } from "sonner";
+import { adminApi, type AdminAnneeAggregate } from "@/lib/admin-api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/annees-scolaires")({
@@ -21,62 +41,109 @@ export const Route = createFileRoute("/_authenticated/admin/annees-scolaires")({
   component: AdminAnneesPage,
 });
 
-interface AnneeAggregate {
-  libelle: string;
-  active: number;
-  archivee: number;
-  a_venir: number;
-  enseignants: number;
-}
-
 function AdminAnneesPage() {
   const qc = useQueryClient();
-  const listFn = useServerFn(listAnneesGlobal);
-  const archiveFn = useServerFn(bulkArchiveAnnee);
-  const deleteFn = useServerFn(bulkDeleteAnnee);
 
   const { data = [], isLoading, error } = useQuery({
     queryKey: ["admin-annees"],
-    queryFn: () => listFn() as Promise<AnneeAggregate[]>,
+    queryFn: () => adminApi.anneesList(),
     staleTime: 15_000,
   });
 
-  const [archiveTarget, setArchiveTarget] = useState<AnneeAggregate | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<AnneeAggregate | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newLibelle, setNewLibelle] = useState("");
+  const [newDebut, setNewDebut] = useState("");
+  const [newFin, setNewFin] = useState("");
+
+  const [renameTarget, setRenameTarget] = useState<AdminAnneeAggregate | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  const [archiveTarget, setArchiveTarget] = useState<AdminAnneeAggregate | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminAnneeAggregate | null>(null);
+  const [activateTarget, setActivateTarget] = useState<AdminAnneeAggregate | null>(null);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-annees"] });
+  const err = (e: Error) => toast.error(e.message);
+
+  const create = useMutation({
+    mutationFn: (v: { libelle: string; date_debut?: string; date_fin?: string }) =>
+      adminApi.anneesCreate({
+        libelle: v.libelle,
+        date_debut: v.date_debut || null,
+        date_fin: v.date_fin || null,
+        statut: "a_venir",
+      }),
+    onSuccess: (r) => {
+      toast.success(`Année créée pour ${r.created} enseignant(s)`);
+      invalidate();
+    },
+    onError: err,
+  });
+
+  const rename = useMutation({
+    mutationFn: (v: { oldLibelle: string; newLibelle: string }) =>
+      adminApi.anneesRename(v.oldLibelle, v.newLibelle),
+    onSuccess: (r) => {
+      toast.success(`${r.updated} entrée(s) renommée(s)`);
+      invalidate();
+    },
+    onError: err,
+  });
+
+  const setStatus = useMutation({
+    mutationFn: (v: { libelle: string; statut: "active" | "archivee" | "a_venir" }) =>
+      adminApi.anneesSetStatus(v.libelle, v.statut),
+    onSuccess: (r) => {
+      toast.success(`${r.updated} entrée(s) mise(s) à jour`);
+      invalidate();
+    },
+    onError: err,
+  });
 
   const archive = useMutation({
-    mutationFn: (libelle: string) => archiveFn({ data: { libelle } }),
+    mutationFn: (libelle: string) => adminApi.anneesArchive(libelle),
     onSuccess: (r) => {
       toast.success(`Année clôturée pour ${r.archived} enseignant(s)`);
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: err,
   });
 
   const remove = useMutation({
-    mutationFn: (libelle: string) => deleteFn({ data: { libelle } }),
+    mutationFn: (libelle: string) => adminApi.anneesDelete(libelle),
     onSuccess: (r) => {
       toast.success(`${r.deleted} entrée(s) supprimée(s)`);
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: err,
   });
 
   return (
     <div className="space-y-5 px-5 py-6">
-      <header>
-        <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-          Backoffice
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+            Backoffice
+          </div>
+          <h1 className="mt-1 flex items-center gap-2 font-display text-3xl font-semibold text-foreground">
+            <CalendarClock className="h-7 w-7 text-teal" /> Années scolaires
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Gestion globale : créez, renommez, activez, clôturez ou supprimez les années
+            pour l'ensemble des enseignants.
+          </p>
         </div>
-        <h1 className="mt-1 flex items-center gap-2 font-display text-3xl font-semibold text-foreground">
-          <CalendarClock className="h-7 w-7 text-teal" /> Années scolaires
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Vue globale des années utilisées sur la plateforme. L'admin peut clôturer
-          une année pour tous les enseignants en fin de cycle.
-        </p>
+        <Button
+          onClick={() => {
+            setNewLibelle("");
+            setNewDebut("");
+            setNewFin("");
+            setCreateOpen(true);
+          }}
+          className="shrink-0"
+        >
+          <Plus className="mr-1 h-4 w-4" /> Nouvelle année
+        </Button>
       </header>
 
       {isLoading && (
@@ -90,7 +157,7 @@ function AdminAnneesPage() {
 
       {!isLoading && !error && data.length === 0 && (
         <div className="card-elevated p-6 text-sm text-muted-foreground">
-          Aucune année scolaire enregistrée.
+          Aucune année scolaire enregistrée. Cliquez sur « Nouvelle année ».
         </div>
       )}
 
@@ -115,7 +182,9 @@ function AdminAnneesPage() {
                       </Badge>
                     )}
                     {a.archivee > 0 && (
-                      <Badge variant="secondary">{a.archivee} archivée{a.archivee > 1 ? "s" : ""}</Badge>
+                      <Badge variant="secondary">
+                        {a.archivee} archivée{a.archivee > 1 ? "s" : ""}
+                      </Badge>
                     )}
                   </div>
                   <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
@@ -128,11 +197,46 @@ function AdminAnneesPage() {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => {
+                      setRenameTarget(a);
+                      setRenameValue(a.libelle);
+                    }}
+                  >
+                    <Pencil className="mr-1 h-3.5 w-3.5" /> Renommer
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={setStatus.isPending}
+                    onClick={() => setActivateTarget(a)}
+                    title="Rendre cette année active pour tous"
+                  >
+                    <Play className="mr-1 h-3.5 w-3.5" /> Activer
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
                     disabled={a.active === 0 || archive.isPending}
                     onClick={() => setArchiveTarget(a)}
                   >
                     <Archive className="mr-1 h-3.5 w-3.5" /> Clôturer
                   </Button>
+
+                  {a.archivee > 0 && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setStatus.mutate({ libelle: a.libelle, statut: "a_venir" })
+                      }
+                      title="Réouvrir (statut à venir)"
+                    >
+                      <RotateCcw className="mr-1 h-3.5 w-3.5" /> Réouvrir
+                    </Button>
+                  )}
+
                   <Button
                     size="sm"
                     variant="ghost"
@@ -149,6 +253,114 @@ function AdminAnneesPage() {
         </ul>
       )}
 
+      {/* Create dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-teal" /> Nouvelle année scolaire
+            </DialogTitle>
+            <DialogDescription>
+              Créée en statut « à venir » pour tous les enseignants existants.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="lib">Libellé</Label>
+              <Input
+                id="lib"
+                value={newLibelle}
+                onChange={(e) => setNewLibelle(e.target.value)}
+                placeholder="Ex. 2026-2027"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="deb">Début</Label>
+                <Input id="deb" type="date" value={newDebut} onChange={(e) => setNewDebut(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="fin">Fin</Label>
+                <Input id="fin" type="date" value={newFin} onChange={(e) => setNewFin(e.target.value)} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>Annuler</Button>
+            <Button
+              disabled={!newLibelle.trim() || create.isPending}
+              onClick={() => {
+                create.mutate({
+                  libelle: newLibelle.trim(),
+                  date_debut: newDebut || undefined,
+                  date_fin: newFin || undefined,
+                });
+                setCreateOpen(false);
+              }}
+            >
+              Créer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename dialog */}
+      <Dialog open={!!renameTarget} onOpenChange={(v) => !v && setRenameTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-teal" /> Renommer l'année
+            </DialogTitle>
+            <DialogDescription>
+              Applique le nouveau libellé pour tous les enseignants.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <Label htmlFor="rn">Nouveau libellé</Label>
+            <Input id="rn" value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameTarget(null)}>Annuler</Button>
+            <Button
+              disabled={!renameValue.trim() || renameValue.trim() === renameTarget?.libelle}
+              onClick={() => {
+                if (!renameTarget) return;
+                rename.mutate({ oldLibelle: renameTarget.libelle, newLibelle: renameValue.trim() });
+                setRenameTarget(null);
+              }}
+            >
+              Renommer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activate confirm */}
+      <AlertDialog open={!!activateTarget} onOpenChange={(v) => !v && setActivateTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Activer l'année {activateTarget?.libelle} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Toutes les autres années actives seront automatiquement archivées afin
+              d'éviter les conflits. Les enseignants basculeront sur cette année.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!activateTarget) return;
+                setStatus.mutate({ libelle: activateTarget.libelle, statut: "active" });
+                setActivateTarget(null);
+              }}
+            >
+              Activer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive confirm */}
       <AlertDialog open={!!archiveTarget} onOpenChange={(v) => !v && setArchiveTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -173,14 +385,15 @@ function AdminAnneesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Delete confirm */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer l'année {deleteTarget?.libelle} ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est <strong>irréversible</strong>. Toutes les entrées
-              ({deleteTarget?.active ?? 0} active + {deleteTarget?.archivee ?? 0} archivée + {deleteTarget?.a_venir ?? 0} à venir)
-              seront supprimées pour l'ensemble des enseignants.
+              ({deleteTarget?.active ?? 0} active + {deleteTarget?.archivee ?? 0} archivée
+              + {deleteTarget?.a_venir ?? 0} à venir) seront supprimées pour tous les enseignants.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
