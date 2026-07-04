@@ -35,6 +35,18 @@ function AdminContent() {
     staleTime: 15_000,
   });
 
+  const { data: planLimits = [] } = useQuery({
+    queryKey: ["admin-plan-limits"],
+    queryFn: () => adminApi.plansList(),
+    staleTime: 30_000,
+  });
+  const limitsByPlan = useMemo(() => {
+    const m = new Map<AppPlan, PlanLimit>();
+    for (const p of planLimits) m.set(p.plan, p);
+    return m;
+  }, [planLimits]);
+
+
 
   const [q, setQ] = useState("");
 
