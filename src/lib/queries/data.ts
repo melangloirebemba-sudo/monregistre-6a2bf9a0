@@ -66,6 +66,20 @@ export interface Creneau {
   user_id: string;
 }
 
+export interface Sequence {
+  id: string;
+  titre: string;
+  description: string | null;
+  ordre: number;
+  semaine_prevue: number | null;
+  date_traitee: string | null;
+  statut: string; // 'a_venir' | 'en_cours' | 'terminee'
+  notes_libres: string | null;
+  classe_id: string;
+  periode_id: string | null;
+  user_id: string;
+}
+
 export const ecolesQO = () =>
   queryOptions({
     queryKey: ["ecoles"],
