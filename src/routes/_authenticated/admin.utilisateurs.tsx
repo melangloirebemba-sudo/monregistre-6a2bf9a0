@@ -27,7 +27,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/_authenticated/admin")({
+export const Route = createFileRoute("/_authenticated/admin/utilisateurs")({
   head: () => ({ meta: [{ title: "Espace admin — MonRegistre" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
