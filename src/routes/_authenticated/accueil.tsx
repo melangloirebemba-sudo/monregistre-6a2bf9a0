@@ -10,9 +10,13 @@ import {
   CalendarDays,
   BookOpen,
   MapPin,
+  Bell,
+  CalendarX,
+  AlertTriangle,
 } from "lucide-react";
+import { useMemo } from "react";
 import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
-import { creneauxQO } from "@/lib/queries/data";
+import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO } from "@/lib/queries/data";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   head: () => ({
