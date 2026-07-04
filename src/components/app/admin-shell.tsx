@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Users,
   Crown,
+  CalendarClock,
   Shield,
   LogOut,
   MoreHorizontal,
@@ -29,7 +30,8 @@ interface AdminShellProps {
 const adminNav = [
   { to: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
-  { to: "/admin/plans", label: "Plans & tarifs", icon: Crown },
+  { to: "/admin/annees-scolaires", label: "Années", icon: CalendarClock },
+  { to: "/admin/plans", label: "Plans", icon: Crown },
 ] as const;
 
 function isActive(pathname: string, to: string) {
@@ -160,7 +162,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
         {/* Bottom nav mobile */}
         <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
-          <ul className="mx-auto grid max-w-2xl grid-cols-3">
+          <ul className="mx-auto grid max-w-2xl grid-cols-4">
             {adminNav.map((t) => {
               const active = isActive(pathname, t.to);
               const Icon = t.icon;

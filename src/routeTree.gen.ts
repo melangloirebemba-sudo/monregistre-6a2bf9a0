@@ -28,6 +28,7 @@ import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
+import { Route as AuthenticatedAdminAnneesScolairesRouteImport } from './routes/_authenticated/admin.annees-scolaires'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -127,6 +128,12 @@ const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
   path: '/plans',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminAnneesScolairesRoute =
+  AuthenticatedAdminAnneesScolairesRouteImport.update({
+    id: '/annees-scolaires',
+    path: '/annees-scolaires',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/plus': typeof AuthenticatedPlusRoute
   '/progression': typeof AuthenticatedProgressionRoute
   '/rapports': typeof AuthenticatedRapportsRoute
+  '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -163,6 +171,7 @@ export interface FileRoutesByTo {
   '/plus': typeof AuthenticatedPlusRoute
   '/progression': typeof AuthenticatedProgressionRoute
   '/rapports': typeof AuthenticatedRapportsRoute
+  '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -185,6 +194,7 @@ export interface FileRoutesById {
   '/_authenticated/plus': typeof AuthenticatedPlusRoute
   '/_authenticated/progression': typeof AuthenticatedProgressionRoute
   '/_authenticated/rapports': typeof AuthenticatedRapportsRoute
+  '/_authenticated/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/plus'
     | '/progression'
     | '/rapports'
+    | '/admin/annees-scolaires'
     | '/admin/plans'
     | '/admin/utilisateurs'
     | '/admin/'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/plus'
     | '/progression'
     | '/rapports'
+    | '/admin/annees-scolaires'
     | '/admin/plans'
     | '/admin/utilisateurs'
     | '/admin'
@@ -247,6 +259,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plus'
     | '/_authenticated/progression'
     | '/_authenticated/rapports'
+    | '/_authenticated/admin/annees-scolaires'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/utilisateurs'
     | '/_authenticated/admin/'
@@ -393,16 +406,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPlansRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/annees-scolaires': {
+      id: '/_authenticated/admin/annees-scolaires'
+      path: '/annees-scolaires'
+      fullPath: '/admin/annees-scolaires'
+      preLoaderRoute: typeof AuthenticatedAdminAnneesScolairesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAnneesScolairesRoute: typeof AuthenticatedAdminAnneesScolairesRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminUtilisateursRoute: typeof AuthenticatedAdminUtilisateursRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAnneesScolairesRoute:
+    AuthenticatedAdminAnneesScolairesRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
   AuthenticatedAdminUtilisateursRoute: AuthenticatedAdminUtilisateursRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
