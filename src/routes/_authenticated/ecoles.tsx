@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 import { ecolesQO, requireUserId, type Ecole } from "@/lib/queries/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -218,11 +218,20 @@ function EcoleDialog({
       };
       if (!payload.nom) throw new Error("Le nom est obligatoire");
       if (ecole) {
-        const { error } = await supabase.from("ecoles").update(payload).eq("id", ecole.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "ecoles",
+          op: "update",
+          payload,
+          match: { id: ecole.id },
+          label: `Modifier école ${payload.nom}`,
+        });
       } else {
-        const { error } = await supabase.from("ecoles").insert({ ...payload, user_id });
-        if (error) throw error;
+        await enqueueWrite({
+          table: "ecoles",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID(), user_id },
+          label: `Ajouter école ${payload.nom}`,
+        });
       }
     },
     onSuccess: () => {
@@ -298,8 +307,12 @@ function DeleteDialog({
   const del = useMutation({
     mutationFn: async () => {
       if (!ecole) return;
-      const { error } = await supabase.from("ecoles").delete().eq("id", ecole.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "ecoles",
+        op: "delete",
+        match: { id: ecole.id },
+        label: `Supprimer école ${ecole.nom}`,
+      });
     },
     onSuccess: () => {
       toast.success("École supprimée");
