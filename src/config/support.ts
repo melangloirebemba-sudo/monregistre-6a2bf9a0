@@ -4,7 +4,7 @@
 
 // wa.me exige le numéro en format international sans "+", sans zéro initial
 // ni espace. +242 06 962 65 40 → 24269626540
-export const WHATSAPP_NUMBER = "24269626540";
+export const WHATSAPP_NUMBER = "242069626540";
 export const WHATSAPP_DISPLAY = "+242 06 962 65 40";
 export const SUPPORT_EMAIL = "support@monregistre.app";
 
