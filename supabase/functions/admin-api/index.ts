@@ -1,0 +1,270 @@
+// deno-lint-ignore-file no-explicit-any
+// Supabase Edge Function: admin-api
+// Provides admin-only management of users and school-year labels.
+// Auth: caller must have role 'admin' in public.user_roles.
+// Runtime injects SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY automatically.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "content-type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  // ---- Auth: extract caller from Authorization header ----
+  const authz = req.headers.get("Authorization") ?? "";
+  const token = authz.startsWith("Bearer ") ? authz.slice(7) : "";
+  if (!token) return json({ error: "Missing bearer token" }, 401);
+  const { data: userRes, error: userErr } = await admin.auth.getUser(token);
+  if (userErr || !userRes.user) return json({ error: "Unauthorized" }, 401);
+  const uid = userRes.user.id;
+
+  // ---- Verify admin role ----
+  const { data: roleRow } = await admin
+    .from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
+  if (!roleRow) return json({ error: "Forbidden: admin only" }, 403);
+
+  let payload: any = {};
+  try { payload = await req.json(); } catch { /* empty */ }
+  const action: string = payload?.action ?? "";
+
+  try {
+    switch (action) {
+      /* ============ USERS ============ */
+      case "listUsers": {
+        const [{ data: usersRes, error: uErr }, { data: profils, error: pErr }, { data: roles }] = await Promise.all([
+          admin.auth.admin.listUsers({ page: 1, perPage: 500 }),
+          admin.from("profils_enseignant").select("*"),
+          admin.from("user_roles").select("*"),
+        ]);
+        if (uErr) throw uErr;
+        if (pErr) throw pErr;
+        const profByUser = new Map<string, any>();
+        for (const p of profils ?? []) profByUser.set(p.user_id, p);
+        const rolesByUser = new Map<string, string[]>();
+        for (const r of roles ?? []) {
+          const arr = rolesByUser.get(r.user_id) ?? [];
+          arr.push(r.role); rolesByUser.set(r.user_id, arr);
+        }
+        return json({
+          users: (usersRes.users ?? []).map((u: any) => ({
+            id: u.id,
+            email: u.email ?? "",
+            created_at: u.created_at,
+            last_sign_in_at: u.last_sign_in_at ?? null,
+            banned_until: u.banned_until ?? null,
+            email_confirmed_at: u.email_confirmed_at ?? null,
+            nom_affiche: profByUser.get(u.id)?.nom_affiche ?? null,
+            plan: profByUser.get(u.id)?.plan ?? "gratuit",
+            statut: profByUser.get(u.id)?.statut ?? "actif",
+            roles: rolesByUser.get(u.id) ?? [],
+          })),
+        });
+      }
+
+      case "updatePlan": {
+        const { userId, plan } = payload;
+        if (!userId || !["gratuit", "lite", "premium"].includes(plan))
+          return json({ error: "Bad input" }, 400);
+        const { error } = await admin.from("profils_enseignant").update({ plan }).eq("user_id", userId);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "setSuspension": {
+        const { userId, suspendre } = payload;
+        if (!userId || typeof suspendre !== "boolean") return json({ error: "Bad input" }, 400);
+        const banDuration = suspendre ? "876000h" : "none";
+        const { error: e1 } = await (admin.auth.admin as any)
+          .updateUserById(userId, { ban_duration: banDuration });
+        if (e1) throw e1;
+        const { error: e2 } = await admin.from("profils_enseignant")
+          .update({ statut: suspendre ? "suspendu" : "actif" }).eq("user_id", userId);
+        if (e2) throw e2;
+        return json({ ok: true });
+      }
+
+      case "resetPassword": {
+        const { userId, newPassword } = payload;
+        if (!userId || !newPassword || newPassword.length < 8) return json({ error: "Bad input" }, 400);
+        const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "deleteUser": {
+        const { userId } = payload;
+        if (!userId) return json({ error: "Bad input" }, 400);
+        if (userId === uid) return json({ error: "Vous ne pouvez pas supprimer votre propre compte." }, 400);
+        const { error } = await admin.auth.admin.deleteUser(userId);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "stats": {
+        const [usersRes, profilsRes, rolesRes, ecolesRes, classesRes, elevesRes] = await Promise.all([
+          admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+          admin.from("profils_enseignant").select("plan, statut"),
+          admin.from("user_roles").select("user_id, role"),
+          admin.from("ecoles").select("id", { count: "exact", head: true }),
+          admin.from("classes").select("id", { count: "exact", head: true }),
+          admin.from("eleves").select("id", { count: "exact", head: true }),
+        ]);
+        const users = usersRes.data?.users ?? [];
+        const profils: any[] = profilsRes.data ?? [];
+        const roles: any[] = rolesRes.data ?? [];
+        const now = Date.now();
+        const THIRTY = 30 * 24 * 3600 * 1000;
+        const actifs30j = users.filter((u: any) =>
+          u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < THIRTY).length;
+        return json({
+          totalUsers: users.length,
+          admins: roles.filter((r) => r.role === "admin").length,
+          suspendus: profils.filter((p) => p.statut === "suspendu").length,
+          actifs30j,
+          planGratuit: profils.filter((p) => p.plan === "gratuit").length,
+          planLite: profils.filter((p) => p.plan === "lite").length,
+          planPremium: profils.filter((p) => p.plan === "premium").length,
+          totalEcoles: ecolesRes.count ?? 0,
+          totalClasses: classesRes.count ?? 0,
+          totalEleves: elevesRes.count ?? 0,
+        });
+      }
+
+      /* ============ ANNEES SCOLAIRES ============ */
+      case "annees.list": {
+        const { data, error } = await admin
+          .from("annees_scolaires")
+          .select("id, user_id, libelle, statut, date_debut, date_fin, created_at");
+        if (error) throw error;
+        const byLibelle = new Map<string, any>();
+        for (const a of data ?? []) {
+          const key = a.libelle as string;
+          const b = byLibelle.get(key) ?? {
+            libelle: key, active: 0, archivee: 0, a_venir: 0, enseignants: new Set<string>(),
+            date_debut: a.date_debut, date_fin: a.date_fin,
+          };
+          if (a.statut === "active") b.active++;
+          else if (a.statut === "archivee") b.archivee++;
+          else b.a_venir++;
+          b.enseignants.add(a.user_id);
+          byLibelle.set(key, b);
+        }
+        return json({
+          annees: Array.from(byLibelle.values())
+            .map((b) => ({
+              libelle: b.libelle,
+              active: b.active,
+              archivee: b.archivee,
+              a_venir: b.a_venir,
+              enseignants: b.enseignants.size,
+              date_debut: b.date_debut,
+              date_fin: b.date_fin,
+            }))
+            .sort((a, b) => b.libelle.localeCompare(a.libelle)),
+        });
+      }
+
+      case "annees.create": {
+        const { libelle, date_debut, date_fin, statut } = payload;
+        if (!libelle) return json({ error: "Libellé requis" }, 400);
+        const targetStatut = statut === "active" || statut === "archivee" ? statut : "a_venir";
+        // Créer l'année pour tous les enseignants existants
+        const { data: users } = await admin.from("profils_enseignant").select("user_id");
+        const rows = (users ?? []).map((u: any) => ({
+          user_id: u.user_id,
+          libelle,
+          statut: targetStatut,
+          date_debut: date_debut || null,
+          date_fin: date_fin || null,
+        }));
+        if (rows.length === 0) return json({ ok: true, created: 0 });
+        const { error, count } = await admin
+          .from("annees_scolaires")
+          .upsert(rows, { onConflict: "user_id,libelle", count: "exact" });
+        if (error) throw error;
+        return json({ ok: true, created: count ?? rows.length });
+      }
+
+      case "annees.rename": {
+        const { oldLibelle, newLibelle } = payload;
+        if (!oldLibelle || !newLibelle) return json({ error: "Bad input" }, 400);
+        const { error, count } = await admin
+          .from("annees_scolaires")
+          .update({ libelle: newLibelle }, { count: "exact" })
+          .eq("libelle", oldLibelle);
+        if (error) throw error;
+        // Mise à jour de profils_enseignant.annee_active
+        await admin.from("profils_enseignant")
+          .update({ annee_active: newLibelle })
+          .eq("annee_active", oldLibelle);
+        return json({ ok: true, updated: count ?? 0 });
+      }
+
+      case "annees.setStatus": {
+        const { libelle, statut } = payload;
+        if (!libelle || !["active", "archivee", "a_venir"].includes(statut))
+          return json({ error: "Bad input" }, 400);
+        // Si active: passer les autres actives (par enseignant) à archivée pour respecter unicité fonctionnelle
+        if (statut === "active") {
+          await admin.from("annees_scolaires")
+            .update({ statut: "archivee" })
+            .neq("libelle", libelle)
+            .eq("statut", "active");
+        }
+        const { error, count } = await admin
+          .from("annees_scolaires")
+          .update({ statut }, { count: "exact" })
+          .eq("libelle", libelle);
+        if (error) throw error;
+        return json({ ok: true, updated: count ?? 0 });
+      }
+
+      case "annees.archive": {
+        const { libelle } = payload;
+        if (!libelle) return json({ error: "Bad input" }, 400);
+        const { error, count } = await admin
+          .from("annees_scolaires")
+          .update({ statut: "archivee" }, { count: "exact" })
+          .eq("libelle", libelle)
+          .eq("statut", "active");
+        if (error) throw error;
+        return json({ ok: true, archived: count ?? 0 });
+      }
+
+      case "annees.delete": {
+        const { libelle } = payload;
+        if (!libelle) return json({ error: "Bad input" }, 400);
+        const { error, count } = await admin
+          .from("annees_scolaires")
+          .delete({ count: "exact" })
+          .eq("libelle", libelle);
+        if (error) throw error;
+        return json({ ok: true, deleted: count ?? 0 });
+      }
+
+      default:
+        return json({ error: `Unknown action: ${action}` }, 400);
+    }
+  } catch (e: any) {
+    console.error("[admin-api]", action, e?.message ?? e);
+    return json({ error: e?.message ?? String(e) }, 400);
+  }
+});
