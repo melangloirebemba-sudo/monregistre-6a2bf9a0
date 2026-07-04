@@ -42,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/eleves")({
   head: () => ({ meta: [{ title: "Élèves — MonRegistre" }] }),
@@ -129,20 +130,15 @@ function ElevesPage() {
       </header>
 
       <div className="mb-3 grid grid-cols-2 gap-2">
-        <Select
+        <EcoleFilter
           value={ecoleFilter}
+          ecoles={ecoles}
           onValueChange={(v) => {
             setEcoleFilter(v);
             const cls = classes.find((c) => c.id === classeFilter);
             if (v !== "all" && cls && cls.ecole_id !== v) setClasseFilter("all");
           }}
-        >
-          <SelectTrigger><SelectValue placeholder="École" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les écoles</SelectItem>
-            {ecoles.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        />
         <Select value={classeFilter} onValueChange={setClasseFilter}>
           <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
           <SelectContent>
@@ -203,9 +199,7 @@ function ElevesPage() {
                       )}
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate">
-                      <span className="rounded-sm bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
-                        {ecoleById[e.ecole_id] ?? "École ?"}
-                      </span>
+                      <EcoleBadge name={ecoleById[e.ecole_id]} />
                       {" · "}{cls?.nom ?? "Classe inconnue"}
                       {e.numero_eleve ? ` · ${e.numero_eleve}` : ""}
                       {e.tuteur_numero ? ` · Tuteur ${e.tuteur_numero}` : ""}
@@ -231,11 +225,7 @@ function ElevesPage() {
               <div className="space-y-4">
                 {grouped.map(([ecoleId, list]) => (
                   <section key={ecoleId}>
-                    <h2 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <span className="h-1.5 w-1.5 rounded-full bg-teal" />
-                      {ecoleById[ecoleId] ?? "École ?"}
-                      <span className="ml-auto text-[10px] font-normal">{list.length}</span>
-                    </h2>
+                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
                     <ul className="space-y-2">{list.map(renderItem)}</ul>
                   </section>
                 ))}
