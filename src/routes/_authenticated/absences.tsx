@@ -154,30 +154,43 @@ function AbsencesPage() {
 
       <SyncStatusInline className="mb-3" />
 
-      <div className="mb-3 space-y-2">
-        <Select value={classeFilter} onValueChange={setClasseFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filtrer par classe" />
-          </SelectTrigger>
+      <div className="mb-3 grid grid-cols-2 gap-2">
+        <Select
+          value={ecoleFilter}
+          onValueChange={(v) => {
+            setEcoleFilter(v);
+            const cls = classes.find((c) => c.id === classeFilter);
+            if (v !== "all" && cls && cls.ecole_id !== v) setClasseFilter("all");
+          }}
+        >
+          <SelectTrigger><SelectValue placeholder="École" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les classes</SelectItem>
-            {classes.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.nom}
-              </SelectItem>
+            <SelectItem value="all">Toutes les écoles</SelectItem>
+            {ecoles.map((e) => (
+              <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher…"
-            className="pl-9"
-          />
-        </div>
+        <Select value={classeFilter} onValueChange={setClasseFilter}>
+          <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les classes</SelectItem>
+            {classesForEcole.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+      <div className="relative mb-3">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Rechercher…"
+          className="pl-9"
+        />
+      </div>
+
 
       {!canAdd ? (
         <div className="card-elevated p-6 text-center text-sm text-muted-foreground">
