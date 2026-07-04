@@ -23,6 +23,8 @@ import { moyennePonderee, noteColorClass } from "@/lib/format";
 import { generateBulletinPDF } from "@/lib/pdf/bulletin";
 import { generateClasseRapportPDF } from "@/lib/pdf/classe-rapport";
 import { Button } from "@/components/ui/button";
+import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Label } from "@/components/ui/label";
 import {
   Select,
