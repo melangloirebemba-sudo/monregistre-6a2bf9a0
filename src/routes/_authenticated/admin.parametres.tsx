@@ -467,10 +467,11 @@ function AdminAccountCard() {
     return "";
   };
 
+  const pwdAnalysis = useMemo(() => analyzePassword(password), [password]);
+
   const validatePassword = (): boolean => {
     const errs: { pwd?: string; confirm?: string } = {};
-    const s = scorePassword(password);
-    if (!s.ok) errs.pwd = s.hint;
+    if (!pwdAnalysis.requiredOk) errs.pwd = pwdAnalysis.hint ?? "Mot de passe trop faible.";
     if (!passwordConfirm) errs.confirm = "Confirmez le mot de passe.";
     else if (passwordConfirm !== password) errs.confirm = "Les mots de passe ne correspondent pas.";
     setPwdErrors(errs);
