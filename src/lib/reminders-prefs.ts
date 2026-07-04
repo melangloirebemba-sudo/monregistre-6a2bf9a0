@@ -16,6 +16,8 @@ export interface ReminderPrefs {
   absencesUnj: boolean;
   /** Fenêtre (en jours) pour les absences non justifiées. */
   absencesWindowDays: number;
+  /** Envoyer une notification locale quand un rappel devient actif. */
+  notificationsEnabled: boolean;
 }
 
 export const DEFAULT_REMINDER_PREFS: ReminderPrefs = {
