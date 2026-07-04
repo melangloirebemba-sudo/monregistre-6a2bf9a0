@@ -334,6 +334,3 @@ function DeleteDialog({
     </AlertDialog>
   );
 }
-
-// Silence unused DialogTrigger import
-export const _DialogTrigger = DialogTrigger;
