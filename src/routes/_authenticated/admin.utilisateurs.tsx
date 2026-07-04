@@ -131,8 +131,13 @@ function AdminContent() {
       {/* Recherche */}
       <div className="card-elevated p-4">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Label htmlFor="admin-users-search" className="sr-only">
+            Rechercher un utilisateur
+          </Label>
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="admin-users-search"
+            type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Rechercher par email ou nom…"
