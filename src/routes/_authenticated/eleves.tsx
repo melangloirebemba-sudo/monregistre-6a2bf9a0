@@ -262,21 +262,42 @@ function EleveDialog({
       };
       let eleveId = eleve?.id;
       if (eleve) {
-        const { error } = await supabase.from("eleves").update(payload).eq("id", eleve.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "eleves",
+          op: "update",
+          payload,
+          match: { id: eleve.id },
+          label: `Modifier ${form.prenom} ${form.nom}`,
+        });
       } else {
-        const { data, error } = await supabase.from("eleves").insert({ ...payload, user_id }).select("id").single();
-        if (error) throw error;
-        eleveId = data.id;
+        // Generate id client-side so a later chef_id update can reference
+        // it even when the insert is queued offline.
+        eleveId = crypto.randomUUID();
+        await enqueueWrite({
+          table: "eleves",
+          op: "insert",
+          payload: { ...payload, id: eleveId, user_id },
+          label: `Ajouter ${form.prenom} ${form.nom}`,
+        });
       }
       // Chef de classe
       const wasChef = eleve && classe.chef_id === eleve.id;
       if (form.chef && eleveId) {
-        const { error } = await supabase.from("classes").update({ chef_id: eleveId }).eq("id", form.classe_id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "classes",
+          op: "update",
+          payload: { chef_id: eleveId },
+          match: { id: form.classe_id },
+          label: "Définir chef de classe",
+        });
       } else if (wasChef && !form.chef) {
-        const { error } = await supabase.from("classes").update({ chef_id: null }).eq("id", form.classe_id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "classes",
+          op: "update",
+          payload: { chef_id: null },
+          match: { id: form.classe_id },
+          label: "Retirer chef de classe",
+        });
       }
     },
     onSuccess: () => {
