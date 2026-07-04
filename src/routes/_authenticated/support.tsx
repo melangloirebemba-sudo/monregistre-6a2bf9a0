@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/support")({
   component: SupportPage,
 });
 
-const WHATSAPP_NUMBER = "24206962654"; // +242 069626540 — format international sans "+"
+const WHATSAPP_NUMBER = "242069626540"; // format international, sans "+" (wa.me exige uniquement des chiffres)
 const SUPPORT_EMAIL = "support@monregistre.app";
 
 const PLAN_LABEL: Record<"gratuit" | "lite" | "premium", string> = {
