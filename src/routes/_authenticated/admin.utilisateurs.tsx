@@ -171,7 +171,9 @@ function AdminContent() {
                       <> · Dernière connexion {new Date(u.last_sign_in_at).toLocaleDateString("fr-FR")}</>
                     )}
                   </div>
+                  <PlanLimitsBadges limit={limitsByPlan.get(u.plan)} />
                 </div>
+
 
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="flex items-center gap-1.5">
