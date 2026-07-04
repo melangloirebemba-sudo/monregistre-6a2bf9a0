@@ -82,19 +82,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#1a1a2e" },
-      { title: "MonRegistre — Gestion de classes pour enseignants" },
+      { title: "MonRegistre -  application de gestion des activités d'ensign" },
       {
         name: "description",
         content:
           "Gérez vos écoles, classes, élèves, notes, emplois du temps et progression pédagogique en un seul endroit.",
       },
-      { property: "og:title", content: "MonRegistre" },
+      { property: "og:title", content: "MonRegistre -  application de gestion des activités d'ensign" },
       {
         property: "og:description",
         content: "Le registre numérique des enseignants : classes, notes, bulletins, EDT.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "MonRegistre -  application de gestion des activités d'ensign" },
+      { name: "description", content: "Gérez vos écoles, classes, élèves, notes, emplois du temps et progression pédagogique en un seul endroit." },
+      { property: "og:description", content: "Gérez vos écoles, classes, élèves, notes, emplois du temps et progression pédagogique en un seul endroit." },
+      { name: "twitter:description", content: "Gérez vos écoles, classes, élèves, notes, emplois du temps et progression pédagogique en un seul endroit." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/EzFkUySw2NW1v6lHezSzJCuYD612/social-images/social-1783196358819-1000907298.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/EzFkUySw2NW1v6lHezSzJCuYD612/social-images/social-1783196358819-1000907298.webp" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
