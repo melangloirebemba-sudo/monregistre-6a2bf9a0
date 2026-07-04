@@ -86,6 +86,36 @@ export interface Sequence {
   periode_id: string | null;
   user_id: string;
 }
+export interface Absence {
+  id: string;
+  eleve_id: string;
+  date: string;
+  motif: string | null;
+  justifiee: boolean;
+  user_id: string;
+}
+
+export const absencesQO = (opts: { classeId?: string; eleveId?: string } = {}) =>
+  queryOptions({
+    queryKey: ["absences", opts.classeId ?? "-", opts.eleveId ?? "-"],
+    queryFn: async (): Promise<
+      Array<Absence & { eleve: { nom: string; prenom: string; classe_id: string } | null }>
+    > => {
+      let q = supabase
+        .from("absences")
+        .select("*, eleve:eleves(nom, prenom, classe_id)")
+        .order("date", { ascending: false });
+      if (opts.eleveId) q = q.eq("eleve_id", opts.eleveId);
+      const { data, error } = await q;
+      if (error) throw error;
+      let rows = (data ?? []) as Array<
+        Absence & { eleve: { nom: string; prenom: string; classe_id: string } | null }
+      >;
+      if (opts.classeId) rows = rows.filter((r) => r.eleve?.classe_id === opts.classeId);
+      return rows;
+    },
+  });
+
 
 export const ecolesQO = () =>
   queryOptions({
