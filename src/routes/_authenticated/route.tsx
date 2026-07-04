@@ -6,6 +6,7 @@ import { AppShell } from "@/components/app/app-shell";
 import { AdminShell } from "@/components/app/admin-shell";
 import { AnneeScolaireGate } from "@/components/app/annee-scolaire-gate";
 import { SuspendedGate } from "@/components/app/suspended-gate";
+import { PlanUpgradeNotice } from "@/components/app/plan-upgrade-notice";
 import { currentUserRolesQO } from "@/lib/queries/admin";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -53,6 +54,7 @@ function AuthenticatedLayout() {
     <AppShell>
       <SuspendedGate />
       <AnneeScolaireGate />
+      <PlanUpgradeNotice />
       <Outlet />
     </AppShell>
   );
