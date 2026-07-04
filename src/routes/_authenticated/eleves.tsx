@@ -393,8 +393,12 @@ function DeleteEleveDialog({ open, onOpenChange, eleve, onDone }: { open: boolea
   const del = useMutation({
     mutationFn: async () => {
       if (!eleve) return;
-      const { error } = await supabase.from("eleves").delete().eq("id", eleve.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "eleves",
+        op: "delete",
+        match: { id: eleve.id },
+        label: `Supprimer ${eleve.prenom} ${eleve.nom}`,
+      });
     },
     onSuccess: () => {
       toast.success("Élève supprimé");
