@@ -204,7 +204,10 @@ function isNetworkError(err: unknown): boolean {
 
 async function runWrite(input: EnqueueInput): Promise<unknown> {
   const { table, op, payload, match } = input;
-  const from = supabase.from(table);
+  // Cast to loose typing — this queue is a generic writer that must accept
+  // arbitrary tables/payloads chosen at runtime, so we bypass the strict
+  // per-table types from the generated Database schema.
+  const from = (supabase.from as unknown as (t: string) => any)(table);
   if (op === "insert") {
     const { data, error } = await from.insert(payload ?? {}).select();
     if (error) throw error;
@@ -212,14 +215,14 @@ async function runWrite(input: EnqueueInput): Promise<unknown> {
   }
   if (op === "update") {
     let q = from.update(payload ?? {});
-    for (const [k, v] of Object.entries(match ?? {})) q = q.eq(k, v as never);
+    for (const [k, v] of Object.entries(match ?? {})) q = q.eq(k, v);
     const { data, error } = await q.select();
     if (error) throw error;
     return data;
   }
   // delete
   let q = from.delete();
-  for (const [k, v] of Object.entries(match ?? {})) q = q.eq(k, v as never);
+  for (const [k, v] of Object.entries(match ?? {})) q = q.eq(k, v);
   const { error } = await q;
   if (error) throw error;
   return null;
