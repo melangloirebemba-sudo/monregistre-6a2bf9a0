@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
 import { Button } from "@/components/ui/button";
-import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { DataPagination } from "@/components/ui/data-pagination";
+import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,16 +54,13 @@ function ClassesPage() {
   const [open, setOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Classe | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      classes.filter((c) =>
-        [c.nom, c.code, c.matiere].filter(Boolean).join(" ").toLowerCase().includes(q.toLowerCase()),
-      ),
-    [classes, q],
-  );
-
-  const pg = usePagination(filtered.length, 20, [q, ecoleFilter]);
-  const paged = pg.slice(filtered);
+  const pq = usePaginatedQuery({
+    data: classes,
+    search: q,
+    searchFields: (c) => [c.nom, c.code, c.matiere],
+    sortKey: ecoleFilter,
+  });
+  const paged = pq.items;
 
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
 
