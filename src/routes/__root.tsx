@@ -161,6 +161,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <InstallPwaPrompt />
+      <AppUpdateNotifier />
       <Toaster />
     </QueryClientProvider>
   );
