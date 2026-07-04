@@ -119,14 +119,15 @@ function AdminAnneesPage() {
   });
 
   return (
-    <div className="space-y-5 px-5 py-6">
-      <header className="flex items-start justify-between gap-3">
-        <div>
+    <div className="space-y-5 px-4 py-5 sm:px-5 sm:py-6">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="min-w-0">
           <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
             Backoffice
           </div>
-          <h1 className="mt-1 flex items-center gap-2 font-display text-3xl font-semibold text-foreground">
-            <CalendarClock className="h-7 w-7 text-teal" /> Années scolaires
+          <h1 className="mt-1 flex items-center gap-2 font-display text-xl font-semibold text-foreground sm:text-2xl lg:text-3xl">
+            <CalendarClock className="h-6 w-6 shrink-0 text-teal sm:h-7 sm:w-7" />
+            <span className="truncate">Années scolaires</span>
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Gestion globale : créez, renommez, activez, clôturez ou supprimez les années
@@ -134,15 +135,17 @@ function AdminAnneesPage() {
           </p>
         </div>
         <Button
+          size="sm"
           onClick={() => {
             setNewLibelle("");
             setNewDebut("");
             setNewFin("");
             setCreateOpen(true);
           }}
-          className="shrink-0"
+          className="shrink-0 sm:size-default"
         >
-          <Plus className="mr-1 h-4 w-4" /> Nouvelle année
+          <Plus className="h-4 w-4 sm:mr-1" />
+          <span className="hidden sm:inline">Nouvelle année</span>
         </Button>
       </header>
 
