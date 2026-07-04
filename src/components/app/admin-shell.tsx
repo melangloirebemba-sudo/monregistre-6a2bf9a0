@@ -162,7 +162,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
         {/* Bottom nav mobile */}
         <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
-          <ul className="mx-auto grid max-w-2xl grid-cols-3">
+          <ul className="mx-auto grid max-w-2xl grid-cols-4">
             {adminNav.map((t) => {
               const active = isActive(pathname, t.to);
               const Icon = t.icon;
