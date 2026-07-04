@@ -35,10 +35,36 @@ export function generateBulletinPDF(ctx: BulletinContext) {
     { align: "center" },
   );
 
-  // Student info
+  // École badge (chip visible)
   doc.setTextColor(26, 26, 46);
+  let y = 38;
+  if (ctx.ecole?.nom) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    const label = "ÉCOLE";
+    const value = ctx.ecole.nom;
+    doc.setFontSize(9);
+    const valueW = doc.getTextWidth(value);
+    doc.setFontSize(8);
+    const labelW = doc.getTextWidth(label);
+    const padX = 3;
+    const gap = 3;
+    const chipW = padX + labelW + gap + valueW + padX;
+    const chipH = 6.5;
+    doc.setFillColor(26, 122, 110);
+    doc.roundedRect(15, y - 4.5, chipW, chipH, 1.5, 1.5, "F");
+    doc.setTextColor(245, 240, 232);
+    doc.text(label, 15 + padX, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(value, 15 + padX + labelW + gap, y);
+    doc.setTextColor(26, 26, 46);
+    y += 6;
+  }
+
+  // Student info
   doc.setFontSize(11);
-  let y = 40;
+  y += 4;
   doc.setFont("helvetica", "bold");
   doc.text("Élève :", 15, y);
   doc.setFont("helvetica", "normal");

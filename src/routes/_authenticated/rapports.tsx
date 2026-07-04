@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { EcoleFilter } from "@/components/app/ecole-filter";
+import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/rapports")({
   head: () => ({ meta: [{ title: "Rapports — MonRegistre" }] }),
@@ -157,6 +157,11 @@ function RapportsPage() {
       <header>
         <h1 className="text-2xl sm:text-3xl font-serif text-ink">Rapports</h1>
         <p className="text-sm text-ink/60">Moyennes, statistiques et bulletins PDF.</p>
+        {ecole && (
+          <div className="mt-2">
+            <EcoleBadge name={ecole.nom} />
+          </div>
+        )}
       </header>
 
       {/* Filters */}
@@ -197,10 +202,15 @@ function RapportsPage() {
         </div>
       </div>
 
-      {!classeId ? (
+      {!ecoleId ? (
         <div className="card-elevated p-8 text-center text-ink/60">
           <BarChart3 className="mx-auto mb-3 h-10 w-10 text-teal/60" />
-          Sélectionne une classe pour afficher les statistiques.
+          Sélectionne d'abord une école pour afficher les statistiques.
+        </div>
+      ) : !classeId ? (
+        <div className="card-elevated p-8 text-center text-ink/60">
+          <BarChart3 className="mx-auto mb-3 h-10 w-10 text-teal/60" />
+          Sélectionne une classe de <strong>{ecole?.nom ?? "l'école"}</strong> pour afficher les statistiques.
         </div>
       ) : (
         <>
