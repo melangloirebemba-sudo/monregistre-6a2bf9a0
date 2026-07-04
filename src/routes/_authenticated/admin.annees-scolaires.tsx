@@ -168,10 +168,10 @@ function AdminAnneesPage() {
         <ul className="space-y-2">
           {data.map((a) => (
             <li key={a.libelle} className="card-elevated p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-display text-lg font-semibold text-foreground">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-display text-base font-semibold text-foreground sm:text-lg">
                       {a.libelle}
                     </span>
                     {a.active > 0 && (
@@ -196,7 +196,7 @@ function AdminAnneesPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
                   <Button
                     size="sm"
                     variant="outline"
@@ -243,7 +243,7 @@ function AdminAnneesPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    className="col-span-2 text-destructive hover:bg-destructive/10 hover:text-destructive sm:col-span-1"
                     disabled={remove.isPending}
                     onClick={() => setDeleteTarget(a)}
                   >
