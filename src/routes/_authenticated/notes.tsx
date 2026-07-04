@@ -139,22 +139,37 @@ function NotesPage() {
         </div>
       </header>
 
-      <div className="mb-3 grid grid-cols-2 gap-2">
+      <div className="mb-3 grid grid-cols-3 gap-2">
+        <Select
+          value={ecoleFilter}
+          onValueChange={(v) => {
+            setEcoleFilter(v);
+            const cls = classes.find((c) => c.id === classeFilter);
+            if (v !== "all" && cls && cls.ecole_id !== v) setClasseFilter("all");
+          }}
+        >
+          <SelectTrigger><SelectValue placeholder="École" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes écoles</SelectItem>
+            {ecoles.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={classeFilter} onValueChange={setClasseFilter}>
           <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les classes</SelectItem>
-            {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+            <SelectItem value="all">Toutes classes</SelectItem>
+            {classesForEcole.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={periodeFilter} onValueChange={setPeriodeFilter}>
           <SelectTrigger><SelectValue placeholder="Période" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les périodes</SelectItem>
+            <SelectItem value="all">Toutes périodes</SelectItem>
             {periodes.map((p) => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
+
       <div className="relative mb-3">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…" className="pl-9" />
