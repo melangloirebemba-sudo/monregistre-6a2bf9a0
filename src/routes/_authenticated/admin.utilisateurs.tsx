@@ -5,6 +5,7 @@ import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucid
 import { toast } from "sonner";
 import { adminApi, type AdminUser, type PlanLimit } from "@/lib/admin-api";
 import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
+import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
