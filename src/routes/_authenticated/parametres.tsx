@@ -416,7 +416,7 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
 
         <DialogFooter className="gap-2 sm:justify-between">
           <a
-            href={`https://wa.me/242069626540?text=${encodeURIComponent(`Bonjour, je souhaite passer du plan ${PLAN_LABEL[currentPlan]} à un plan supérieur sur MonRegistre.`)}`}
+            href={waHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-1.5 rounded-md bg-teal px-3 py-2 text-sm font-medium text-cream hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
