@@ -305,6 +305,44 @@ function AccueilPage() {
         )}
       </section>
 
+      {/* Rappels */}
+      {reminders.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-2 text-gold">
+            <Bell className="h-4 w-4" />
+            <span className="text-xs font-semibold uppercase tracking-widest">Rappels</span>
+          </div>
+          <ul className="space-y-2">
+            {reminders.map((r) => {
+              const Icon =
+                r.id.startsWith("absences") ? CalendarX : r.tone === "warn" ? AlertTriangle : Bell;
+              return (
+                <li key={r.id}>
+                  <Link
+                    to={r.to}
+                    className={`flex items-center gap-3 rounded-xl border p-2.5 transition-colors hover:bg-cream-deep/50 ${
+                      r.tone === "warn"
+                        ? "border-gold/30 bg-gold/5"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+                        r.tone === "warn" ? "bg-gold/20 text-gold-foreground" : "bg-teal/15 text-teal"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="flex-1 text-sm text-foreground">{r.label}</span>
+                    <span className="text-xs text-muted-foreground">→</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* Grille menu */}
       <section className="mt-6">
         <h2 className="mb-3 font-display text-base font-semibold text-foreground">
