@@ -398,7 +398,7 @@ function EleveDialog({
                 onValueChange={(v) => setForm({ ...form, classe_id: v })}
                 disabled={!form.ecole_id || classesForEcole.length === 0}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-invalid={classeMismatch} className={classeMismatch ? "border-destructive" : undefined}>
                   <SelectValue
                     placeholder={
                       !form.ecole_id
@@ -415,7 +415,13 @@ function EleveDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {classeMismatch && (
+                <p className="text-xs text-destructive">
+                  Cette classe n'appartient pas à l'école sélectionnée. Choisissez une classe de cette école.
+                </p>
+              )}
             </div>
+
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="enum">Numéro de l'élève</Label>
