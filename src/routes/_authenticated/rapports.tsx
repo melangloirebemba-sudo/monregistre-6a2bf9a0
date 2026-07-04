@@ -40,8 +40,11 @@ export const Route = createFileRoute("/_authenticated/rapports")({
 
 function RapportsPage() {
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: caps } = useQuery(planCapabilitiesQO());
+  const canPdf = caps?.bulletins_pdf ?? false;
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
+
 
   const [ecoleId, setEcoleId] = useState<string>("");
   const [classeId, setClasseId] = useState<string>("");
