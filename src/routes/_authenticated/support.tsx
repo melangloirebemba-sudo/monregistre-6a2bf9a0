@@ -156,7 +156,7 @@ function SupportPage() {
             <span className="block text-xs text-muted-foreground">
               Message pré-rempli avec votre école et plan
             </span>
-            <span className="mt-1 block truncate text-xs text-teal">+242 06 962 65 40</span>
+            <span className="mt-1 block truncate text-xs text-teal">{WHATSAPP_DISPLAY}</span>
           </span>
         </a>
 
