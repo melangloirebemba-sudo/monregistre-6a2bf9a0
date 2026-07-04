@@ -50,16 +50,57 @@ function AdminContent() {
 
 
   const [q, setQ] = useState("");
+  type SortKey = "nom" | "email" | "plan" | "statut" | "created";
+  const [sortKey, setSortKey] = useState<SortKey>("nom");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortMsg, setSortMsg] = useState("");
+
+  const PLAN_ORDER: Record<AppPlan, number> = { gratuit: 0, lite: 1, premium: 2 };
+  const SORT_LABELS: Record<SortKey, string> = {
+    nom: "Nom",
+    email: "Email",
+    plan: "Plan",
+    statut: "Statut",
+    created: "Date de création",
+  };
+
+  const requestSort = (key: SortKey) => {
+    const nextDir: "asc" | "desc" = sortKey === key && sortDir === "asc" ? "desc" : "asc";
+    setSortKey(key);
+    setSortDir(nextDir);
+    setSortMsg(
+      `Table triée par ${SORT_LABELS[key]}, ordre ${nextDir === "asc" ? "croissant" : "décroissant"}`,
+    );
+  };
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return users;
-    return users.filter(
-      (u) =>
-        u.email.toLowerCase().includes(term) ||
-        (u.nom_affiche ?? "").toLowerCase().includes(term),
-    );
-  }, [users, q]);
+    const base = !term
+      ? users
+      : users.filter(
+          (u) =>
+            u.email.toLowerCase().includes(term) ||
+            (u.nom_affiche ?? "").toLowerCase().includes(term),
+        );
+    const collator = new Intl.Collator("fr", { sensitivity: "base" });
+    const cmp = (a: AdminUser, b: AdminUser) => {
+      switch (sortKey) {
+        case "email":
+          return collator.compare(a.email, b.email);
+        case "plan":
+          return PLAN_ORDER[a.plan] - PLAN_ORDER[b.plan];
+        case "statut":
+          return collator.compare(a.statut, b.statut);
+        case "created":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "nom":
+        default:
+          return collator.compare(a.nom_affiche ?? a.email, b.nom_affiche ?? b.email);
+      }
+    };
+    const sorted = [...base].sort(cmp);
+    return sortDir === "asc" ? sorted : sorted.reverse();
+  }, [users, q, sortKey, sortDir]);
 
   const stats = useMemo(() => {
     return {
