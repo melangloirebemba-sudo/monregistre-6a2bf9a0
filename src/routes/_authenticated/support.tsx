@@ -120,19 +120,9 @@ function SupportPage() {
   const currentPlan = caps?.plan ?? "gratuit";
   const planLabel = PLAN_LABEL[currentPlan];
   const isGratuit = currentPlan === "gratuit";
-  const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    buildWhatsAppMessage(ecoleNom, planLabel),
-  )}`;
-  const upgradeMsg = [
-    `Bonjour, je souhaite passer du plan ${planLabel} à un plan supérieur sur MonRegistre.`,
-    "",
-    `École : ${ecoleNom || "(non renseignée)"}`,
-    `Plan actuel : ${planLabel}`,
-  ].join("\n");
-  const upgradeWaHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(upgradeMsg)}`;
-  const mailHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-    "Support MonRegistre",
-  )}&body=${encodeURIComponent(buildWhatsAppMessage(ecoleNom, planLabel))}`;
+  const waHref = supportWhatsAppHref(ecoleNom, planLabel);
+  const upgradeWaHref = upgradeWhatsAppHref(ecoleNom, planLabel);
+  const mailHref = supportMailtoHref(ecoleNom, planLabel);
 
   const [copied, setCopied] = useState(false);
   const copyEmail = async () => {
