@@ -45,16 +45,12 @@ function EcolesPage() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Ecole | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      ecoles.filter((e) =>
-        [e.nom, e.numero, e.adresse].filter(Boolean).join(" ").toLowerCase().includes(q.toLowerCase()),
-      ),
-    [ecoles, q],
-  );
-
-  const pg = usePagination(filtered.length, 20, [q]);
-  const paged = pg.slice(filtered);
+  const pq = usePaginatedQuery({
+    data: ecoles,
+    search: q,
+    searchFields: (e) => [e.nom, e.numero, e.adresse],
+  });
+  const paged = pq.items;
 
   const maxEcoles = caps?.max_ecoles ?? 0;
   const atLimit = !caps?.isAdmin && maxEcoles > 0 && ecoles.length >= maxEcoles;
