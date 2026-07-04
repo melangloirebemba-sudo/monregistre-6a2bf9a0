@@ -274,15 +274,26 @@ function RapportsPage() {
             />
           </div>
 
-          {/* Bulletins */}
           <div className="card-elevated p-4">
             <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
               <h2 className="font-serif text-lg text-ink">Bulletins PDF</h2>
-              <Button size="sm" onClick={handleExportAll} className="bg-teal text-cream hover:bg-teal/90">
+              <Button
+                size="sm"
+                onClick={handleExportAll}
+                disabled={!canPdf}
+                aria-disabled={!canPdf}
+                title={!canPdf ? "Export PDF réservé aux plans Lite et Premium" : undefined}
+                className="bg-teal text-cream hover:bg-teal/90 disabled:opacity-60"
+              >
                 <FileDown className="h-4 w-4 mr-1.5" />
                 Tout exporter
               </Button>
             </div>
+            {!canPdf && (
+              <p className="mb-3 rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-ink/80">
+                L'export PDF des bulletins est disponible à partir du plan <strong>Lite</strong>. Votre plan actuel est <strong>{caps?.plan ?? "gratuit"}</strong>.
+              </p>
+            )}
             <ul className="divide-y divide-ink/10">
               {stats.sorted.map(({ eleve, moyenne, nbNotes }) => (
                 <li key={eleve.id} className="py-2.5 flex items-center justify-between gap-3">
@@ -294,7 +305,14 @@ function RapportsPage() {
                     <span className={`px-2 py-1 rounded-md text-xs font-semibold ${noteColorClass(moyenne, echelle)}`}>
                       {moyenne.toFixed(2)}
                     </span>
-                    <Button size="sm" variant="outline" onClick={() => handleExport(eleve.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleExport(eleve.id)}
+                      disabled={!canPdf}
+                      aria-disabled={!canPdf}
+                      title={!canPdf ? "Export PDF réservé aux plans Lite et Premium" : `Exporter le bulletin de ${eleve.prenom} ${eleve.nom}`}
+                    >
                       <FileDown className="h-4 w-4" />
                     </Button>
                   </div>
@@ -305,6 +323,7 @@ function RapportsPage() {
               )}
             </ul>
           </div>
+
         </>
       )}
     </div>
