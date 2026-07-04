@@ -136,3 +136,11 @@ export interface AdminAnneeAggregate {
   date_debut: string | null;
   date_fin: string | null;
 }
+
+export interface AppSettings {
+  id: number;
+  whatsapp_number: string;
+  whatsapp_display: string;
+  support_email: string;
+  updated_at: string;
+}
