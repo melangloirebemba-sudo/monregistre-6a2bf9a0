@@ -16,7 +16,8 @@ import {
 import { moyennePonderee, noteColorClass, formatNote } from "@/lib/format";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { Button } from "@/components/ui/button";
-import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { DataPagination } from "@/components/ui/data-pagination";
+import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,13 +74,15 @@ function ElevesPage() {
     [classes, ecoleFilter],
   );
 
-  const filtered = useMemo(
-    () =>
-      eleves
-        .filter((e) => ecoleFilter === "all" || e.ecole_id === ecoleFilter)
-        .filter((e) => `${e.nom} ${e.prenom}`.toLowerCase().includes(q.toLowerCase())),
-    [eleves, q, ecoleFilter],
-  );
+  const pq = usePaginatedQuery({
+    data: eleves,
+    search: q,
+    searchFields: (e) => [e.nom, e.prenom],
+    filters: [(e) => ecoleFilter === "all" || e.ecole_id === ecoleFilter],
+    sortKey: `${ecoleFilter}|${classeFilter}`,
+  });
+  const filtered = pq.filtered;
+  const paged = pq.items;
 
   const moyennesByEleve = useMemo(() => {
     const map = new Map<string, number>();
@@ -99,9 +102,6 @@ function ElevesPage() {
   const classeById = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c])), [classes]);
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
   const canAdd = classes.length > 0;
-
-  const pg = usePagination(filtered.length, 20, [q, ecoleFilter, classeFilter]);
-  const paged = pg.slice(filtered);
 
   const grouped = useMemo(() => {
     if (ecoleFilter !== "all") return null;
