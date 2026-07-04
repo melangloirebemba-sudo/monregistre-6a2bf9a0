@@ -200,6 +200,16 @@ function ParametresPage() {
         <ThemeToggle />
       </section>
 
+      <section className="mt-6 space-y-3">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Synchronisation</h2>
+          <p className="text-xs text-muted-foreground">
+            État de la file hors-ligne, dernière synchronisation et erreurs éventuelles.
+          </p>
+        </div>
+        <SyncStatusCard />
+      </section>
+
 
       <section className="card-elevated mt-6 space-y-4 p-5">
         <div>
