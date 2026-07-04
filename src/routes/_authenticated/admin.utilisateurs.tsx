@@ -420,6 +420,70 @@ function AdminContent() {
       </div>
 
 
+      {/* Dialog activer un plan */}
+      <Dialog open={!!activateTarget} onOpenChange={(v) => !v && setActivateTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-teal" aria-hidden="true" /> Activer un plan
+            </DialogTitle>
+            <DialogDescription>
+              Activation d'un plan payant pour <strong>{activateTarget?.email}</strong>.
+              La date d'expiration est calculée automatiquement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="activate-plan">Plan</Label>
+              <Select value={activatePlanChoice} onValueChange={(v) => setActivatePlanChoice(v as "lite" | "premium")}>
+                <SelectTrigger id="activate-plan"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lite">{PLAN_LABELS.lite}</SelectItem>
+                  <SelectItem value="premium">{PLAN_LABELS.premium}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="activate-periode">Période</Label>
+              <Select value={activatePeriodeChoice} onValueChange={(v) => setActivatePeriodeChoice(v as PlanPeriode)}>
+                <SelectTrigger id="activate-periode"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mensuelle">Mensuelle — 30 jours</SelectItem>
+                  <SelectItem value="trimestrielle">Trimestrielle — 90 jours</SelectItem>
+                  <SelectItem value="annuelle">Annuelle — 300 jours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-ink/80">
+              {(() => {
+                const days = activatePeriodeChoice === "mensuelle" ? 30 : activatePeriodeChoice === "trimestrielle" ? 90 : 300;
+                const exp = new Date(Date.now() + days * 86_400_000).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+                return (
+                  <>
+                    Récapitulatif : plan <strong>{PLAN_LABELS[activatePlanChoice]}</strong> pour <strong>{days} jours</strong> — expire le <strong>{exp}</strong>.
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setActivateTarget(null)}>Annuler</Button>
+            <Button
+              disabled={activatePlan.isPending}
+              onClick={() => {
+                if (!activateTarget) return;
+                activatePlan.mutate(
+                  { userId: activateTarget.id, plan: activatePlanChoice, periode: activatePeriodeChoice },
+                  { onSuccess: () => setActivateTarget(null) },
+                );
+              }}
+            >
+              {activatePlan.isPending ? "Activation…" : "Confirmer l'activation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog reset password */}
       <Dialog open={!!pwdTarget} onOpenChange={(v) => !v && setPwdTarget(null)}>
         <DialogContent className="max-w-md">
