@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles, ArrowUpRight, Crown, Zap, Mail } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { profilQueryOptions, planCapabilitiesQO, type Profil, type PlanCapabilities } from "@/lib/queries/profil";
 import { periodesQO, requireUserId, type Periode } from "@/lib/queries/data";
 import { supabase } from "@/integrations/supabase/client";
