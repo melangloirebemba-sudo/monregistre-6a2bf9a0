@@ -248,11 +248,6 @@ function ParametresPage() {
   );
 }
 
-const PLAN_LABEL: Record<PlanCapabilities["plan"], string> = {
-  gratuit: "Gratuit",
-  lite: "Lite",
-  premium: "Premium",
-};
 
 const PLAN_BADGE: Record<PlanCapabilities["plan"], string> = {
   gratuit: "bg-muted text-muted-foreground",
