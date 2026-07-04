@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/app/theme-toggle";
-import { adminApi, type AppSettings } from "@/lib/admin-api";
+import { adminApi } from "@/lib/admin-api";
 import { supabase } from "@/integrations/supabase/client";
 import { updateSupportConfig } from "@/config/support";
 
@@ -341,6 +341,3 @@ function AdminAccountCard() {
     </section>
   );
 }
-
-// Silencier les imports inutilisés selon le linter (les icônes sont utilisées ci-dessus).
-export const _keep = { AppSettings } as unknown as { AppSettings?: AppSettings };
