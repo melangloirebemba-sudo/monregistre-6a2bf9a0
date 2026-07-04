@@ -61,6 +61,8 @@ type AbsenceRow = Absence & {
 function AbsencesPage() {
   const qc = useQueryClient();
   const { data: classes = [] } = useQuery(classesQO());
+  const { data: ecoles = [] } = useQuery(ecolesQO());
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const { data: absences = [], isLoading } = useQuery(
     absencesQO({ classeId: classeFilter === "all" ? undefined : classeFilter }),
@@ -103,21 +105,36 @@ function AbsencesPage() {
     return () => window.removeEventListener("online", onOnline);
   }, [qc]);
 
-  const filtered = useMemo(
-    () =>
-      absences.filter((a) => {
-        const s = `${a.eleve?.prenom ?? ""} ${a.eleve?.nom ?? ""} ${a.motif ?? ""}`.toLowerCase();
-        return s.includes(q.toLowerCase());
-      }),
-    [absences, q],
-  );
-
   const classeById = useMemo(
     () => Object.fromEntries(classes.map((c) => [c.id, c])),
     [classes],
   );
+  const ecoleById = useMemo(
+    () => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])),
+    [ecoles],
+  );
+  const classesForEcole = useMemo(
+    () => (ecoleFilter === "all" ? classes : classes.filter((c) => c.ecole_id === ecoleFilter)),
+    [classes, ecoleFilter],
+  );
+
+  const filtered = useMemo(
+    () =>
+      absences
+        .filter((a) => {
+          if (ecoleFilter === "all") return true;
+          const cls = a.eleve ? classeById[a.eleve.classe_id] : null;
+          return cls?.ecole_id === ecoleFilter;
+        })
+        .filter((a) => {
+          const s = `${a.eleve?.prenom ?? ""} ${a.eleve?.nom ?? ""} ${a.motif ?? ""}`.toLowerCase();
+          return s.includes(q.toLowerCase());
+        }),
+    [absences, q, ecoleFilter, classeById],
+  );
 
   const canAdd = classes.length > 0;
+
 
   return (
     <div className="px-5 pb-24 pt-5">
