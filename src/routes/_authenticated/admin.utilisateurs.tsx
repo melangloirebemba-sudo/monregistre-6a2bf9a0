@@ -159,6 +159,7 @@ function AdminContent() {
   const [activateTarget, setActivateTarget] = useState<AdminUser | null>(null);
   const [activatePlanChoice, setActivatePlanChoice] = useState<"lite" | "premium">("lite");
   const [activatePeriodeChoice, setActivatePeriodeChoice] = useState<PlanPeriode>("mensuelle");
+  const [historyTarget, setHistoryTarget] = useState<AdminUser | null>(null);
 
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
   const onRowKeyDown = (e: KeyboardEvent<HTMLTableRowElement>) => {
