@@ -332,12 +332,122 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
             <li>Pas d'export PDF des bulletins ni des rapports de classe.</li>
             <li>Rapports avancés et suivi de progression indisponibles.</li>
           </ul>
-          <p className="mt-2 text-ink/70">
-            Passez au plan <strong>Lite</strong> ou <strong>Premium</strong> pour débloquer les exports PDF et les rapports détaillés.
-          </p>
+          <div className="mt-3">
+            <UpgradeDialog currentPlan={caps.plan} variant="inline" />
+          </div>
         </div>
       )}
     </section>
   );
 }
+
+const UPGRADE_EMAIL = "contact@monregistre.app";
+
+function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanCapabilities["plan"]; variant?: "header" | "inline" }) {
+  const trigger =
+    variant === "header" ? (
+      <Button size="sm" className="bg-teal text-cream hover:bg-teal/90">
+        <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
+        Mettre à niveau
+      </Button>
+    ) : (
+      <Button size="sm" className="bg-teal text-cream hover:bg-teal/90">
+        <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
+        Voir les plans supérieurs
+      </Button>
+    );
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 font-display text-xl">
+            <Sparkles className="h-5 w-5 text-gold" aria-hidden="true" />
+            Passez à la vitesse supérieure
+          </DialogTitle>
+          <DialogDescription>
+            Vous êtes actuellement sur le plan <strong>{PLAN_LABEL[currentPlan]}</strong>. Débloquez plus de capacité et toutes les fonctionnalités avancées.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <UpgradeTier
+            icon={<Zap className="h-4 w-4 text-gold" aria-hidden="true" />}
+            title="Lite"
+            tagline="Pour élargir votre suivi"
+            benefits={[
+              "Jusqu'à 2 écoles & 2 classes par école",
+              "Nombre d'élèves illimité",
+              "Export PDF des bulletins & rapports",
+              "Rapports détaillés (moyennes, distribution)",
+            ]}
+          />
+          <UpgradeTier
+            icon={<Crown className="h-4 w-4 text-teal" aria-hidden="true" />}
+            title="Premium"
+            highlight
+            tagline="Tout, sans limite"
+            benefits={[
+              "Écoles, classes et élèves illimités",
+              "Export PDF illimité",
+              "Rapports & suivi de progression avancé",
+              "Support prioritaire",
+            ]}
+          />
+        </div>
+
+        <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-ink/80">
+          <p className="font-semibold text-ink">Comment mettre à niveau ?</p>
+          <p className="mt-1">
+            Contactez-nous pour activer votre nouveau plan. Nous vous accompagnons pour choisir la formule adaptée à votre établissement.
+          </p>
+        </div>
+
+        <DialogFooter className="gap-2 sm:justify-between">
+          <a
+            href={`mailto:${UPGRADE_EMAIL}?subject=${encodeURIComponent("Demande de mise à niveau MonRegistre")}&body=${encodeURIComponent(`Bonjour,\n\nJe souhaite passer du plan ${PLAN_LABEL[currentPlan]} à un plan supérieur.\n\nMerci.`)}`}
+            className="inline-flex items-center justify-center gap-1.5 rounded-md bg-teal px-3 py-2 text-sm font-medium text-cream hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
+          >
+            <Mail className="h-4 w-4" aria-hidden="true" />
+            Nous contacter
+          </a>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function UpgradeTier({
+  icon,
+  title,
+  tagline,
+  benefits,
+  highlight,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  tagline: string;
+  benefits: string[];
+  highlight?: boolean;
+}) {
+  return (
+    <div className={`rounded-lg border p-3 ${highlight ? "border-teal/60 bg-teal/5" : "border-border bg-background/60"}`}>
+      <div className="flex items-center gap-1.5">
+        {icon}
+        <h3 className="font-serif text-base text-ink">{title}</h3>
+      </div>
+      <p className="text-[11px] text-muted-foreground">{tagline}</p>
+      <ul className="mt-2 space-y-1">
+        {benefits.map((b) => (
+          <li key={b} className="flex items-start gap-1.5 text-xs text-ink/80">
+            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal" aria-hidden="true" />
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 
