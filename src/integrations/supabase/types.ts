@@ -426,7 +426,9 @@ export type Database = {
           matiere_principale: string | null
           nom_affiche: string
           nom_famille: string | null
+          plan: Database["public"]["Enums"]["app_plan"]
           prenom: string | null
+          statut: Database["public"]["Enums"]["user_statut"]
           telephone: string | null
           updated_at: string
           user_id: string
@@ -442,7 +444,9 @@ export type Database = {
           matiere_principale?: string | null
           nom_affiche?: string
           nom_famille?: string | null
+          plan?: Database["public"]["Enums"]["app_plan"]
           prenom?: string | null
+          statut?: Database["public"]["Enums"]["user_statut"]
           telephone?: string | null
           updated_at?: string
           user_id: string
@@ -458,7 +462,9 @@ export type Database = {
           matiere_principale?: string | null
           nom_affiche?: string
           nom_famille?: string | null
+          plan?: Database["public"]["Enums"]["app_plan"]
           prenom?: string | null
+          statut?: Database["public"]["Enums"]["user_statut"]
           telephone?: string | null
           updated_at?: string
           user_id?: string
@@ -528,15 +534,48 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_plan: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_plan"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_plan: "gratuit" | "lite" | "premium"
+      app_role: "admin" | "user"
+      user_statut: "actif" | "suspendu"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -663,6 +702,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_plan: ["gratuit", "lite", "premium"],
+      app_role: ["admin", "user"],
+      user_statut: ["actif", "suspendu"],
+    },
   },
 } as const

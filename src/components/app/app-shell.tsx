@@ -13,10 +13,12 @@ import {
   BookOpen,
   Settings,
   BookMarked,
+  Shield,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { profilQueryOptions } from "@/lib/queries/profil";
+import { currentUserRolesQO } from "@/lib/queries/admin";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -59,6 +61,8 @@ function isActive(pathname: string, to: string) {
 export function AppShell({ children }: AppShellProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: roles } = useQuery(currentUserRolesQO());
+  const isAdmin = (roles ?? []).includes("admin");
   const navigate = useNavigate();
 
   const initiales = profil?.initiales?.slice(0, 2).toUpperCase() ?? "EM";
@@ -106,6 +110,20 @@ export function AppShell({ children }: AppShellProps) {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={[
+                "mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                isActive(pathname, "/admin")
+                  ? "bg-teal/30 text-gold-soft"
+                  : "bg-teal/15 text-ink-foreground/90 hover:bg-teal/25",
+              ].join(" ")}
+            >
+              <Shield className="h-4 w-4 shrink-0" />
+              <span className="truncate">Espace admin</span>
+            </Link>
+          )}
         </nav>
         <div className="border-t border-white/10 p-3">
           <DropdownMenu>
