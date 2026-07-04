@@ -168,7 +168,7 @@ function EcolesPage() {
         </ul>
       )}
 
-      <FloatingAdd onClick={handleAdd} disabled={atLimit} />
+      <FloatingAdd onClick={handleAdd} locked={atLimit} />
 
 
       <EcoleDialog
@@ -183,9 +183,18 @@ function EcolesPage() {
         ecole={toDelete}
         onDone={() => setToDelete(null)}
       />
+
+      <UpgradeDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        currentPlan={currentPlan}
+        ecoleNom={caps ? (ecoles[0]?.nom ?? "") : ""}
+        maxEcoles={maxEcoles}
+      />
     </div>
   );
 }
+
 
 function EmptyState({ onAdd, disabled }: { onAdd: () => void; disabled?: boolean }) {
   return (
