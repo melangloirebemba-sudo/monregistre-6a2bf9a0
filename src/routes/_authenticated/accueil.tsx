@@ -14,12 +14,13 @@ import {
   CalendarX,
   AlertTriangle,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
-import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO } from "@/lib/queries/data";
+import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
+import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   head: () => ({
@@ -34,11 +35,14 @@ export const Route = createFileRoute("/_authenticated/accueil")({
 function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: counts } = useQuery(countsQueryOptions());
+  const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: creneaux = [] } = useQuery(creneauxQO());
   const { data: classes = [] } = useQuery(classesQO());
   const { data: notes = [] } = useQuery(notesQO());
   const { data: absences = [] } = useQuery(absencesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
+
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
 
   const reminderPrefs = useReminderPrefs();
 
@@ -129,7 +133,10 @@ function AccueilPage() {
   };
   const todayCreneaux = creneaux
     .filter((c) => c.jour_semaine === todayIso)
+    .filter((c) => ecoleFilter === "all" || c.ecole_id === ecoleFilter)
     .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut));
+
+  const selectedEcole = ecoles.find((e) => e.id === ecoleFilter);
 
   const badges = [
     { label: "Écoles", value: counts?.ecoles ?? 0 },
