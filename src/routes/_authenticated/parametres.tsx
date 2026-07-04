@@ -151,6 +151,7 @@ function ParametresPage() {
       </div>
 
       {caps && <PlanCard caps={caps} />}
+      {caps && !caps.isAdmin && <PlanActivationsHistory />}
 
 
       <form
