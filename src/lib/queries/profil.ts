@@ -28,6 +28,32 @@ export interface PlanCapabilities {
   max_eleves: number;
 }
 
+export interface PlanLimitsRow {
+  plan: "gratuit" | "lite" | "premium";
+  bulletins_pdf: boolean;
+  rapports: boolean;
+  progression: boolean;
+  max_ecoles: number;
+  max_classes_par_ecole: number;
+  max_eleves: number;
+}
+
+export function planLimitsQO(plan: "gratuit" | "lite" | "premium") {
+  return queryOptions({
+    queryKey: ["plan-limits", plan],
+    staleTime: 60_000,
+    queryFn: async (): Promise<PlanLimitsRow | null> => {
+      const { data } = await supabase
+        .from("plan_limits")
+        .select("plan, bulletins_pdf, rapports, progression, max_ecoles, max_classes_par_ecole, max_eleves")
+        .eq("plan", plan)
+        .maybeSingle();
+      return (data as PlanLimitsRow | null) ?? null;
+    },
+  });
+}
+
+
 export function planCapabilitiesQO() {
   return queryOptions({
     queryKey: ["plan-capabilities"],
