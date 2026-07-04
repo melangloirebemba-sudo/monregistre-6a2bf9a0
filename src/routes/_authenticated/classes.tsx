@@ -60,9 +60,13 @@ function ClassesPage() {
     [classes, q],
   );
 
+  const pg = usePagination(filtered.length);
+  const paged = pg.slice(filtered);
+
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
 
   const canAdd = ecoles.length > 0;
+
 
   return (
     <div className="px-5 pb-24 pt-5">
