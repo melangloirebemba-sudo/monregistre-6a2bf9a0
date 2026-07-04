@@ -99,7 +99,7 @@ function ElevesPage() {
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
   const canAdd = classes.length > 0;
 
-  const pg = usePagination(filtered.length);
+  const pg = usePagination(filtered.length, 20, [q, ecoleFilter, classeFilter]);
   const paged = pg.slice(filtered);
 
   const grouped = useMemo(() => {

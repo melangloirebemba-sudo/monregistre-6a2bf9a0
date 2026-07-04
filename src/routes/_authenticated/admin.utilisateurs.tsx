@@ -103,7 +103,7 @@ function AdminContent() {
     return sortDir === "asc" ? sorted : sorted.reverse();
   }, [users, q, sortKey, sortDir]);
 
-  const pg = usePagination(filtered.length);
+  const pg = usePagination(filtered.length, 20, [q, sortKey, sortDir]);
   const paged = pg.slice(filtered);
 
 

@@ -13,7 +13,11 @@ import { cn } from "@/lib/utils";
 export const PAGE_SIZE_OPTIONS = [20, 50, 100] as const;
 export const DEFAULT_PAGE_SIZE = 20;
 
-export function usePagination(totalCount: number, defaultSize: number = DEFAULT_PAGE_SIZE) {
+export function usePagination(
+  totalCount: number,
+  defaultSize: number = DEFAULT_PAGE_SIZE,
+  resetDeps: React.DependencyList = [],
+) {
   const [pageSize, setPageSize] = React.useState<number>(defaultSize);
   const [page, setPage] = React.useState<number>(1);
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -21,10 +25,11 @@ export function usePagination(totalCount: number, defaultSize: number = DEFAULT_
   const start = (safePage - 1) * pageSize;
   const end = Math.min(start + pageSize, totalCount);
 
-  // Reset on total change
+  // Reset on total, page size, or external dep change (filters, sort…)
   React.useEffect(() => {
     setPage(1);
-  }, [totalCount, pageSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalCount, pageSize, ...resetDeps]);
 
   return {
     page: safePage,
