@@ -50,12 +50,26 @@ export interface AdminUser {
   roles: string[];
 }
 
+export interface PlanActivation {
+  id: string;
+  plan: "gratuit" | "lite" | "premium";
+  periode: PlanPeriode | null;
+  plan_started_at: string;
+  plan_expires_at: string | null;
+  activated_by: string | null;
+  activated_by_email: string | null;
+  note: string | null;
+  created_at: string;
+}
+
 export const adminApi = {
   listUsers: () => callAdminApi<{ users: AdminUser[] }>("listUsers").then((r) => r.users),
   updatePlan: (userId: string, plan: "gratuit" | "lite" | "premium") =>
     callAdminApi<{ ok: true }>("updatePlan", { userId, plan }),
-  activatePlan: (userId: string, plan: "lite" | "premium", periode: PlanPeriode) =>
-    callAdminApi<{ ok: true; plan_expires_at: string }>("activatePlan", { userId, plan, periode }),
+  activatePlan: (userId: string, plan: "lite" | "premium", periode: PlanPeriode, note?: string) =>
+    callAdminApi<{ ok: true; plan_expires_at: string }>("activatePlan", { userId, plan, periode, note }),
+  activationsList: (userId: string) =>
+    callAdminApi<{ activations: PlanActivation[] }>("activations.list", { userId }).then((r) => r.activations),
   setSuspension: (userId: string, suspendre: boolean) =>
     callAdminApi<{ ok: true }>("setSuspension", { userId, suspendre }),
   resetPassword: (userId: string, newPassword: string) =>
