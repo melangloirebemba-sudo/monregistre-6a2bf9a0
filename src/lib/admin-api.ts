@@ -32,6 +32,8 @@ async function callAdminApi<T = unknown>(action: string, params: Record<string, 
 }
 
 /* ---------- Users ---------- */
+export type PlanPeriode = "mensuelle" | "trimestrielle" | "annuelle";
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -42,6 +44,9 @@ export interface AdminUser {
   nom_affiche: string | null;
   plan: "gratuit" | "lite" | "premium";
   statut: "actif" | "suspendu";
+  plan_periode: PlanPeriode | null;
+  plan_started_at: string | null;
+  plan_expires_at: string | null;
   roles: string[];
 }
 
@@ -49,6 +54,8 @@ export const adminApi = {
   listUsers: () => callAdminApi<{ users: AdminUser[] }>("listUsers").then((r) => r.users),
   updatePlan: (userId: string, plan: "gratuit" | "lite" | "premium") =>
     callAdminApi<{ ok: true }>("updatePlan", { userId, plan }),
+  activatePlan: (userId: string, plan: "lite" | "premium", periode: PlanPeriode) =>
+    callAdminApi<{ ok: true; plan_expires_at: string }>("activatePlan", { userId, plan, periode }),
   setSuspension: (userId: string, suspendre: boolean) =>
     callAdminApi<{ ok: true }>("setSuspension", { userId, suspendre }),
   resetPassword: (userId: string, newPassword: string) =>

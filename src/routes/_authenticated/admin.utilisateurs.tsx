@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown, ArrowUp, ArrowDown, ArrowUpDown, Sparkles, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { adminApi, type AdminUser, type PlanLimit } from "@/lib/admin-api";
+import { adminApi, type AdminUser, type PlanLimit, type PlanPeriode } from "@/lib/admin-api";
 import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
 import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 
@@ -121,6 +121,17 @@ function AdminContent() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const activatePlan = useMutation({
+    mutationFn: (v: { userId: string; plan: "lite" | "premium"; periode: PlanPeriode }) =>
+      adminApi.activatePlan(v.userId, v.plan, v.periode),
+    onSuccess: (r) => {
+      const d = new Date(r.plan_expires_at).toLocaleDateString("fr-FR");
+      toast.success(`Plan activé — expire le ${d}`);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const toggleSuspend = useMutation({
     mutationFn: (v: { userId: string; suspendre: boolean }) => adminApi.setSuspension(v.userId, v.suspendre),
     onSuccess: (_r, v) => {
@@ -145,6 +156,9 @@ function AdminContent() {
   const [pwdTarget, setPwdTarget] = useState<AdminUser | null>(null);
   const [newPwd, setNewPwd] = useState("");
   const [delTarget, setDelTarget] = useState<AdminUser | null>(null);
+  const [activateTarget, setActivateTarget] = useState<AdminUser | null>(null);
+  const [activatePlanChoice, setActivatePlanChoice] = useState<"lite" | "premium">("lite");
+  const [activatePeriodeChoice, setActivatePeriodeChoice] = useState<PlanPeriode>("mensuelle");
 
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
   const onRowKeyDown = (e: KeyboardEvent<HTMLTableRowElement>) => {
@@ -314,6 +328,16 @@ function AdminContent() {
                             <SelectItem value="premium">{PLAN_LABELS.premium}</SelectItem>
                           </SelectContent>
                         </Select>
+                        {u.plan !== "gratuit" && u.plan_expires_at && (
+                          <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Clock aria-hidden="true" className="h-3 w-3" />
+                            <span>
+                              {new Date(u.plan_expires_at).getTime() <= Date.now()
+                                ? "Expiré"
+                                : `Expire le ${new Date(u.plan_expires_at).toLocaleDateString("fr-FR")}`}
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-3">
                         {suspended ? (
@@ -354,6 +378,19 @@ function AdminContent() {
                           <Button
                             size="sm"
                             variant="outline"
+                            aria-label={`Activer un plan pour ${displayName}`}
+                            onClick={() => {
+                              setActivateTarget(u);
+                              setActivatePlanChoice(u.plan === "premium" ? "premium" : "lite");
+                              setActivatePeriodeChoice(u.plan_periode ?? "mensuelle");
+                            }}
+                          >
+                            <Sparkles aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> Activer
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
                             aria-label={`Réinitialiser le mot de passe de ${displayName}`}
                             onClick={() => { setPwdTarget(u); setNewPwd(""); }}
                           >
@@ -382,6 +419,70 @@ function AdminContent() {
         )}
       </div>
 
+
+      {/* Dialog activer un plan */}
+      <Dialog open={!!activateTarget} onOpenChange={(v) => !v && setActivateTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-teal" aria-hidden="true" /> Activer un plan
+            </DialogTitle>
+            <DialogDescription>
+              Activation d'un plan payant pour <strong>{activateTarget?.email}</strong>.
+              La date d'expiration est calculée automatiquement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="activate-plan">Plan</Label>
+              <Select value={activatePlanChoice} onValueChange={(v) => setActivatePlanChoice(v as "lite" | "premium")}>
+                <SelectTrigger id="activate-plan"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lite">{PLAN_LABELS.lite}</SelectItem>
+                  <SelectItem value="premium">{PLAN_LABELS.premium}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="activate-periode">Période</Label>
+              <Select value={activatePeriodeChoice} onValueChange={(v) => setActivatePeriodeChoice(v as PlanPeriode)}>
+                <SelectTrigger id="activate-periode"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mensuelle">Mensuelle — 30 jours</SelectItem>
+                  <SelectItem value="trimestrielle">Trimestrielle — 90 jours</SelectItem>
+                  <SelectItem value="annuelle">Annuelle — 300 jours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-ink/80">
+              {(() => {
+                const days = activatePeriodeChoice === "mensuelle" ? 30 : activatePeriodeChoice === "trimestrielle" ? 90 : 300;
+                const exp = new Date(Date.now() + days * 86_400_000).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+                return (
+                  <>
+                    Récapitulatif : plan <strong>{PLAN_LABELS[activatePlanChoice]}</strong> pour <strong>{days} jours</strong> — expire le <strong>{exp}</strong>.
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setActivateTarget(null)}>Annuler</Button>
+            <Button
+              disabled={activatePlan.isPending}
+              onClick={() => {
+                if (!activateTarget) return;
+                activatePlan.mutate(
+                  { userId: activateTarget.id, plan: activatePlanChoice, periode: activatePeriodeChoice },
+                  { onSuccess: () => setActivateTarget(null) },
+                );
+              }}
+            >
+              {activatePlan.isPending ? "Activation…" : "Confirmer l'activation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog reset password */}
       <Dialog open={!!pwdTarget} onOpenChange={(v) => !v && setPwdTarget(null)}>
