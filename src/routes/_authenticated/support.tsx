@@ -3,6 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { LifeBuoy, MessageCircle, Mail, ChevronDown, Copy, Check, Sparkles, ArrowUpRight } from "lucide-react";
 import { profilQueryOptions, planCapabilitiesQO, planLimitsQO } from "@/lib/queries/profil";
+import {
+  SUPPORT_EMAIL,
+  WHATSAPP_DISPLAY,
+  PLAN_LABEL,
+  supportWhatsAppHref,
+  upgradeWhatsAppHref,
+  supportMailtoHref,
+} from "@/config/support";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/support")({
@@ -15,16 +23,6 @@ export const Route = createFileRoute("/_authenticated/support")({
   component: SupportPage,
 });
 
-// wa.me exige le numéro en format international sans "+", sans zéro initial ni espace.
-// +242 06 962 65 40 → 24269626540
-const WHATSAPP_NUMBER = "24269626540";
-const SUPPORT_EMAIL = "support@monregistre.app";
-
-const PLAN_LABEL: Record<"gratuit" | "lite" | "premium", string> = {
-  gratuit: "Gratuit",
-  lite: "Lite",
-  premium: "Premium",
-};
 
 function fmtQuota(n: number | null | undefined, unite: string): string {
   if (n === null || n === undefined) return `${unite} — non défini`;
@@ -99,15 +97,6 @@ function buildFaq(
 }
 
 
-function buildWhatsAppMessage(ecole: string, plan: string) {
-  const lines = [
-    "Bonjour, je souhaite obtenir de l'aide concernant MonRegistre.",
-    "",
-    `École : ${ecole || "(non renseignée)"}`,
-    `Plan actuel : ${plan}`,
-  ];
-  return lines.join("\n");
-}
 
 function SupportPage() {
   const { data: profil } = useQuery(profilQueryOptions());
@@ -122,19 +111,9 @@ function SupportPage() {
   const currentPlan = caps?.plan ?? "gratuit";
   const planLabel = PLAN_LABEL[currentPlan];
   const isGratuit = currentPlan === "gratuit";
-  const waHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    buildWhatsAppMessage(ecoleNom, planLabel),
-  )}`;
-  const upgradeMsg = [
-    `Bonjour, je souhaite passer du plan ${planLabel} à un plan supérieur sur MonRegistre.`,
-    "",
-    `École : ${ecoleNom || "(non renseignée)"}`,
-    `Plan actuel : ${planLabel}`,
-  ].join("\n");
-  const upgradeWaHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(upgradeMsg)}`;
-  const mailHref = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-    "Support MonRegistre",
-  )}&body=${encodeURIComponent(buildWhatsAppMessage(ecoleNom, planLabel))}`;
+  const waHref = supportWhatsAppHref(ecoleNom, planLabel);
+  const upgradeWaHref = upgradeWhatsAppHref(ecoleNom, planLabel);
+  const mailHref = supportMailtoHref(ecoleNom, planLabel);
 
   const [copied, setCopied] = useState(false);
   const copyEmail = async () => {
@@ -177,7 +156,7 @@ function SupportPage() {
             <span className="block text-xs text-muted-foreground">
               Message pré-rempli avec votre école et plan
             </span>
-            <span className="mt-1 block truncate text-xs text-teal">+242 06 962 65 40</span>
+            <span className="mt-1 block truncate text-xs text-teal">{WHATSAPP_DISPLAY}</span>
           </span>
         </a>
 

@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { PLAN_LABEL, upgradeWhatsAppHref } from "@/config/support";
 
 export const Route = createFileRoute("/_authenticated/parametres")({
   head: () => ({ meta: [{ title: "Paramètres — MonRegistre" }] }),
@@ -247,11 +248,6 @@ function ParametresPage() {
   );
 }
 
-const PLAN_LABEL: Record<PlanCapabilities["plan"], string> = {
-  gratuit: "Gratuit",
-  lite: "Lite",
-  premium: "Premium",
-};
 
 const PLAN_BADGE: Record<PlanCapabilities["plan"], string> = {
   gratuit: "bg-muted text-muted-foreground",
@@ -346,13 +342,7 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
 function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanCapabilities["plan"]; variant?: "header" | "inline" }) {
   const { data: profil } = useQuery(profilQueryOptions());
   const ecoleNom = profil?.etablissement?.trim() ?? "";
-  const waMessage = [
-    `Bonjour, je souhaite passer du plan ${PLAN_LABEL[currentPlan]} à un plan supérieur sur MonRegistre.`,
-    "",
-    `École : ${ecoleNom || "(non renseignée)"}`,
-    `Plan actuel : ${PLAN_LABEL[currentPlan]}`,
-  ].join("\n");
-  const waHref = `https://wa.me/24269626540?text=${encodeURIComponent(waMessage)}`;
+  const waHref = upgradeWhatsAppHref(ecoleNom, PLAN_LABEL[currentPlan]);
 
   const trigger =
     variant === "header" ? (
