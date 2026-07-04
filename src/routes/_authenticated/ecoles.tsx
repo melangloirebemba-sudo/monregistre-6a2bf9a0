@@ -115,10 +115,13 @@ function EcolesPage() {
 
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement…</p>
+        <ListSkeleton rows={4} />
       ) : filtered.length === 0 ? (
-        <EmptyState onAdd={handleAdd} locked={atLimit} />
-      ) : (
+        ecoles.length === 0 ? (
+          <EmptyState onAdd={handleAdd} locked={atLimit} />
+        ) : (
+          <NoResults query={q} onReset={() => setQ("")} resetLabel="Effacer la recherche" />
+        )
         <div className="space-y-3">
           <ul className="space-y-3">
             {paged.map((e) => (
