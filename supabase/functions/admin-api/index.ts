@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       }
 
       case "activatePlan": {
-        const { userId, plan, periode } = payload;
+        const { userId, plan, periode, note } = payload;
         if (!userId || !["lite", "premium"].includes(plan))
           return json({ error: "Plan invalide (lite ou premium)" }, 400);
         if (!["mensuelle", "trimestrielle", "annuelle"].includes(periode))
@@ -113,8 +113,34 @@ Deno.serve(async (req) => {
           statut: "actif",
         }).eq("user_id", userId);
         if (error) throw error;
+        // Journal d'historique
+        const { error: logErr } = await admin.from("plan_activations").insert({
+          user_id: userId,
+          plan,
+          periode,
+          plan_started_at: now.toISOString(),
+          plan_expires_at: expiresAt.toISOString(),
+          activated_by: uid,
+          activated_by_email: userRes.user.email ?? null,
+          note: typeof note === "string" && note.trim() ? note.trim() : null,
+        });
+        if (logErr) console.error("[admin-api] plan_activations insert failed", logErr.message);
         return json({ ok: true, plan_expires_at: expiresAt.toISOString() });
       }
+
+      case "activations.list": {
+        const { userId } = payload;
+        if (!userId) return json({ error: "Bad input" }, 400);
+        const { data, error } = await admin
+          .from("plan_activations")
+          .select("id, plan, periode, plan_started_at, plan_expires_at, activated_by, activated_by_email, note, created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(200);
+        if (error) throw error;
+        return json({ activations: data ?? [] });
+      }
+
 
       case "setSuspension": {
         const { userId, suspendre } = payload;

@@ -414,6 +414,45 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_activations: {
+        Row: {
+          activated_by: string | null
+          activated_by_email: string | null
+          created_at: string
+          id: string
+          note: string | null
+          periode: Database["public"]["Enums"]["plan_periode"] | null
+          plan: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at: string | null
+          plan_started_at: string
+          user_id: string
+        }
+        Insert: {
+          activated_by?: string | null
+          activated_by_email?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          periode?: Database["public"]["Enums"]["plan_periode"] | null
+          plan: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at?: string | null
+          plan_started_at?: string
+          user_id: string
+        }
+        Update: {
+          activated_by?: string | null
+          activated_by_email?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          periode?: Database["public"]["Enums"]["plan_periode"] | null
+          plan?: Database["public"]["Enums"]["app_plan"]
+          plan_expires_at?: string | null
+          plan_started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plan_limits: {
         Row: {
           bulletins_pdf: boolean
