@@ -9,8 +9,10 @@ import {
   Plus,
   CalendarDays,
   BookOpen,
+  MapPin,
 } from "lucide-react";
 import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
+import { creneauxQO } from "@/lib/queries/data";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   head: () => ({
