@@ -19,6 +19,8 @@ import { profilQueryOptions } from "@/lib/queries/profil";
 
 import { noteColorClass, formatNote } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -96,6 +98,11 @@ function NotesPage() {
         }),
     [notes, q, ecoleFilter, classeById],
   );
+
+  const pg = usePagination(filtered.length, 20, [q, ecoleFilter, classeFilter, periodeFilter]);
+  const paged = pg.slice(filtered);
+
+
 
 
   const canAdd = eleves.length > 0 || classes.length > 0;
@@ -183,20 +190,32 @@ function NotesPage() {
           Créez d'abord une classe et un élève pour saisir des notes.
         </div>
       ) : isLoading ? (
-        <p className="text-sm text-muted-foreground">Chargement…</p>
+        <ListSkeleton rows={5} />
       ) : filtered.length === 0 ? (
-        <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
-            <ClipboardList className="h-6 w-6" />
-          </span>
-          <div>
-            <div className="font-display text-lg font-semibold">Aucune note</div>
-            <p className="mt-1 text-sm text-muted-foreground">Saisissez votre première note.</p>
+        notes.length === 0 ? (
+          <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
+              <ClipboardList className="h-6 w-6" />
+            </span>
+            <div>
+              <div className="font-display text-lg font-semibold">Aucune note</div>
+              <p className="mt-1 text-sm text-muted-foreground">Saisissez votre première note.</p>
+            </div>
+            <Button onClick={() => { setEditing(null); setOpen(true); }}>
+              <Plus className="mr-1 h-4 w-4" /> Ajouter une note
+            </Button>
           </div>
-          <Button onClick={() => { setEditing(null); setOpen(true); }}>
-            <Plus className="mr-1 h-4 w-4" /> Ajouter une note
-          </Button>
-        </div>
+        ) : (
+          <NoResults
+            query={q}
+            onReset={() => {
+              setQ("");
+              setEcoleFilter("all");
+              setClasseFilter("all");
+              setPeriodeFilter("all");
+            }}
+          />
+        )
       ) : (
         (() => {
           const renderItem = (n: NoteRow) => {
@@ -230,30 +249,49 @@ function NotesPage() {
               </li>
             );
           };
-          if (ecoleFilter === "all") {
-            const map = new Map<string, NoteRow[]>();
-            filtered.forEach((n) => {
-              const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
-              const key = cls?.ecole_id ?? "__unknown__";
-              const list = map.get(key) ?? [];
-              list.push(n);
-              map.set(key, list);
-            });
-            const grouped = Array.from(map.entries()).sort((a, b) =>
-              (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
-            );
-            return (
-              <div className="space-y-4">
-                {grouped.map(([ecoleId, list]) => (
-                  <section key={ecoleId}>
-                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                    <ul className="space-y-2">{list.map(renderItem)}</ul>
-                  </section>
-                ))}
-              </div>
-            );
-          }
-          return <ul className="space-y-2">{filtered.map(renderItem)}</ul>;
+          const listView = (() => {
+            if (ecoleFilter === "all") {
+              const map = new Map<string, NoteRow[]>();
+              paged.forEach((n) => {
+                const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
+                const key = cls?.ecole_id ?? "__unknown__";
+                const list = map.get(key) ?? [];
+                list.push(n);
+                map.set(key, list);
+              });
+              const grouped = Array.from(map.entries()).sort((a, b) =>
+                (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+              );
+              return (
+                <div className="space-y-4">
+                  {grouped.map(([ecoleId, list]) => (
+                    <section key={ecoleId}>
+                      <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
+                      <ul className="space-y-2">{list.map(renderItem)}</ul>
+                    </section>
+                  ))}
+                </div>
+              );
+            }
+            return <ul className="space-y-2">{paged.map(renderItem)}</ul>;
+          })();
+          return (
+            <div className="space-y-3">
+              {listView}
+              <DataPagination
+                page={pg.page}
+                totalPages={pg.totalPages}
+                pageSize={pg.pageSize}
+                totalCount={notes.length}
+                filteredCount={filtered.length}
+                start={pg.start}
+                end={pg.end}
+                onPageChange={pg.setPage}
+                onPageSizeChange={pg.setPageSize}
+                itemLabel="notes"
+              />
+            </div>
+          );
         })()
       )}
 

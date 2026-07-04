@@ -23,6 +23,8 @@ import { moyennePonderee, noteColorClass } from "@/lib/format";
 import { generateBulletinPDF } from "@/lib/pdf/bulletin";
 import { generateClasseRapportPDF } from "@/lib/pdf/classe-rapport";
 import { Button } from "@/components/ui/button";
+import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -53,7 +55,7 @@ function RapportsPage() {
 
   const { data: classes = [] } = useQuery(classesQO(ecoleId || undefined));
   const { data: eleves = [] } = useQuery(elevesQO(classeId || undefined));
-  const { data: notes = [] } = useQuery(
+  const { data: notes = [], isLoading: notesLoading } = useQuery(
     notesQO({ classeId: classeId || undefined, periodeId: periodeId || undefined }),
   );
 
@@ -335,35 +337,15 @@ function RapportsPage() {
                 L'export PDF des bulletins est disponible à partir du plan <strong>Lite</strong>. Votre plan actuel est <strong>{caps?.plan ?? "gratuit"}</strong>.
               </p>
             )}
-            <ul className="divide-y divide-ink/10">
-              {stats.sorted.map(({ eleve, moyenne, nbNotes }) => (
-                <li key={eleve.id} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-medium text-ink truncate">{eleve.prenom} {eleve.nom}</p>
-                    <p className="text-xs text-ink/60">{nbNotes} note{nbNotes > 1 ? "s" : ""}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`px-2 py-1 rounded-md text-xs font-semibold ${noteColorClass(moyenne, echelle)}`}>
-                      {moyenne.toFixed(2)}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleExport(eleve.id)}
-                      disabled={!canPdf}
-                      aria-disabled={!canPdf}
-                      title={!canPdf ? "Export PDF réservé aux plans Lite et Premium" : `Exporter le bulletin de ${eleve.prenom} ${eleve.nom}`}
-                    >
-                      <FileDown className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-              {!stats.sorted.length && (
-                <li className="py-6 text-center text-sm text-ink/60">Aucun élève noté.</li>
-              )}
-            </ul>
+            <BulletinsList
+              sorted={stats.sorted}
+              echelle={echelle}
+              canPdf={canPdf}
+              isLoading={notesLoading}
+              onExport={handleExport}
+            />
           </div>
+
 
         </>
       )}
@@ -421,6 +403,81 @@ function RankList({
         ))}
         {!items.length && <li className="text-sm text-ink/50">—</li>}
       </ul>
+    </div>
+  );
+}
+
+type BulletinEntry = {
+  eleve: { id: string; nom: string; prenom: string };
+  moyenne: number;
+  nbNotes: number;
+};
+
+function BulletinsList({
+  sorted,
+  echelle,
+  canPdf,
+  isLoading,
+  onExport,
+}: {
+  sorted: BulletinEntry[];
+  echelle: number;
+  canPdf: boolean;
+  isLoading: boolean;
+  onExport: (id: string) => void;
+}) {
+  const pg = usePagination(sorted.length, 20);
+  const paged = pg.slice(sorted);
+
+  if (isLoading) {
+    return <ListSkeleton rows={4} className="mt-1" />;
+  }
+  if (sorted.length === 0) {
+    return (
+      <NoResults
+        title="Aucun élève noté"
+        description="Aucun élève n'a de note calculable pour cette sélection."
+      />
+    );
+  }
+  return (
+    <div className="space-y-3">
+      <ul className="divide-y divide-ink/10">
+        {paged.map(({ eleve, moyenne, nbNotes }) => (
+          <li key={eleve.id} className="py-2.5 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium text-ink truncate">{eleve.prenom} {eleve.nom}</p>
+              <p className="text-xs text-ink/60">{nbNotes} note{nbNotes > 1 ? "s" : ""}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className={`px-2 py-1 rounded-md text-xs font-semibold ${noteColorClass(moyenne, echelle)}`}>
+                {moyenne.toFixed(2)}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onExport(eleve.id)}
+                disabled={!canPdf}
+                aria-disabled={!canPdf}
+                title={!canPdf ? "Export PDF réservé aux plans Lite et Premium" : `Exporter le bulletin de ${eleve.prenom} ${eleve.nom}`}
+              >
+                <FileDown className="h-4 w-4" />
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <DataPagination
+        page={pg.page}
+        totalPages={pg.totalPages}
+        pageSize={pg.pageSize}
+        totalCount={sorted.length}
+        start={pg.start}
+        end={pg.end}
+        onPageChange={pg.setPage}
+        onPageSizeChange={pg.setPageSize}
+        itemLabel="bulletins"
+      />
     </div>
   );
 }
