@@ -76,6 +76,10 @@ export const adminApi = {
     callAdminApi<{ ok: true }>("resetPassword", { userId, newPassword }),
   sendPasswordResetEmail: (userId: string, redirectTo?: string) =>
     callAdminApi<{ ok: true; email: string }>("sendPasswordResetEmail", { userId, redirectTo }),
+  passwordChangesLog: (params: { targetUserId?: string; source?: "self" | "reset" | "admin-reset" }) =>
+    callAdminApi<{ ok: true }>("passwordChanges.log", params),
+  passwordChangesList: (limit = 50) =>
+    callAdminApi<{ entries: AdminPasswordChange[] }>("passwordChanges.list", { limit }).then((r) => r.entries),
   deleteUser: (userId: string) =>
     callAdminApi<{ ok: true }>("deleteUser", { userId }),
   stats: () => callAdminApi<AdminStats>("stats"),
