@@ -106,17 +106,16 @@ function AdminContent() {
   const [delTarget, setDelTarget] = useState<AdminUser | null>(null);
 
   return (
-    <div className="space-y-5 px-5 py-5">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Espace administrateur</div>
-          <h1 className="mt-1 flex items-center gap-2 font-display text-3xl font-semibold text-foreground">
-            <Users className="h-7 w-7 text-teal" /> Gestion des utilisateurs
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Gérez les comptes, les plans et les statuts de tous les enseignants.
-          </p>
-        </div>
+    <div className="space-y-5 px-4 py-5 sm:px-5 sm:py-5">
+      <header>
+        <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Espace administrateur</div>
+        <h1 className="mt-1 flex items-center gap-2 font-display text-xl font-semibold text-foreground sm:text-2xl lg:text-3xl">
+          <Users className="h-6 w-6 shrink-0 text-teal sm:h-7 sm:w-7" />
+          <span className="truncate">Gestion des utilisateurs</span>
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Gérez les comptes, les plans et les statuts de tous les enseignants.
+        </p>
       </header>
 
       {/* Stats */}
@@ -152,10 +151,10 @@ function AdminContent() {
         <ul className="divide-y divide-border">
           {filtered.map((u) => (
             <li key={u.id} className="p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-foreground">{u.nom_affiche || u.email}</span>
+                    <span className="truncate font-medium text-foreground">{u.nom_affiche || u.email}</span>
                     {u.roles.includes("admin") && (
                       <Badge className="bg-teal text-cream">
                         <Crown className="mr-1 h-3 w-3" /> Admin
@@ -165,7 +164,7 @@ function AdminContent() {
                       <Badge variant="destructive">Suspendu</Badge>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground">{u.email}</div>
+                  <div className="truncate text-xs text-muted-foreground">{u.email}</div>
                   <div className="mt-1 text-[11px] text-muted-foreground">
                     Créé le {new Date(u.created_at).toLocaleDateString("fr-FR")}
                     {u.last_sign_in_at && (
@@ -175,9 +174,8 @@ function AdminContent() {
                   <PlanLimitsBadges limit={limitsByPlan.get(u.plan)} />
                 </div>
 
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="flex items-center gap-1.5">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:flex-wrap lg:items-center lg:justify-end">
+                  <div className="col-span-2 flex items-center gap-1.5 sm:col-span-1 lg:col-auto">
                     <Label className="sr-only">Plan</Label>
                     <Select
                       value={u.plan}
@@ -185,7 +183,7 @@ function AdminContent() {
                         changePlan.mutate({ userId: u.id, plan: v as AppPlan })
                       }
                     >
-                      <SelectTrigger className="h-8 w-32">
+                      <SelectTrigger className="h-8 w-full lg:w-32">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

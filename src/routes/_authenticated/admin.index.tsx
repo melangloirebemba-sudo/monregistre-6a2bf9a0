@@ -28,13 +28,14 @@ function AdminDashboard() {
 
 
   return (
-    <div className="space-y-6 px-5 py-6">
+    <div className="space-y-5 px-4 py-5 sm:space-y-6 sm:px-5 sm:py-6">
       <header>
         <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
           Backoffice
         </div>
-        <h1 className="mt-1 flex items-center gap-2 font-display text-3xl font-semibold text-foreground">
-          <ShieldCheck className="h-7 w-7 text-teal" /> Tableau de bord
+        <h1 className="mt-1 flex items-center gap-2 font-display text-xl font-semibold text-foreground sm:text-2xl lg:text-3xl">
+          <ShieldCheck className="h-6 w-6 shrink-0 text-teal sm:h-7 sm:w-7" />
+          <span className="truncate">Tableau de bord</span>
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Vue d'ensemble de la plateforme — comptes enseignants, plans et activité.

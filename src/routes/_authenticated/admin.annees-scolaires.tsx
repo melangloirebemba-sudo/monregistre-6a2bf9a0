@@ -119,14 +119,15 @@ function AdminAnneesPage() {
   });
 
   return (
-    <div className="space-y-5 px-5 py-6">
-      <header className="flex items-start justify-between gap-3">
-        <div>
+    <div className="space-y-5 px-4 py-5 sm:px-5 sm:py-6">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="min-w-0">
           <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
             Backoffice
           </div>
-          <h1 className="mt-1 flex items-center gap-2 font-display text-3xl font-semibold text-foreground">
-            <CalendarClock className="h-7 w-7 text-teal" /> Années scolaires
+          <h1 className="mt-1 flex items-center gap-2 font-display text-xl font-semibold text-foreground sm:text-2xl lg:text-3xl">
+            <CalendarClock className="h-6 w-6 shrink-0 text-teal sm:h-7 sm:w-7" />
+            <span className="truncate">Années scolaires</span>
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Gestion globale : créez, renommez, activez, clôturez ou supprimez les années
@@ -134,15 +135,17 @@ function AdminAnneesPage() {
           </p>
         </div>
         <Button
+          size="sm"
           onClick={() => {
             setNewLibelle("");
             setNewDebut("");
             setNewFin("");
             setCreateOpen(true);
           }}
-          className="shrink-0"
+          className="shrink-0 sm:size-default"
         >
-          <Plus className="mr-1 h-4 w-4" /> Nouvelle année
+          <Plus className="h-4 w-4 sm:mr-1" />
+          <span className="hidden sm:inline">Nouvelle année</span>
         </Button>
       </header>
 
@@ -165,10 +168,10 @@ function AdminAnneesPage() {
         <ul className="space-y-2">
           {data.map((a) => (
             <li key={a.libelle} className="card-elevated p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-display text-lg font-semibold text-foreground">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-display text-base font-semibold text-foreground sm:text-lg">
                       {a.libelle}
                     </span>
                     {a.active > 0 && (
@@ -193,7 +196,7 @@ function AdminAnneesPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end">
                   <Button
                     size="sm"
                     variant="outline"
@@ -240,7 +243,7 @@ function AdminAnneesPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    className="col-span-2 text-destructive hover:bg-destructive/10 hover:text-destructive sm:col-span-1"
                     disabled={remove.isPending}
                     onClick={() => setDeleteTarget(a)}
                   >
