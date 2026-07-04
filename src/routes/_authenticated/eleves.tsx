@@ -99,10 +99,13 @@ function ElevesPage() {
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
   const canAdd = classes.length > 0;
 
+  const pg = usePagination(filtered.length);
+  const paged = pg.slice(filtered);
+
   const grouped = useMemo(() => {
     if (ecoleFilter !== "all") return null;
-    const map = new Map<string, typeof filtered>();
-    filtered.forEach((e) => {
+    const map = new Map<string, typeof paged>();
+    paged.forEach((e) => {
       const list = map.get(e.ecole_id) ?? [];
       list.push(e);
       map.set(e.ecole_id, list);
@@ -110,7 +113,8 @@ function ElevesPage() {
     return Array.from(map.entries()).sort((a, b) =>
       (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
     );
-  }, [filtered, ecoleFilter, ecoleById]);
+  }, [paged, ecoleFilter, ecoleById]);
+
 
 
   return (
