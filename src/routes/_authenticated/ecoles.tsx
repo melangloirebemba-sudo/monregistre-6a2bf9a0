@@ -220,7 +220,7 @@ function FloatingAdd({ onClick, disabled }: { onClick: () => void; disabled?: bo
     </button>
   );
 }
-}
+
 
 function EcoleDialog({
   open,
