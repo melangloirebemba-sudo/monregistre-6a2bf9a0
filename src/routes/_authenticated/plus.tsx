@@ -6,6 +6,7 @@ import {
   BookOpen,
   Settings,
   ChevronRight,
+  UserCircle2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/plus")({
@@ -14,11 +15,12 @@ export const Route = createFileRoute("/_authenticated/plus")({
 });
 
 const items = [
+  { to: "/mon-profil", label: "Mon profil", desc: "Informations personnelles", icon: UserCircle2 },
   { to: "/notes", label: "Notes", desc: "Saisie et suivi des notes", icon: ClipboardList },
   { to: "/rapports", label: "Rapports & bulletins", desc: "Moyennes, classements, PDF", icon: BarChart3 },
   { to: "/emploi-du-temps", label: "Emploi du temps", desc: "Créneaux par classe et école", icon: CalendarDays },
   { to: "/progression", label: "Progression pédagogique", desc: "Séquences par trimestre", icon: BookOpen },
-  { to: "/parametres", label: "Paramètres", desc: "Profil, année scolaire, notation", icon: Settings },
+  { to: "/parametres", label: "Paramètres", desc: "Année scolaire, notation, périodes", icon: Settings },
 ] as const;
 
 function PlusPage() {
