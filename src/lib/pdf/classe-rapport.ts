@@ -62,7 +62,7 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
   };
 
   labelValue("École :", ctx.ecole?.nom, 15, y);
-  labelValue("Année scolaire :", ctx.periode?.annee_scolaire, pageW / 2 + 5, y);
+  labelValue("Année scolaire :", annee, pageW / 2 + 5, y);
 
   y += 6;
   labelValue("Classe :", ctx.classe?.nom, 15, y);
