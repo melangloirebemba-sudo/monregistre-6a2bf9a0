@@ -112,11 +112,7 @@ export function InstallPwaPrompt() {
 
   const close = () => {
     setVisible(false);
-    try {
-      sessionStorage.setItem(SESSION_DISMISS_KEY, "1");
-    } catch {
-      /* ignore */
-    }
+    markShown();
   };
 
   const install = async () => {
