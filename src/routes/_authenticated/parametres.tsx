@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Circle, Plus, Trash2 } from "lucide-react";
-import { profilQueryOptions, type Profil } from "@/lib/queries/profil";
+import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles } from "lucide-react";
+import { profilQueryOptions, planCapabilitiesQO, type Profil, type PlanCapabilities } from "@/lib/queries/profil";
 import { periodesQO, requireUserId, type Periode } from "@/lib/queries/data";
 import { supabase } from "@/integrations/supabase/client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
