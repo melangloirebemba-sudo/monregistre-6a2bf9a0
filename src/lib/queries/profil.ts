@@ -17,14 +17,29 @@ export interface Profil {
   plan?: "gratuit" | "lite" | "premium";
 }
 
+export interface PlanCapabilities {
+  plan: "gratuit" | "lite" | "premium";
+  isAdmin: boolean;
+  bulletins_pdf: boolean;
+  rapports: boolean;
+  progression: boolean;
+  max_ecoles: number;
+  max_classes_par_ecole: number;
+  max_eleves: number;
+}
+
 export function planCapabilitiesQO() {
   return queryOptions({
     queryKey: ["plan-capabilities"],
     staleTime: 60_000,
-    queryFn: async (): Promise<{ plan: "gratuit" | "lite" | "premium"; bulletins_pdf: boolean; isAdmin: boolean }> => {
+    queryFn: async (): Promise<PlanCapabilities> => {
+      const fallback: PlanCapabilities = {
+        plan: "gratuit", isAdmin: false, bulletins_pdf: false, rapports: false, progression: false,
+        max_ecoles: 1, max_classes_par_ecole: 1, max_eleves: 25,
+      };
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
-      if (!uid) return { plan: "gratuit", bulletins_pdf: false, isAdmin: false };
+      if (!uid) return fallback;
       const [{ data: prof }, { data: roles }] = await Promise.all([
         supabase.from("profils_enseignant").select("plan").eq("user_id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid),
@@ -33,14 +48,24 @@ export function planCapabilitiesQO() {
       const plan = ((prof as { plan?: string } | null)?.plan ?? "gratuit") as "gratuit" | "lite" | "premium";
       const { data: limits } = await supabase
         .from("plan_limits")
-        .select("bulletins_pdf")
+        .select("bulletins_pdf, rapports, progression, max_ecoles, max_classes_par_ecole, max_eleves")
         .eq("plan", plan)
         .maybeSingle();
-      const bulletins_pdf = isAdmin || Boolean((limits as { bulletins_pdf?: boolean } | null)?.bulletins_pdf);
-      return { plan, bulletins_pdf, isAdmin };
+      const l = (limits ?? {}) as Partial<PlanCapabilities>;
+      return {
+        plan,
+        isAdmin,
+        bulletins_pdf: isAdmin || Boolean(l.bulletins_pdf),
+        rapports: isAdmin || Boolean(l.rapports),
+        progression: isAdmin || Boolean(l.progression),
+        max_ecoles: l.max_ecoles ?? fallback.max_ecoles,
+        max_classes_par_ecole: l.max_classes_par_ecole ?? fallback.max_classes_par_ecole,
+        max_eleves: l.max_eleves ?? fallback.max_eleves,
+      };
     },
   });
 }
+
 
 
 export function profilQueryOptions() {
