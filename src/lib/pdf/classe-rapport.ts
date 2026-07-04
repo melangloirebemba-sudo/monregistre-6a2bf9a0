@@ -11,6 +11,7 @@ export interface ClasseRapportContext {
   notes: Note[];
   enseignant?: string;
   telephone?: string;
+  anneeScolaire?: string;
   echelle?: number;
 }
 
