@@ -1,16 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucide-react";
 import { toast } from "sonner";
-import {
-  listAllUsers,
-  updateUserPlan,
-  setUserSuspension,
-  resetUserPassword,
-  deleteUserAccount,
-} from "@/lib/admin.functions";
+import { adminApi, type AdminUser } from "@/lib/admin-api";
 import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,34 +25,15 @@ export const Route = createFileRoute("/_authenticated/admin/utilisateurs")({
   component: AdminContent,
 });
 
-interface AdminUser {
-  id: string;
-  email: string;
-  created_at: string;
-  last_sign_in_at: string | null;
-  banned_until: string | null;
-  email_confirmed_at: string | null;
-  nom_affiche: string | null;
-  plan: AppPlan;
-  statut: "actif" | "suspendu";
-  roles: string[];
-}
-
-
-
 function AdminContent() {
   const qc = useQueryClient();
-  const listFn = useServerFn(listAllUsers);
-  const updatePlanFn = useServerFn(updateUserPlan);
-  const suspendFn = useServerFn(setUserSuspension);
-  const resetPwdFn = useServerFn(resetUserPassword);
-  const deleteFn = useServerFn(deleteUserAccount);
 
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: () => listFn() as Promise<AdminUser[]>,
+    queryFn: () => adminApi.listUsers(),
     staleTime: 15_000,
   });
+
 
   const [q, setQ] = useState("");
 
@@ -87,13 +61,13 @@ function AdminContent() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
 
   const changePlan = useMutation({
-    mutationFn: (v: { userId: string; plan: AppPlan }) => updatePlanFn({ data: v }),
+    mutationFn: (v: { userId: string; plan: AppPlan }) => adminApi.updatePlan(v.userId, v.plan),
     onSuccess: () => { toast.success("Plan mis à jour"); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const toggleSuspend = useMutation({
-    mutationFn: (v: { userId: string; suspendre: boolean }) => suspendFn({ data: v }),
+    mutationFn: (v: { userId: string; suspendre: boolean }) => adminApi.setSuspension(v.userId, v.suspendre),
     onSuccess: (_r, v) => {
       toast.success(v.suspendre ? "Compte suspendu" : "Compte réactivé");
       invalidate();
@@ -102,13 +76,13 @@ function AdminContent() {
   });
 
   const resetPwd = useMutation({
-    mutationFn: (v: { userId: string; newPassword: string }) => resetPwdFn({ data: v }),
+    mutationFn: (v: { userId: string; newPassword: string }) => adminApi.resetPassword(v.userId, v.newPassword),
     onSuccess: () => toast.success("Mot de passe réinitialisé"),
     onError: (e: Error) => toast.error(e.message),
   });
 
   const delAcc = useMutation({
-    mutationFn: (userId: string) => deleteFn({ data: { userId } }),
+    mutationFn: (userId: string) => adminApi.deleteUser(userId),
     onSuccess: () => { toast.success("Compte supprimé"); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });

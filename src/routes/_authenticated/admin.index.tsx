@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Users,
   School,
@@ -13,7 +12,7 @@ import {
   ShieldCheck,
   Activity,
 } from "lucide-react";
-import { getAdminStats } from "@/lib/admin.functions";
+import { adminApi } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({ meta: [{ title: "Tableau de bord — Console admin" }, { name: "robots", content: "noindex" }] }),
@@ -21,12 +20,12 @@ export const Route = createFileRoute("/_authenticated/admin/")({
 });
 
 function AdminDashboard() {
-  const statsFn = useServerFn(getAdminStats);
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-stats"],
-    queryFn: () => statsFn(),
+    queryFn: () => adminApi.stats(),
     staleTime: 30_000,
   });
+
 
   return (
     <div className="space-y-6 px-5 py-6">
