@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Shield, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucide-react";
+import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucide-react";
 import { toast } from "sonner";
 import {
   listAllUsers,
@@ -11,7 +11,7 @@ import {
   resetUserPassword,
   deleteUserAccount,
 } from "@/lib/admin.functions";
-import { currentUserRolesQO, PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
+import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/utilisateurs")({
-  head: () => ({ meta: [{ title: "Espace admin — MonRegistre" }, { name: "robots", content: "noindex" }] }),
-  component: AdminPage,
+  head: () => ({ meta: [{ title: "Utilisateurs — Console admin" }, { name: "robots", content: "noindex" }] }),
+  component: AdminContent,
 });
 
 interface AdminUser {
@@ -45,25 +45,7 @@ interface AdminUser {
   roles: string[];
 }
 
-function AdminPage() {
-  const navigate = useNavigate();
-  const { data: roles, isLoading: rolesLoading } = useQuery(currentUserRolesQO());
-  const isAdmin = (roles ?? []).includes("admin");
 
-  useEffect(() => {
-    if (!rolesLoading && !isAdmin) {
-      toast.error("Accès refusé : réservé aux administrateurs.");
-      navigate({ to: "/accueil", replace: true });
-    }
-  }, [rolesLoading, isAdmin, navigate]);
-
-  if (rolesLoading) {
-    return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
-  }
-  if (!isAdmin) return null;
-
-  return <AdminContent />;
-}
 
 function AdminContent() {
   const qc = useQueryClient();
