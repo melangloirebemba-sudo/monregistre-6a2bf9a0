@@ -260,9 +260,41 @@ Deno.serve(async (req) => {
         return json({ ok: true, deleted: count ?? 0 });
       }
 
+      /* ============ PLAN LIMITS ============ */
+      case "plans.list": {
+        const { data, error } = await admin
+          .from("plan_limits")
+          .select("*")
+          .order("plan");
+        if (error) throw error;
+        return json({ plans: data ?? [] });
+      }
+
+      case "plans.update": {
+        const { plan, max_ecoles, max_classes_par_ecole, max_eleves, bulletins_pdf, rapports, progression } = payload;
+        if (!["gratuit", "lite", "premium"].includes(plan)) return json({ error: "Plan invalide" }, 400);
+        const toInt = (v: any) => {
+          const n = Number(v);
+          if (!Number.isFinite(n) || n < 0) return null;
+          return Math.min(Math.floor(n), 2147483647);
+        };
+        const patch: any = {};
+        if (max_ecoles !== undefined) { const n = toInt(max_ecoles); if (n === null) return json({ error: "max_ecoles invalide" }, 400); patch.max_ecoles = n; }
+        if (max_classes_par_ecole !== undefined) { const n = toInt(max_classes_par_ecole); if (n === null) return json({ error: "max_classes_par_ecole invalide" }, 400); patch.max_classes_par_ecole = n; }
+        if (max_eleves !== undefined) { const n = toInt(max_eleves); if (n === null) return json({ error: "max_eleves invalide" }, 400); patch.max_eleves = n; }
+        if (typeof bulletins_pdf === "boolean") patch.bulletins_pdf = bulletins_pdf;
+        if (typeof rapports === "boolean") patch.rapports = rapports;
+        if (typeof progression === "boolean") patch.progression = progression;
+        if (Object.keys(patch).length === 0) return json({ error: "Aucun champ à mettre à jour" }, 400);
+        const { error } = await admin.from("plan_limits").update(patch).eq("plan", plan);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
     }
+
   } catch (e: any) {
     console.error("[admin-api]", action, e?.message ?? e);
     return json({ error: e?.message ?? String(e) }, 400);
