@@ -24,6 +24,7 @@ const baseItems = [
   { to: "/mon-profil", label: "Mon profil", desc: "Informations personnelles", icon: UserCircle2 },
   { to: "/annees-scolaires", label: "Années scolaires", desc: "Créer, activer, archiver", icon: CalendarClock },
   { to: "/notes", label: "Notes", desc: "Saisie et suivi des notes", icon: ClipboardList },
+  { to: "/absences", label: "Absences", desc: "Suivi de l'assiduité", icon: CalendarX },
   { to: "/rapports", label: "Rapports & bulletins", desc: "Moyennes, classements, PDF", icon: BarChart3 },
   { to: "/emploi-du-temps", label: "Emploi du temps", desc: "Créneaux par classe et école", icon: CalendarDays },
   { to: "/progression", label: "Progression pédagogique", desc: "Séquences par trimestre", icon: BookOpen },
