@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Settings2,
@@ -11,8 +11,10 @@ import {
   ShieldCheck,
   Save,
   KeyRound,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +33,38 @@ export const Route = createFileRoute("/_authenticated/admin/parametres")({
   }),
   component: AdminSettingsPage,
 });
+
+/* ------------------------------ Helpers ------------------------------ */
+
+function humanizeAuthError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("email address") && m.includes("invalid")) return "Adresse e-mail invalide.";
+  if (m.includes("already registered") || m.includes("already been registered") || m.includes("already exists"))
+    return "Cette adresse e-mail est déjà utilisée par un autre compte.";
+  if (m.includes("same as") || m.includes("should be different"))
+    return "Le nouveau mot de passe doit être différent de l'ancien.";
+  if (m.includes("weak") || m.includes("pwned") || m.includes("compromised") || m.includes("breach"))
+    return "Ce mot de passe est trop faible ou compromis. Choisissez-en un autre.";
+  if (m.includes("rate limit") || m.includes("too many"))
+    return "Trop de tentatives. Veuillez patienter quelques minutes.";
+  if (m.includes("network") || m.includes("failed to fetch"))
+    return "Connexion interrompue. Vérifiez votre réseau et réessayez.";
+  if (m.includes("password should be at least"))
+    return "Mot de passe trop court (8 caractères minimum).";
+  return msg || "Une erreur est survenue. Réessayez.";
+}
+
+function FieldError({ children }: { children?: React.ReactNode }) {
+  if (!children) return null;
+  return (
+    <p className="mt-1 flex items-start gap-1 text-[11.5px] text-destructive">
+      <AlertCircle className="mt-[1px] h-3 w-3 shrink-0" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+/* ------------------------------ Page ------------------------------ */
 
 function AdminSettingsPage() {
   return (
@@ -78,6 +112,30 @@ function AppearanceCard() {
 
 /* ------------------------ Coordonnées du support ------------------------ */
 
+const supportSchema = z.object({
+  whatsapp_number: z
+    .string()
+    .trim()
+    .min(1, "Le numéro WhatsApp est requis.")
+    .refine((v) => /^\+?[\d\s().-]+$/.test(v), "Chiffres, espaces, +, -, ( ) uniquement.")
+    .refine((v) => {
+      const d = v.replace(/\D/g, "");
+      return d.length >= 8 && d.length <= 15;
+    }, "Le numéro doit contenir entre 8 et 15 chiffres."),
+  whatsapp_display: z
+    .string()
+    .trim()
+    .min(3, "Libellé trop court (3 caractères min.).")
+    .max(40, "Libellé trop long (40 caractères max.)."),
+  support_email: z
+    .string()
+    .trim()
+    .min(1, "L'e-mail de support est requis.")
+    .email("Adresse e-mail invalide."),
+});
+
+type SupportErrors = Partial<Record<keyof z.infer<typeof supportSchema>, string>>;
+
 function SupportSettingsCard() {
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({
@@ -89,6 +147,8 @@ function SupportSettingsCard() {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [whatsappDisplay, setWhatsappDisplay] = useState("");
   const [supportEmail, setSupportEmail] = useState("");
+  const [errors, setErrors] = useState<SupportErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!data) return;
@@ -97,23 +157,54 @@ function SupportSettingsCard() {
     setSupportEmail(data.support_email);
   }, [data]);
 
+  const validate = (): z.infer<typeof supportSchema> | null => {
+    const parsed = supportSchema.safeParse({
+      whatsapp_number: whatsappNumber,
+      whatsapp_display: whatsappDisplay,
+      support_email: supportEmail,
+    });
+    if (parsed.success) {
+      setErrors({});
+      return parsed.data;
+    }
+    const errs: SupportErrors = {};
+    for (const issue of parsed.error.issues) {
+      const k = issue.path[0] as keyof SupportErrors;
+      if (k && !errs[k]) errs[k] = issue.message;
+    }
+    setErrors(errs);
+    return null;
+  };
+
+  // Live validation once a field has been touched.
+  useEffect(() => {
+    if (!Object.keys(touched).length) return;
+    validate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [whatsappNumber, whatsappDisplay, supportEmail]);
+
   const save = useMutation({
-    mutationFn: () =>
-      adminApi.settingsUpdate({
-        whatsapp_number: whatsappNumber,
-        whatsapp_display: whatsappDisplay,
-        support_email: supportEmail,
-      }),
-    onSuccess: () => {
+    mutationFn: async () => {
+      const clean = validate();
+      if (!clean) throw new Error("Corrigez les champs en rouge avant d'enregistrer.");
+      const digits = clean.whatsapp_number.replace(/\D/g, "");
+      await adminApi.settingsUpdate({
+        whatsapp_number: digits,
+        whatsapp_display: clean.whatsapp_display,
+        support_email: clean.support_email,
+      });
+      return { digits, display: clean.whatsapp_display, email: clean.support_email };
+    },
+    onSuccess: (r) => {
       updateSupportConfig({
-        whatsappNumber: whatsappNumber.replace(/\D/g, ""),
-        whatsappDisplay,
-        supportEmail,
+        whatsappNumber: r.digits,
+        whatsappDisplay: r.display,
+        supportEmail: r.email,
       });
       toast.success("Coordonnées du support enregistrées");
       qc.invalidateQueries({ queryKey: ["admin-settings"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(humanizeAuthError(e.message)),
   });
 
   const dirty =
@@ -121,6 +212,8 @@ function SupportSettingsCard() {
     (whatsappNumber !== data.whatsapp_number ||
       whatsappDisplay !== data.whatsapp_display ||
       supportEmail !== data.support_email);
+
+  const hasErrors = Object.keys(errors).length > 0;
 
   return (
     <section className="card-elevated p-4 sm:p-5">
@@ -146,7 +239,7 @@ function SupportSettingsCard() {
 
       {data && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="wa-number">Numéro WhatsApp (format international)</Label>
             <Input
               id="wa-number"
@@ -154,35 +247,57 @@ function SupportSettingsCard() {
               placeholder="242069626540"
               value={whatsappNumber}
               onChange={(e) => setWhatsappNumber(e.target.value)}
+              onBlur={() => {
+                setTouched((t) => ({ ...t, whatsapp_number: true }));
+                validate();
+              }}
+              aria-invalid={!!errors.whatsapp_number}
+              className={errors.whatsapp_number ? "border-destructive focus-visible:ring-destructive/40" : ""}
             />
             <p className="text-[11px] text-muted-foreground">
               Sans « + », sans espaces. Ex : 242069626540
             </p>
+            <FieldError>{errors.whatsapp_number}</FieldError>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="wa-display">Libellé affiché</Label>
             <Input
               id="wa-display"
               placeholder="+242 06 962 65 40"
               value={whatsappDisplay}
               onChange={(e) => setWhatsappDisplay(e.target.value)}
+              onBlur={() => {
+                setTouched((t) => ({ ...t, whatsapp_display: true }));
+                validate();
+              }}
+              aria-invalid={!!errors.whatsapp_display}
+              className={errors.whatsapp_display ? "border-destructive focus-visible:ring-destructive/40" : ""}
             />
+            <FieldError>{errors.whatsapp_display}</FieldError>
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
+          <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="support-email" className="flex items-center gap-1.5">
               <Mail className="h-3.5 w-3.5" /> E-mail du support
             </Label>
             <Input
               id="support-email"
               type="email"
+              autoComplete="email"
               placeholder="support@monregistre.app"
               value={supportEmail}
               onChange={(e) => setSupportEmail(e.target.value)}
+              onBlur={() => {
+                setTouched((t) => ({ ...t, support_email: true }));
+                validate();
+              }}
+              aria-invalid={!!errors.support_email}
+              className={errors.support_email ? "border-destructive focus-visible:ring-destructive/40" : ""}
             />
+            <FieldError>{errors.support_email}</FieldError>
           </div>
           <div className="sm:col-span-2 flex justify-end">
             <Button
-              disabled={!dirty || save.isPending}
+              disabled={!dirty || save.isPending || hasErrors}
               onClick={() => save.mutate()}
             >
               <Save className="mr-1.5 h-4 w-4" />
@@ -197,11 +312,29 @@ function SupportSettingsCard() {
 
 /* ------------------------- Compte administrateur ------------------------- */
 
+// Password policy — kept in sync with server side (8 char min).
+// We also nudge users toward mixed classes without hard-blocking (Supabase HIBP
+// gives the definitive rejection on submit).
+function scorePassword(pwd: string): { ok: boolean; hint?: string } {
+  if (pwd.length < 8) return { ok: false, hint: "8 caractères minimum." };
+  const classes =
+    (/[a-z]/.test(pwd) ? 1 : 0) +
+    (/[A-Z]/.test(pwd) ? 1 : 0) +
+    (/\d/.test(pwd) ? 1 : 0) +
+    (/[^A-Za-z0-9]/.test(pwd) ? 1 : 0);
+  if (classes < 2)
+    return { ok: false, hint: "Mélangez lettres, chiffres et/ou symboles." };
+  return { ok: true };
+}
+
 function AdminAccountCard() {
   const [currentEmail, setCurrentEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [emailError, setEmailError] = useState<string>("");
+
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [pwdErrors, setPwdErrors] = useState<{ pwd?: string; confirm?: string }>({});
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -210,27 +343,59 @@ function AdminAccountCard() {
     });
   }, []);
 
+  // Live-check email
+  const validateEmail = (v: string): string => {
+    const t = v.trim();
+    if (!t) return "L'adresse e-mail est requise.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return "Adresse e-mail invalide.";
+    if (t.toLowerCase() === currentEmail.toLowerCase())
+      return "Cette adresse est identique à l'actuelle.";
+    return "";
+  };
+
+  const validatePassword = (): boolean => {
+    const errs: { pwd?: string; confirm?: string } = {};
+    const s = scorePassword(password);
+    if (!s.ok) errs.pwd = s.hint;
+    if (!passwordConfirm) errs.confirm = "Confirmez le mot de passe.";
+    else if (passwordConfirm !== password) errs.confirm = "Les mots de passe ne correspondent pas.";
+    setPwdErrors(errs);
+    return !errs.pwd && !errs.confirm;
+  };
+
+  // Live re-validate as the user types
+  useEffect(() => {
+    if (password || passwordConfirm) validatePassword();
+    else setPwdErrors({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [password, passwordConfirm]);
+
   const updateEmail = useMutation({
     mutationFn: async () => {
-      const email = newEmail.trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new Error("Adresse e-mail invalide");
+      const err = validateEmail(newEmail);
+      if (err) {
+        setEmailError(err);
+        throw new Error(err);
       }
-      const { error } = await supabase.auth.updateUser({ email });
+      const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
       if (error) throw error;
     },
     onSuccess: () => {
+      setEmailError("");
       toast.success(
         "E-mail mis à jour. Un lien de confirmation a été envoyé aux deux adresses.",
       );
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      const msg = humanizeAuthError(e.message);
+      setEmailError(msg);
+      toast.error(msg);
+    },
   });
 
   const updatePassword = useMutation({
     mutationFn: async () => {
-      if (password.length < 8) throw new Error("Mot de passe trop court (8 caractères min.)");
-      if (password !== passwordConfirm) throw new Error("Les mots de passe ne correspondent pas");
+      if (!validatePassword()) throw new Error("Corrigez les champs en rouge.");
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
     },
@@ -238,9 +403,30 @@ function AdminAccountCard() {
       toast.success("Mot de passe administrateur mis à jour");
       setPassword("");
       setPasswordConfirm("");
+      setPwdErrors({});
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      const msg = humanizeAuthError(e.message);
+      setPwdErrors((p) => ({ ...p, pwd: msg }));
+      toast.error(msg);
+    },
   });
+
+  const emailDisabled =
+    updateEmail.isPending ||
+    !newEmail.trim() ||
+    newEmail.trim().toLowerCase() === currentEmail.toLowerCase() ||
+    !!validateEmail(newEmail);
+
+  const pwdCanSubmit = useMemo(
+    () =>
+      !updatePassword.isPending &&
+      password.length >= 8 &&
+      passwordConfirm === password &&
+      !pwdErrors.pwd &&
+      !pwdErrors.confirm,
+    [updatePassword.isPending, password, passwordConfirm, pwdErrors],
+  );
 
   return (
     <section className="card-elevated p-4 sm:p-5">
@@ -260,7 +446,7 @@ function AdminAccountCard() {
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <AtSign className="h-4 w-4 text-teal" /> Adresse e-mail
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="admin-email" className="text-xs">
               Nouvelle adresse (actuelle : {currentEmail || "…"})
             </Label>
@@ -269,17 +455,20 @@ function AdminAccountCard() {
               type="email"
               autoComplete="email"
               value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
+              onChange={(e) => {
+                setNewEmail(e.target.value);
+                setEmailError(validateEmail(e.target.value));
+              }}
+              onBlur={() => setEmailError(validateEmail(newEmail))}
+              aria-invalid={!!emailError}
+              className={emailError ? "border-destructive focus-visible:ring-destructive/40" : ""}
             />
+            <FieldError>{emailError}</FieldError>
           </div>
           <Button
             className="w-full"
             variant="secondary"
-            disabled={
-              updateEmail.isPending ||
-              !newEmail.trim() ||
-              newEmail.trim() === currentEmail
-            }
+            disabled={emailDisabled}
             onClick={() => updateEmail.mutate()}
           >
             {updateEmail.isPending ? "Envoi…" : "Mettre à jour l'e-mail"}
@@ -291,7 +480,7 @@ function AdminAccountCard() {
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Lock className="h-4 w-4 text-teal" /> Mot de passe
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="admin-pwd" className="text-xs">
               Nouveau mot de passe
             </Label>
@@ -302,9 +491,12 @@ function AdminAccountCard() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              aria-invalid={!!pwdErrors.pwd}
+              className={pwdErrors.pwd ? "border-destructive focus-visible:ring-destructive/40" : ""}
             />
+            <FieldError>{pwdErrors.pwd}</FieldError>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="admin-pwd2" className="text-xs">
               Confirmer
             </Label>
@@ -315,16 +507,15 @@ function AdminAccountCard() {
               minLength={8}
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}
+              aria-invalid={!!pwdErrors.confirm}
+              className={pwdErrors.confirm ? "border-destructive focus-visible:ring-destructive/40" : ""}
             />
+            <FieldError>{pwdErrors.confirm}</FieldError>
           </div>
           <Button
             className="w-full"
             variant="secondary"
-            disabled={
-              updatePassword.isPending ||
-              password.length < 8 ||
-              password !== passwordConfirm
-            }
+            disabled={!pwdCanSubmit}
             onClick={() => updatePassword.mutate()}
           >
             <KeyRound className="mr-1.5 h-4 w-4" />
