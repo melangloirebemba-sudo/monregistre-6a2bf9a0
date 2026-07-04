@@ -86,10 +86,30 @@ function EcolesPage() {
         />
       </div>
 
+      {atLimit && (
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-ink">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-ink/70" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold">
+              Limite atteinte — plan {planLabel}
+            </div>
+            <p className="mt-0.5 text-ink/80">
+              Le plan {planLabel} autorise {maxEcoles} école{maxEcoles > 1 ? "s" : ""}. Passez à un plan supérieur pour en ajouter davantage.
+            </p>
+            <Link
+              to="/support"
+              className="mt-1 inline-block text-teal underline-offset-2 hover:underline"
+            >
+              Contacter le support
+            </Link>
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : filtered.length === 0 ? (
-        <EmptyState onAdd={() => { setEditing(null); setOpen(true); }} />
+        <EmptyState onAdd={handleAdd} disabled={atLimit} />
       ) : (
         <ul className="space-y-3">
           {filtered.map((e) => (
@@ -145,7 +165,8 @@ function EcolesPage() {
         </ul>
       )}
 
-      <FloatingAdd onClick={() => { setEditing(null); setOpen(true); }} />
+      <FloatingAdd onClick={handleAdd} disabled={atLimit} />
+
 
       <EcoleDialog
         open={open}
