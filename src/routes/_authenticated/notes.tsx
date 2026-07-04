@@ -54,9 +54,11 @@ type NoteRow = Note & { eleve: { nom: string; prenom: string; classe_id: string 
 function NotesPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: classes = [] } = useQuery(classesQO());
+  const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
   const echelle = profil?.echelle_notation ?? 20;
 
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const [periodeFilter, setPeriodeFilter] = useState<string>("all");
   const { data: eleves = [] } = useQuery(elevesQO(classeFilter === "all" ? undefined : classeFilter));
@@ -67,6 +69,13 @@ function NotesPage() {
     }),
   );
 
+  const classesForEcole = useMemo(
+    () => (ecoleFilter === "all" ? classes : classes.filter((c) => c.ecole_id === ecoleFilter)),
+    [classes, ecoleFilter],
+  );
+  const classeById = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c])), [classes]);
+  const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
+
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<NoteRow | null>(null);
   const [open, setOpen] = useState(false);
@@ -74,12 +83,19 @@ function NotesPage() {
 
   const filtered = useMemo(
     () =>
-      notes.filter((n) => {
-        const nom = `${n.eleve?.prenom ?? ""} ${n.eleve?.nom ?? ""} ${n.libelle} ${n.matiere ?? ""}`.toLowerCase();
-        return nom.includes(q.toLowerCase());
-      }),
-    [notes, q],
+      notes
+        .filter((n) => {
+          if (ecoleFilter === "all") return true;
+          const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
+          return cls?.ecole_id === ecoleFilter;
+        })
+        .filter((n) => {
+          const nom = `${n.eleve?.prenom ?? ""} ${n.eleve?.nom ?? ""} ${n.libelle} ${n.matiere ?? ""}`.toLowerCase();
+          return nom.includes(q.toLowerCase());
+        }),
+    [notes, q, ecoleFilter, classeById],
   );
+
 
   const canAdd = eleves.length > 0 || classes.length > 0;
 
