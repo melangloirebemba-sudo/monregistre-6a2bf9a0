@@ -134,6 +134,23 @@ export const notesQO = (opts: { classeId?: string; eleveId?: string; periodeId?:
     },
   });
 
+export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =>
+  queryOptions({
+    queryKey: ["creneaux", opts.ecoleId ?? "-", opts.classeId ?? "-"],
+    queryFn: async (): Promise<Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>> => {
+      let q = supabase
+        .from("creneaux")
+        .select("*, classe:classes(nom, code), ecole:ecoles(nom)")
+        .order("jour_semaine")
+        .order("heure_debut");
+      if (opts.ecoleId) q = q.eq("ecole_id", opts.ecoleId);
+      if (opts.classeId) q = q.eq("classe_id", opts.classeId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>;
+    },
+  });
+
 export async function requireUserId(): Promise<string> {
   const { data } = await supabase.auth.getUser();
   if (!data.user) throw new Error("Session expirée");
