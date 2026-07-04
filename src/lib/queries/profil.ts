@@ -1,6 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type PlanKey = "gratuit" | "lite" | "premium";
+export type PlanPeriode = "mensuelle" | "trimestrielle" | "annuelle";
+
 export interface Profil {
   id: string;
   user_id: string;
@@ -14,11 +17,16 @@ export interface Profil {
   email: string | null;
   matiere_principale: string | null;
   etablissement: string | null;
-  plan?: "gratuit" | "lite" | "premium";
+  plan?: PlanKey;
+  plan_periode?: PlanPeriode | null;
+  plan_started_at?: string | null;
+  plan_expires_at?: string | null;
 }
 
 export interface PlanCapabilities {
-  plan: "gratuit" | "lite" | "premium";
+  plan: PlanKey;
+  /** Plan enregistré en base avant vérification d'expiration. */
+  storedPlan: PlanKey;
   isAdmin: boolean;
   bulletins_pdf: boolean;
   rapports: boolean;
@@ -26,7 +34,17 @@ export interface PlanCapabilities {
   max_ecoles: number;
   max_classes_par_ecole: number;
   max_eleves: number;
+  periode: PlanPeriode | null;
+  startedAt: string | null;
+  expiresAt: string | null;
+  /** Jours restants avant expiration (peut être négatif). null si pas d'expiration. */
+  daysRemaining: number | null;
+  /** True si le plan payant est arrivé à échéance. */
+  isExpired: boolean;
+  /** True si un plan payant est actif et expire dans ≤ 10 jours. */
+  isExpiringSoon: boolean;
 }
+
 
 export interface PlanLimitsRow {
   plan: "gratuit" | "lite" | "premium";
