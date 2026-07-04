@@ -26,11 +26,16 @@ interface AdminShellProps {
   children: ReactNode;
 }
 
-const adminNav = [
+const adminNav: ReadonlyArray<{
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+}> = [
   { to: "/admin", label: "Tableau de bord", icon: LayoutDashboard, exact: true },
   { to: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
   { to: "/admin/plans", label: "Plans & tarifs", icon: Crown },
-] as const;
+];
 
 function isActive(pathname: string, to: string, exact?: boolean) {
   if (exact) return pathname === to;
