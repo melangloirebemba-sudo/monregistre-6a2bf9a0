@@ -756,7 +756,7 @@ function HistoryDialog({ target, onClose }: { target: AdminUser | null; onClose:
 
   return (
     <Dialog open={enabled} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl sm:w-full">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="h-5 w-5 shrink-0 text-teal" aria-hidden="true" /> Historique des activations
