@@ -604,13 +604,23 @@ function PlanActivationsHistory() {
 
   return (
     <section className="card-elevated mb-6 p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <History className="h-4 w-4 text-teal" aria-hidden="true" />
-        <div>
-          <h2 className="font-display text-lg font-semibold text-foreground">Historique des activations</h2>
-          <p className="text-xs text-muted-foreground">Toutes les activations de plan effectuées sur votre compte.</p>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <History className="h-4 w-4 text-teal" aria-hidden="true" />
+          <div>
+            <h2 className="font-display text-lg font-semibold text-foreground">Historique des activations</h2>
+            <p className="text-xs text-muted-foreground">Toutes les activations de plan effectuées sur votre compte.</p>
+          </div>
         </div>
+        <Link
+          to="/facturation"
+          className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-3 py-1.5 text-xs font-medium text-teal hover:bg-teal/15"
+        >
+          Voir factures & reçus
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
+
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
