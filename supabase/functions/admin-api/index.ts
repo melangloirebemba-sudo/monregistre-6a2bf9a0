@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       }
 
       case "activatePlan": {
-        const { userId, plan, periode, note } = payload;
+        const { userId, plan, periode, note, montant: montantOverride, moyen_paiement } = payload;
         if (!userId || !["lite", "premium"].includes(plan))
           return json({ error: "Plan invalide (lite ou premium)" }, 400);
         if (!["mensuelle", "trimestrielle", "annuelle"].includes(periode))
@@ -114,19 +114,53 @@ Deno.serve(async (req) => {
         }).eq("user_id", userId);
         if (error) throw error;
         // Journal d'historique
-        const { error: logErr } = await admin.from("plan_activations").insert({
+        const { data: activationRow, error: logErr } = await admin
+          .from("plan_activations")
+          .insert({
+            user_id: userId,
+            plan,
+            periode,
+            plan_started_at: now.toISOString(),
+            plan_expires_at: expiresAt.toISOString(),
+            activated_by: uid,
+            activated_by_email: userRes.user.email ?? null,
+            note: typeof note === "string" && note.trim() ? note.trim() : null,
+          })
+          .select("id")
+          .single();
+        if (logErr) console.error("[admin-api] plan_activations insert failed", logErr.message);
+
+        // Reçu de paiement : récupère le prix courant si aucun override
+        let montant = 0;
+        if (typeof montantOverride === "number" && montantOverride >= 0) {
+          montant = Math.floor(montantOverride);
+        } else {
+          const { data: priceRow } = await admin
+            .from("plan_prices")
+            .select("montant")
+            .eq("plan", plan)
+            .eq("periode", periode)
+            .maybeSingle();
+          montant = priceRow?.montant ?? 0;
+        }
+        const { error: payErr } = await admin.from("paiements").insert({
           user_id: userId,
+          plan_activation_id: activationRow?.id ?? null,
           plan,
           periode,
-          plan_started_at: now.toISOString(),
+          montant,
+          devise: "XAF",
+          paye_le: now.toISOString(),
           plan_expires_at: expiresAt.toISOString(),
-          activated_by: uid,
-          activated_by_email: userRes.user.email ?? null,
+          moyen_paiement: typeof moyen_paiement === "string" && moyen_paiement.trim() ? moyen_paiement.trim() : "manuel",
           note: typeof note === "string" && note.trim() ? note.trim() : null,
+          created_by: uid,
         });
-        if (logErr) console.error("[admin-api] plan_activations insert failed", logErr.message);
+        if (payErr) console.error("[admin-api] paiements insert failed", payErr.message);
+
         return json({ ok: true, plan_expires_at: expiresAt.toISOString() });
       }
+
 
       case "activations.list": {
         const { userId } = payload;
@@ -428,8 +462,39 @@ Deno.serve(async (req) => {
         return json({ ok: true });
       }
 
+      /* ============ PLAN PRICES ============ */
+      case "prices.list": {
+        const { data, error } = await admin
+          .from("plan_prices")
+          .select("plan, periode, montant, devise, updated_at")
+          .order("plan")
+          .order("periode");
+        if (error) throw error;
+        return json({ prices: data ?? [] });
+      }
+
+      case "prices.update": {
+        const { plan, periode, montant, devise } = payload;
+        if (!["lite", "premium"].includes(plan)) return json({ error: "Plan invalide (lite ou premium)" }, 400);
+        if (!["mensuelle", "trimestrielle", "annuelle"].includes(periode)) return json({ error: "Période invalide" }, 400);
+        const n = Number(montant);
+        if (!Number.isFinite(n) || n < 0) return json({ error: "Montant invalide" }, 400);
+        const patch: Record<string, unknown> = {
+          plan,
+          periode,
+          montant: Math.floor(n),
+          devise: typeof devise === "string" && devise.trim() ? devise.trim().toUpperCase() : "XAF",
+          updated_at: new Date().toISOString(),
+          updated_by: uid,
+        };
+        const { error } = await admin.from("plan_prices").upsert(patch, { onConflict: "plan,periode" });
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
       default:
         return json({ error: `Unknown action: ${action}` }, 400);
+
     }
 
   } catch (e: any) {

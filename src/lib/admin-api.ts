@@ -104,7 +104,20 @@ export const adminApi = {
   plansList: () => callAdminApi<{ plans: PlanLimit[] }>("plans.list").then((r) => r.plans),
   plansUpdate: (patch: Partial<PlanLimit> & { plan: PlanLimit["plan"] }) =>
     callAdminApi<{ ok: true }>("plans.update", patch),
+
+  pricesList: () => callAdminApi<{ prices: PlanPrice[] }>("prices.list").then((r) => r.prices),
+  pricesUpdate: (params: { plan: "lite" | "premium"; periode: PlanPeriode; montant: number; devise?: string }) =>
+    callAdminApi<{ ok: true }>("prices.update", params),
 };
+
+export interface PlanPrice {
+  plan: "lite" | "premium";
+  periode: PlanPeriode;
+  montant: number;
+  devise: string;
+  updated_at?: string;
+}
+
 
 export interface PlanLimit {
   plan: "gratuit" | "lite" | "premium";
