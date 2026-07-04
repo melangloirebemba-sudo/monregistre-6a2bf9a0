@@ -124,12 +124,12 @@ export function AdminShell({ children }: AdminShellProps) {
       </aside>
 
       {/* Zone principale */}
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         {/* Topbar mobile/tablet */}
         <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 lg:hidden">
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-teal font-semibold text-cream shadow-soft">
-              <Shield className="h-5 w-5" />
+              <Shield className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 leading-tight">
               <div className="font-display text-lg font-semibold">Console admin</div>
@@ -142,10 +142,11 @@ export function AdminShell({ children }: AdminShellProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                aria-label="Menu"
-                className="shrink-0 rounded-full p-2 text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground"
+                type="button"
+                aria-label="Ouvrir le menu du compte"
+                className="shrink-0 rounded-full p-2 text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
               >
-                <MoreHorizontal className="h-5 w-5" />
+                <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
