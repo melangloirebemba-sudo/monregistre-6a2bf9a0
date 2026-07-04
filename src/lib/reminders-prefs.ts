@@ -55,6 +55,10 @@ function coerce(raw: unknown): ReminderPrefs {
       90,
       DEFAULT_REMINDER_PREFS.absencesWindowDays,
     ),
+    notificationsEnabled:
+      typeof r.notificationsEnabled === "boolean"
+        ? r.notificationsEnabled
+        : DEFAULT_REMINDER_PREFS.notificationsEnabled,
   };
 }
 
