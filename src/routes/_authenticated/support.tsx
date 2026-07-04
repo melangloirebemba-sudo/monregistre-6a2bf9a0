@@ -97,15 +97,6 @@ function buildFaq(
 }
 
 
-function buildWhatsAppMessage(ecole: string, plan: string) {
-  const lines = [
-    "Bonjour, je souhaite obtenir de l'aide concernant MonRegistre.",
-    "",
-    `École : ${ecole || "(non renseignée)"}`,
-    `Plan actuel : ${plan}`,
-  ];
-  return lines.join("\n");
-}
 
 function SupportPage() {
   const { data: profil } = useQuery(profilQueryOptions());
