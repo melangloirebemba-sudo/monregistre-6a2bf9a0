@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { LifeBuoy, MessageCircle, Mail, ChevronDown, Copy, Check } from "lucide-react";
+import { LifeBuoy, MessageCircle, Mail, ChevronDown, Copy, Check, Sparkles, ArrowUpRight } from "lucide-react";
 import { profilQueryOptions, planCapabilitiesQO, planLimitsQO } from "@/lib/queries/profil";
 import { toast } from "sonner";
 
