@@ -55,6 +55,36 @@ export type Database = {
           },
         ]
       }
+      admin_password_changes: {
+        Row: {
+          changed_by: string | null
+          changed_by_email: string | null
+          created_at: string
+          id: string
+          source: string
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          source?: string
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          source?: string
+          user_email?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       annees_scolaires: {
         Row: {
           created_at: string
