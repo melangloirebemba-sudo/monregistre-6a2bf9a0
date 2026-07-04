@@ -3,8 +3,9 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucide-react";
 import { toast } from "sonner";
-import { adminApi, type AdminUser } from "@/lib/admin-api";
+import { adminApi, type AdminUser, type PlanLimit } from "@/lib/admin-api";
 import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,18 @@ function AdminContent() {
     queryFn: () => adminApi.listUsers(),
     staleTime: 15_000,
   });
+
+  const { data: planLimits = [] } = useQuery({
+    queryKey: ["admin-plan-limits"],
+    queryFn: () => adminApi.plansList(),
+    staleTime: 30_000,
+  });
+  const limitsByPlan = useMemo(() => {
+    const m = new Map<AppPlan, PlanLimit>();
+    for (const p of planLimits) m.set(p.plan, p);
+    return m;
+  }, [planLimits]);
+
 
 
   const [q, setQ] = useState("");
@@ -158,7 +171,9 @@ function AdminContent() {
                       <> · Dernière connexion {new Date(u.last_sign_in_at).toLocaleDateString("fr-FR")}</>
                     )}
                   </div>
+                  <PlanLimitsBadges limit={limitsByPlan.get(u.plan)} />
                 </div>
+
 
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="flex items-center gap-1.5">
@@ -293,4 +308,30 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "wa
     </div>
   );
 }
+
+const UNLIMITED = 2147483647;
+function fmt(n: number | undefined) {
+  if (n === undefined) return "—";
+  return n >= UNLIMITED ? "∞" : String(n);
+}
+function PlanLimitsBadges({ limit }: { limit: PlanLimit | undefined }) {
+  if (!limit) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        Écoles {fmt(limit.max_ecoles)}
+      </span>
+      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        Classes/école {fmt(limit.max_classes_par_ecole)}
+      </span>
+      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        Élèves {fmt(limit.max_eleves)}
+      </span>
+      {limit.bulletins_pdf && <span className="rounded bg-teal/15 text-teal px-1.5 py-0.5 text-[10px]">Bulletins</span>}
+      {limit.rapports && <span className="rounded bg-teal/15 text-teal px-1.5 py-0.5 text-[10px]">Rapports</span>}
+      {limit.progression && <span className="rounded bg-teal/15 text-teal px-1.5 py-0.5 text-[10px]">Progression</span>}
+    </div>
+  );
+}
+
 
