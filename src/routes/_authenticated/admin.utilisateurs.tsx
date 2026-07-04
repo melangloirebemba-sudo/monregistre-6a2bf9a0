@@ -328,6 +328,16 @@ function AdminContent() {
                             <SelectItem value="premium">{PLAN_LABELS.premium}</SelectItem>
                           </SelectContent>
                         </Select>
+                        {u.plan !== "gratuit" && u.plan_expires_at && (
+                          <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Clock aria-hidden="true" className="h-3 w-3" />
+                            <span>
+                              {new Date(u.plan_expires_at).getTime() <= Date.now()
+                                ? "Expiré"
+                                : `Expire le ${new Date(u.plan_expires_at).toLocaleDateString("fr-FR")}`}
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-3">
                         {suspended ? (
