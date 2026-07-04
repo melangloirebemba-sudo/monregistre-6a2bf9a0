@@ -12,6 +12,7 @@ import {
   Save,
   KeyRound,
   AlertCircle,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -85,7 +86,118 @@ function AdminSettingsPage() {
       <AppearanceCard />
       <SupportSettingsCard />
       <AdminAccountCard />
+      <PasswordChangesLogCard />
     </div>
+  );
+}
+
+/* --------------------- Journal des changements MDP --------------------- */
+
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function sourceLabel(src: string): { label: string; tone: string } {
+  switch (src) {
+    case "self":
+      return { label: "Auto-modification", tone: "bg-teal/15 text-teal" };
+    case "admin-reset":
+      return { label: "Réinit. par admin", tone: "bg-gold/20 text-gold" };
+    case "reset":
+      return { label: "Lien e-mail", tone: "bg-muted text-muted-foreground" };
+    default:
+      return { label: src, tone: "bg-muted text-muted-foreground" };
+  }
+}
+
+function PasswordChangesLogCard() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-password-changes"],
+    queryFn: () => adminApi.passwordChangesList(50),
+    staleTime: 15_000,
+  });
+
+  return (
+    <section className="card-elevated p-4 sm:p-5">
+      <div className="flex items-center gap-2">
+        <History className="h-5 w-5 text-teal" />
+        <h2 className="font-display text-base font-semibold text-foreground">
+          Journal des changements de mot de passe
+        </h2>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Historique des modifications de mot de passe des comptes administrateurs.
+      </p>
+
+      {isLoading && (
+        <p className="mt-4 text-sm text-muted-foreground">Chargement…</p>
+      )}
+      {error && (
+        <p className="mt-4 text-sm text-destructive">
+          Erreur : {(error as Error).message}
+        </p>
+      )}
+
+      {data && data.length === 0 && (
+        <p className="mt-4 rounded-lg border border-dashed border-border/60 bg-cream-deep/20 p-4 text-center text-sm text-muted-foreground">
+          Aucun changement de mot de passe enregistré pour l'instant.
+        </p>
+      )}
+
+      {data && data.length > 0 && (
+        <ul className="mt-4 divide-y divide-border/60 rounded-xl border border-border/60 bg-cream-deep/10">
+          {data.map((entry) => {
+            const s = sourceLabel(entry.source);
+            const isSelf =
+              entry.changed_by && entry.user_id && entry.changed_by === entry.user_id;
+            return (
+              <li key={entry.id} className="flex flex-col gap-1 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-foreground">
+                    {entry.user_email ?? "(compte supprimé)"}
+                  </div>
+                  <div className="mt-0.5 text-[11.5px] text-muted-foreground">
+                    {isSelf ? (
+                      <>Par lui-même</>
+                    ) : (
+                      <>
+                        Par{" "}
+                        <span className="text-foreground/80">
+                          {entry.changed_by_email ?? "admin"}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0.5">
+                  <span
+                    className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10.5px] font-medium ${s.tone}`}
+                  >
+                    {s.label}
+                  </span>
+                  <time
+                    dateTime={entry.created_at}
+                    className="text-[11px] text-muted-foreground"
+                  >
+                    {formatDate(entry.created_at)}
+                  </time>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -508,17 +620,25 @@ function AdminAccountCard() {
     },
   });
 
+  const qc = useQueryClient();
   const updatePassword = useMutation({
     mutationFn: async () => {
       if (!validatePassword()) throw new Error("Corrigez les champs en rouge.");
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+      // Journalise en base (best-effort, ne bloque pas le succès UI).
+      try {
+        await adminApi.passwordChangesLog({ source: "self" });
+      } catch (logErr) {
+        console.warn("[admin] password change log failed", logErr);
+      }
     },
     onSuccess: () => {
       toast.success("Mot de passe administrateur mis à jour");
       setPassword("");
       setPasswordConfirm("");
       setPwdErrors({});
+      qc.invalidateQueries({ queryKey: ["admin-password-changes"] });
     },
     onError: (e: Error) => {
       const msg = humanizeAuthError(e.message);

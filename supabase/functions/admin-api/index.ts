@@ -160,7 +160,46 @@ Deno.serve(async (req) => {
         if (!userId || !newPassword || newPassword.length < 8) return json({ error: "Bad input" }, 400);
         const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
         if (error) throw error;
+        // Journalisation
+        const { data: targetU } = await admin.auth.admin.getUserById(userId);
+        await admin.from("admin_password_changes").insert({
+          user_id: userId,
+          user_email: targetU?.user?.email ?? null,
+          changed_by: uid,
+          changed_by_email: userRes.user.email ?? null,
+          source: "admin-reset",
+        });
         return json({ ok: true });
+      }
+
+      /* ============ PASSWORD CHANGES LOG ============ */
+      case "passwordChanges.log": {
+        // Utilisé après un changement de mot de passe côté client (self-service admin).
+        const targetUserId: string = payload?.targetUserId ?? uid;
+        const source: string = ["self", "reset", "admin-reset"].includes(payload?.source)
+          ? payload.source
+          : "self";
+        const { data: targetU } = await admin.auth.admin.getUserById(targetUserId);
+        const { error } = await admin.from("admin_password_changes").insert({
+          user_id: targetUserId,
+          user_email: targetU?.user?.email ?? null,
+          changed_by: uid,
+          changed_by_email: userRes.user.email ?? null,
+          source,
+        });
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "passwordChanges.list": {
+        const limit = Math.min(Math.max(Number(payload?.limit) || 50, 1), 200);
+        const { data, error } = await admin
+          .from("admin_password_changes")
+          .select("id, user_id, user_email, changed_by, changed_by_email, source, created_at")
+          .order("created_at", { ascending: false })
+          .limit(limit);
+        if (error) throw error;
+        return json({ entries: data ?? [] });
       }
 
       case "sendPasswordResetEmail": {

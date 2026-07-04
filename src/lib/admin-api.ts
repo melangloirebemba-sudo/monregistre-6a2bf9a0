@@ -76,6 +76,10 @@ export const adminApi = {
     callAdminApi<{ ok: true }>("resetPassword", { userId, newPassword }),
   sendPasswordResetEmail: (userId: string, redirectTo?: string) =>
     callAdminApi<{ ok: true; email: string }>("sendPasswordResetEmail", { userId, redirectTo }),
+  passwordChangesLog: (params: { targetUserId?: string; source?: "self" | "reset" | "admin-reset" }) =>
+    callAdminApi<{ ok: true }>("passwordChanges.log", params),
+  passwordChangesList: (limit = 50) =>
+    callAdminApi<{ entries: AdminPasswordChange[] }>("passwordChanges.list", { limit }).then((r) => r.entries),
   deleteUser: (userId: string) =>
     callAdminApi<{ ok: true }>("deleteUser", { userId }),
   stats: () => callAdminApi<AdminStats>("stats"),
@@ -143,4 +147,14 @@ export interface AppSettings {
   whatsapp_display: string;
   support_email: string;
   updated_at: string;
+}
+
+export interface AdminPasswordChange {
+  id: string;
+  user_id: string;
+  user_email: string | null;
+  changed_by: string | null;
+  changed_by_email: string | null;
+  source: string;
+  created_at: string;
 }
