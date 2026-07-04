@@ -39,6 +39,7 @@ function EcolesPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Ecole | null>(null);
   const [open, setOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Ecole | null>(null);
 
   const filtered = useMemo(
@@ -51,13 +52,12 @@ function EcolesPage() {
 
   const maxEcoles = caps?.max_ecoles ?? 0;
   const atLimit = !caps?.isAdmin && maxEcoles > 0 && ecoles.length >= maxEcoles;
-  const planLabel = PLAN_LABEL[caps?.plan ?? "gratuit"];
+  const currentPlan: PlanKey = caps?.plan ?? "gratuit";
+  const planLabel = PLAN_LABEL[currentPlan];
 
   const handleAdd = () => {
     if (atLimit) {
-      toast.error(
-        `Plan ${planLabel} : limite de ${maxEcoles} école${maxEcoles > 1 ? "s" : ""} atteinte. Passez à un plan supérieur pour en ajouter davantage.`,
-      );
+      setUpgradeOpen(true);
       return;
     }
     setEditing(null);
