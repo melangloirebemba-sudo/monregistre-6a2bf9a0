@@ -89,6 +89,36 @@ function NotesPage() {
           <h1 className="mt-1 font-display text-3xl font-semibold text-foreground">Notes</h1>
           <span className="rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal">{notes.length}</span>
         </div>
+        <div className="mt-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (filtered.length === 0) {
+                toast.error("Aucune note à exporter");
+                return;
+              }
+              const periodeById = Object.fromEntries(periodes.map((p) => [p.id, p.label]));
+              downloadCsv(
+                `notes-${new Date().toISOString().slice(0, 10)}.csv`,
+                filtered.map((n) => ({
+                  date: n.date,
+                  eleve: n.eleve ? `${n.eleve.prenom} ${n.eleve.nom}` : "",
+                  libelle: n.libelle,
+                  matiere: n.matiere ?? "",
+                  valeur: n.valeur,
+                  echelle,
+                  coefficient: n.coefficient,
+                  periode: n.periode_id ? periodeById[n.periode_id] ?? "" : "",
+                })),
+              );
+              toast.success(`${filtered.length} note(s) exportée(s)`);
+            }}
+          >
+            <Download className="mr-1 h-4 w-4" /> Export CSV
+          </Button>
+        </div>
       </header>
 
       <div className="mb-3 grid grid-cols-2 gap-2">
