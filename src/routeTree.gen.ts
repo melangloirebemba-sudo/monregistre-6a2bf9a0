@@ -23,6 +23,7 @@ import { Route as AuthenticatedElevesRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEcolesRouteImport } from './routes/_authenticated/ecoles'
 import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
 import { Route as AuthenticatedAnneesScolairesRouteImport } from './routes/_authenticated/annees-scolaires'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticated/accueil'
 
 const AuthRoute = AuthRouteImport.update({
@@ -97,6 +98,11 @@ const AuthenticatedAnneesScolairesRoute =
     path: '/annees-scolaires',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAccueilRoute = AuthenticatedAccueilRouteImport.update({
   id: '/accueil',
   path: '/accueil',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accueil': typeof AuthenticatedAccueilRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/ecoles': typeof AuthenticatedEcolesRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accueil': typeof AuthenticatedAccueilRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/ecoles': typeof AuthenticatedEcolesRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/accueil': typeof AuthenticatedAccueilRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/_authenticated/classes': typeof AuthenticatedClassesRoute
   '/_authenticated/ecoles': typeof AuthenticatedEcolesRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/accueil'
+    | '/admin'
     | '/annees-scolaires'
     | '/classes'
     | '/ecoles'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/accueil'
+    | '/admin'
     | '/annees-scolaires'
     | '/classes'
     | '/ecoles'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/accueil'
+    | '/_authenticated/admin'
     | '/_authenticated/annees-scolaires'
     | '/_authenticated/classes'
     | '/_authenticated/ecoles'
@@ -311,6 +323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAnneesScolairesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accueil': {
       id: '/_authenticated/accueil'
       path: '/accueil'
@@ -323,6 +342,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccueilRoute: typeof AuthenticatedAccueilRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAnneesScolairesRoute: typeof AuthenticatedAnneesScolairesRoute
   AuthenticatedClassesRoute: typeof AuthenticatedClassesRoute
   AuthenticatedEcolesRoute: typeof AuthenticatedEcolesRoute
@@ -338,6 +358,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccueilRoute: AuthenticatedAccueilRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAnneesScolairesRoute: AuthenticatedAnneesScolairesRoute,
   AuthenticatedClassesRoute: AuthenticatedClassesRoute,
   AuthenticatedEcolesRoute: AuthenticatedEcolesRoute,

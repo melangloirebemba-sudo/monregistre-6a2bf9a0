@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Shield, UserCog, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucide-react";
+import { Shield, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucide-react";
 import { toast } from "sonner";
 import {
   listAllUsers,
@@ -338,6 +338,3 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "wa
   );
 }
 
-function _unusedIcon() {
-  return <UserCog />;
-}
