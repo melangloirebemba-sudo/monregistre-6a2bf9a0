@@ -19,6 +19,8 @@ import { profilQueryOptions } from "@/lib/queries/profil";
 
 import { noteColorClass, formatNote } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
