@@ -57,7 +57,12 @@ function RappelsPrefsPage() {
         </p>
       </div>
 
-      <div className="card-elevated divide-y divide-border">
+      <NotificationsSection
+        enabled={prefs.notificationsEnabled}
+        onChange={(v) => setReminderPrefs({ notificationsEnabled: v })}
+      />
+
+      <div className="card-elevated mt-4 divide-y divide-border">
         <ToggleRow
           title="Aucune période définie"
           description="Alerter tant qu'aucune période (trimestre / semestre) n'est configurée."
