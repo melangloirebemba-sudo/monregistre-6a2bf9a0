@@ -203,12 +203,13 @@ function SignUpForm({ onDone }: { onDone: () => void }) {
           type="password"
           autoComplete="new-password"
           required
-          minLength={6}
+          minLength={PASSWORD_MIN_LENGTH}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <PasswordCriteria value={password} />
       </div>
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button type="submit" disabled={loading || !isPasswordValid(password)} className="w-full">
         {loading ? "Création…" : "Créer mon compte"}
       </Button>
       <p className="text-center text-xs text-muted-foreground">
