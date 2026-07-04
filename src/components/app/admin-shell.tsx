@@ -168,7 +168,7 @@ export function AdminShell({ children }: AdminShellProps) {
         </main>
 
         {/* Bottom nav mobile */}
-        <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
+        <nav aria-label="Navigation admin mobile" className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
           <ul className="mx-auto grid max-w-2xl grid-cols-4">
             {adminNav.map((t) => {
               const active = isActive(pathname, t.to);
@@ -179,12 +179,15 @@ export function AdminShell({ children }: AdminShellProps) {
                 <li key={t.to}>
                   <Link
                     to={t.to}
+                    aria-current={active ? "page" : undefined}
+                    aria-label={t.label}
                     className={[
-                      "flex flex-col items-center gap-1 px-1 py-2.5 text-[10.5px] font-medium leading-tight transition-colors",
+                      "flex min-h-11 flex-col items-center justify-center gap-1 px-1 py-2 text-[10.5px] font-medium leading-tight transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal",
                       active ? "text-teal" : "text-muted-foreground hover:text-foreground",
                     ].join(" ")}
                   >
-                    <Icon className={["h-5 w-5", active ? "scale-110" : ""].join(" ")} />
+                    <Icon className={["h-5 w-5", active ? "scale-110" : ""].join(" ")} aria-hidden="true" />
                     <span className="truncate">{short}</span>
                   </Link>
                 </li>
