@@ -18,7 +18,7 @@ import {
   requireUserId,
   type Absence,
 } from "@/lib/queries/data";
-import { enqueueWrite } from "@/lib/offline-queue";
+import { enqueueWrite, flushQueue, subscribeOfflineConflicts } from "@/lib/offline-queue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
