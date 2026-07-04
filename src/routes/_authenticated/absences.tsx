@@ -45,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SyncStatusInline } from "@/components/app/sync-status-inline";
 
 export const Route = createFileRoute("/_authenticated/absences")({
   head: () => ({ meta: [{ title: "Absences — MonRegistre" }] }),
@@ -98,6 +99,8 @@ function AbsencesPage() {
           </span>
         </div>
       </header>
+
+      <SyncStatusInline className="mb-3" />
 
       <div className="mb-3 space-y-2">
         <Select value={classeFilter} onValueChange={setClasseFilter}>
