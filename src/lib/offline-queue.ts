@@ -10,6 +10,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type QueueOp = "insert" | "update" | "delete";
+export type ConflictStrategy = "client-wins" | "server-wins" | "merge";
 
 export interface QueuedWrite {
   id: string;
@@ -23,9 +24,24 @@ export interface QueuedWrite {
   match?: Record<string, unknown>;
   // Optional label for the UI
   label?: string;
+  // ISO timestamp of the server row when the edit started (for conflict detection).
+  baseUpdatedAt?: string;
+  // How to resolve when server has changed since baseUpdatedAt. Default: "merge".
+  conflictStrategy?: ConflictStrategy;
   // Number of failed attempts
   attempts: number;
   lastError?: string;
+}
+
+export interface ConflictEvent {
+  table: string;
+  op: QueueOp;
+  match?: Record<string, unknown>;
+  label?: string;
+  baseUpdatedAt: string;
+  serverUpdatedAt: string;
+  strategy: ConflictStrategy;
+  resolution: "client-applied" | "server-kept";
 }
 
 const DB_NAME = "monregistre-offline";
@@ -33,7 +49,9 @@ const DB_VERSION = 1;
 const STORE = "writes";
 
 type Listener = () => void;
+type ConflictListener = (e: ConflictEvent) => void;
 const listeners = new Set<Listener>();
+const conflictListeners = new Set<ConflictListener>();
 let syncing = false;
 let flushChain: Promise<void> = Promise.resolve();
 
@@ -41,10 +59,21 @@ function notify() {
   for (const l of listeners) l();
 }
 
+function notifyConflict(e: ConflictEvent) {
+  for (const l of conflictListeners) l(e);
+}
+
 export function subscribeOfflineQueue(fn: Listener): () => void {
   listeners.add(fn);
   return () => {
     listeners.delete(fn);
+  };
+}
+
+export function subscribeOfflineConflicts(fn: ConflictListener): () => void {
+  conflictListeners.add(fn);
+  return () => {
+    conflictListeners.delete(fn);
   };
 }
 
