@@ -140,6 +140,9 @@ function ParametresPage() {
         <h1 className="mt-1 font-display text-3xl font-semibold text-foreground">Paramètres</h1>
       </div>
 
+      {caps && <PlanCard caps={caps} />}
+
+
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
         className="card-elevated space-y-5 p-5"
