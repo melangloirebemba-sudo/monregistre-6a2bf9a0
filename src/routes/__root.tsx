@@ -159,6 +159,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <InstallPwaPrompt />
       <Toaster />
     </QueryClientProvider>
   );
