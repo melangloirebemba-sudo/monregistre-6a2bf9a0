@@ -432,3 +432,209 @@ function DeleteEleveDialog({ open, onOpenChange, eleve, onDone }: { open: boolea
     </AlertDialog>
   );
 }
+
+function ImportElevesButton({
+  classes,
+  defaultClasseId,
+}: {
+  classes: Array<{ id: string; nom: string; ecole_id: string }>;
+  defaultClasseId?: string;
+}) {
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<null | {
+    rows: Array<Record<string, string>>;
+    classeId: string;
+  }>(null);
+
+  const onPick = () => fileRef.current?.click();
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const rows = await parseCsvFile(file);
+      if (rows.length === 0) {
+        toast.error("Fichier vide");
+        return;
+      }
+      setPreview({ rows, classeId: defaultClasseId ?? classes[0]?.id ?? "" });
+    } catch {
+      toast.error("Import CSV impossible");
+    }
+  };
+
+  const runImport = async () => {
+    if (!preview) return;
+    const classe = classes.find((c) => c.id === preview.classeId);
+    if (!classe) {
+      toast.error("Sélectionnez une classe cible");
+      return;
+    }
+    setBusy(true);
+    let user_id: string;
+    try {
+      user_id = await requireUserId();
+    } catch {
+      setBusy(false);
+      toast.error("Session expirée");
+      return;
+    }
+    let ok = 0;
+    let ko = 0;
+    for (const r of preview.rows) {
+      const nom = (r.nom ?? r.name ?? "").trim();
+      const prenom = (r.prenom ?? r.firstname ?? "").trim();
+      if (!nom || !prenom) {
+        ko++;
+        continue;
+      }
+      const sexeRaw = (r.sexe ?? r.genre ?? "").trim().toUpperCase();
+      const sexe = sexeRaw.startsWith("F") ? "F" : "M";
+      try {
+        await enqueueWrite({
+          table: "eleves",
+          op: "insert",
+          payload: {
+            id: crypto.randomUUID(),
+            user_id,
+            nom,
+            prenom,
+            sexe,
+            classe_id: classe.id,
+            ecole_id: classe.ecole_id,
+            numero_eleve: (r.numero_eleve ?? r.numero ?? r.matricule ?? "").trim() || null,
+            adresse: (r.adresse ?? r.address ?? "").trim() || null,
+            tuteur_nom: (r.tuteur_nom ?? r.tuteur ?? r.parent ?? "").trim() || null,
+            tuteur_numero: (r.tuteur_numero ?? r.telephone_tuteur ?? r.tel ?? "").trim() || null,
+          },
+          label: `Import élève ${prenom} ${nom}`,
+        });
+        ok++;
+      } catch {
+        ko++;
+      }
+    }
+    setBusy(false);
+    setPreview(null);
+    qc.invalidateQueries({ queryKey: ["eleves"] });
+    qc.invalidateQueries({ queryKey: ["counts"] });
+    toast.success(`${ok} élève(s) importé(s)${ko ? ` · ${ko} ignoré(s)` : ""}`);
+  };
+
+  return (
+    <>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={onFile}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={onPick}
+        disabled={classes.length === 0}
+      >
+        <Upload className="mr-1 h-4 w-4" /> Importer CSV
+      </Button>
+
+      <Dialog open={!!preview} onOpenChange={(v) => !v && setPreview(null)}>
+        <DialogContent className="max-w-[440px]">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              Importer {preview?.rows.length ?? 0} élève(s)
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              Colonnes reconnues : <code>nom</code>, <code>prenom</code>,{" "}
+              <code>sexe</code> (M/F), <code>numero_eleve</code>,{" "}
+              <code>tuteur_nom</code>, <code>tuteur_numero</code>,{" "}
+              <code>adresse</code>.
+            </p>
+            <div className="space-y-1.5">
+              <Label>Classe cible</Label>
+              <Select
+                value={preview?.classeId ?? ""}
+                onValueChange={(v) =>
+                  setPreview((p) => (p ? { ...p, classeId: v } : p))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {preview && preview.rows.length > 0 && (
+              <div className="max-h-32 overflow-y-auto rounded-md border border-input bg-cream-deep/40 p-2 text-[11px]">
+                {preview.rows.slice(0, 5).map((r, i) => (
+                  <div key={i} className="truncate">
+                    · {r.prenom ?? r.firstname ?? "?"} {r.nom ?? r.name ?? "?"}
+                  </div>
+                ))}
+                {preview.rows.length > 5 && (
+                  <div className="text-muted-foreground">
+                    … et {preview.rows.length - 5} de plus
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreview(null)} disabled={busy}>
+              Annuler
+            </Button>
+            <Button onClick={runImport} disabled={busy || !preview?.classeId}>
+              {busy ? "Import…" : "Importer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function ExportElevesButton({
+  eleves,
+  classeById,
+}: {
+  eleves: Eleve[];
+  classeById: Record<string, { nom: string } | undefined>;
+}) {
+  const onClick = () => {
+    if (eleves.length === 0) {
+      toast.error("Aucun élève à exporter");
+      return;
+    }
+    downloadCsv(
+      `eleves-${new Date().toISOString().slice(0, 10)}.csv`,
+      eleves.map((e) => ({
+        nom: e.nom,
+        prenom: e.prenom,
+        sexe: e.sexe ?? "",
+        classe: classeById[e.classe_id]?.nom ?? "",
+        numero_eleve: e.numero_eleve ?? "",
+        tuteur_nom: e.tuteur_nom ?? "",
+        tuteur_numero: e.tuteur_numero ?? "",
+        adresse: e.adresse ?? "",
+      })),
+    );
+    toast.success(`${eleves.length} élève(s) exporté(s)`);
+  };
+  return (
+    <Button type="button" variant="outline" size="sm" onClick={onClick}>
+      <Download className="mr-1 h-4 w-4" /> Export CSV
+    </Button>
+  );
+}
