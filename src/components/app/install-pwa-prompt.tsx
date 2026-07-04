@@ -85,7 +85,7 @@ export function InstallPwaPrompt() {
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferred(e as BeforeInstallPromptEvent);
-      setVisible(true);
+      show();
     };
     const onInstalled = () => {
       setVisible(false);
@@ -100,7 +100,7 @@ export function InstallPwaPrompt() {
       const inSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
       if (inSafari) {
         setIosHint(true);
-        setVisible(true);
+        show();
       }
     }
 
