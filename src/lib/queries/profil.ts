@@ -14,7 +14,34 @@ export interface Profil {
   email: string | null;
   matiere_principale: string | null;
   etablissement: string | null;
+  plan?: "gratuit" | "lite" | "premium";
 }
+
+export function planCapabilitiesQO() {
+  return queryOptions({
+    queryKey: ["plan-capabilities"],
+    staleTime: 60_000,
+    queryFn: async (): Promise<{ plan: "gratuit" | "lite" | "premium"; bulletins_pdf: boolean; isAdmin: boolean }> => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (!uid) return { plan: "gratuit", bulletins_pdf: false, isAdmin: false };
+      const [{ data: prof }, { data: roles }] = await Promise.all([
+        supabase.from("profils_enseignant").select("plan").eq("user_id", uid).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+      ]);
+      const isAdmin = (roles ?? []).some((r) => r.role === "admin");
+      const plan = ((prof as { plan?: string } | null)?.plan ?? "gratuit") as "gratuit" | "lite" | "premium";
+      const { data: limits } = await supabase
+        .from("plan_limits")
+        .select("bulletins_pdf")
+        .eq("plan", plan)
+        .maybeSingle();
+      const bulletins_pdf = isAdmin || Boolean((limits as { bulletins_pdf?: boolean } | null)?.bulletins_pdf);
+      return { plan, bulletins_pdf, isAdmin };
+    },
+  });
+}
+
 
 export function profilQueryOptions() {
   return queryOptions({
