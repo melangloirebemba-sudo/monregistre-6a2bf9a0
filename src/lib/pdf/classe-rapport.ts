@@ -48,31 +48,34 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
     .join("  •  ");
   if (line2) doc.text(line2, pageW / 2, 26, { align: "center" });
 
-  // Teacher block
+  // Info block
   let y = 40;
   doc.setTextColor(26, 26, 46);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("Enseignant :", 15, y);
-  doc.setFont("helvetica", "normal");
-  doc.text(ctx.enseignant ?? "—", 40, y);
 
+  const labelValue = (label: string, value: string | undefined, x: number, yy: number) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(label, x, yy);
+    const labelW = doc.getTextWidth(label);
+    doc.setFont("helvetica", "normal");
+    doc.text(value ?? "—", x + labelW + 2, yy);
+  };
+
+  labelValue("École :", ctx.ecole?.nom, 15, y);
+  labelValue("Année scolaire :", ctx.periode?.annee_scolaire, pageW / 2 + 5, y);
+
+  y += 6;
+  labelValue("Classe :", ctx.classe?.nom, 15, y);
+  labelValue("Période :", ctx.periode?.label, pageW / 2 + 5, y);
+
+  y += 6;
+  labelValue("Enseignant :", ctx.enseignant, 15, y);
   if (ctx.telephone) {
-    doc.setFont("helvetica", "bold");
-    doc.text("Téléphone :", pageW / 2 + 5, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(ctx.telephone, pageW / 2 + 30, y);
+    labelValue("Téléphone :", ctx.telephone, pageW / 2 + 5, y);
   }
 
-  if (ctx.ecole?.nom) {
-    y += 6;
-    doc.setFont("helvetica", "bold");
-    doc.text("École :", 15, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(ctx.ecole.nom, 40, y);
-  }
+  y += 10;
 
-  y += 8;
 
   // Simple flat table: all students with all their notes and appreciation
   const sorted = [...ctx.eleves].sort((a, b) =>
