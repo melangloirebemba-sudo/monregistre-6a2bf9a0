@@ -26,6 +26,7 @@ import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAnneesScolairesRouteImport } from './routes/_authenticated/annees-scolaires'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticated/accueil'
+import { Route as AuthenticatedAbsencesRouteImport } from './routes/_authenticated/absences'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
@@ -118,6 +119,11 @@ const AuthenticatedAccueilRoute = AuthenticatedAccueilRouteImport.update({
   path: '/accueil',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAbsencesRoute = AuthenticatedAbsencesRouteImport.update({
+  id: '/absences',
+  path: '/absences',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -144,6 +150,7 @@ const AuthenticatedAdminAnneesScolairesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/absences': typeof AuthenticatedAbsencesRoute
   '/accueil': typeof AuthenticatedAccueilRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/absences': typeof AuthenticatedAbsencesRoute
   '/accueil': typeof AuthenticatedAccueilRoute
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/classes': typeof AuthenticatedClassesRoute
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/absences': typeof AuthenticatedAbsencesRoute
   '/_authenticated/accueil': typeof AuthenticatedAccueilRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/absences'
     | '/accueil'
     | '/admin'
     | '/annees-scolaires'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/absences'
     | '/accueil'
     | '/annees-scolaires'
     | '/classes'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/absences'
     | '/_authenticated/accueil'
     | '/_authenticated/admin'
     | '/_authenticated/annees-scolaires'
@@ -404,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccueilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/absences': {
+      id: '/_authenticated/absences'
+      path: '/absences'
+      fullPath: '/absences'
+      preLoaderRoute: typeof AuthenticatedAbsencesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -454,6 +473,7 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAbsencesRoute: typeof AuthenticatedAbsencesRoute
   AuthenticatedAccueilRoute: typeof AuthenticatedAccueilRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAnneesScolairesRoute: typeof AuthenticatedAnneesScolairesRoute
@@ -471,6 +491,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAbsencesRoute: AuthenticatedAbsencesRoute,
   AuthenticatedAccueilRoute: AuthenticatedAccueilRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedAnneesScolairesRoute: AuthenticatedAnneesScolairesRoute,
