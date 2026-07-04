@@ -7,6 +7,12 @@ import {
   GraduationCap,
   MoreHorizontal,
   LogOut,
+  ClipboardList,
+  BarChart3,
+  CalendarDays,
+  BookOpen,
+  Settings,
+  BookMarked,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,13 +31,30 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-const tabs = [
+const bottomTabs = [
   { to: "/accueil", label: "Accueil", icon: Home },
   { to: "/ecoles", label: "Écoles", icon: School },
   { to: "/classes", label: "Classes", icon: GraduationCap },
   { to: "/eleves", label: "Élèves", icon: Users },
   { to: "/plus", label: "Plus", icon: MoreHorizontal },
 ] as const;
+
+const sideNav = [
+  { to: "/accueil", label: "Accueil", icon: Home },
+  { to: "/ecoles", label: "Écoles", icon: School },
+  { to: "/classes", label: "Classes", icon: GraduationCap },
+  { to: "/eleves", label: "Élèves", icon: Users },
+  { to: "/notes", label: "Notes", icon: ClipboardList },
+  { to: "/rapports", label: "Rapports", icon: BarChart3 },
+  { to: "/emploi-du-temps", label: "Emploi du temps", icon: CalendarDays },
+  { to: "/progression", label: "Progression", icon: BookOpen },
+  { to: "/parametres", label: "Paramètres", icon: Settings },
+] as const;
+
+function isActive(pathname: string, to: string) {
+  if (to === "/accueil") return pathname === "/accueil" || pathname === "/";
+  return pathname === to || pathname.startsWith(to + "/");
+}
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -49,17 +72,84 @@ export function AppShell({ children }: AppShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto flex min-h-screen max-w-[430px] flex-col bg-background shadow-[0_0_60px_-30px_rgba(0,0,0,0.2)] md:max-w-lg lg:max-w-xl">
-        {/* Top bar */}
-        <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-gold font-semibold text-gold-foreground shadow-soft">
+    <div className="min-h-screen bg-background lg:flex">
+      {/* Sidebar desktop */}
+      <aside className="topbar-ink hidden shrink-0 lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col xl:w-72">
+        <div className="flex items-center gap-3 px-5 py-6">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gold text-gold-foreground shadow-soft">
+            <BookMarked className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 leading-tight">
+            <div className="font-display text-lg font-semibold">MonRegistre</div>
+            <div className="truncate text-[10px] uppercase tracking-[0.22em] text-ink-foreground/60">
+              {annee}
+            </div>
+          </div>
+        </div>
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+          {sideNav.map((t) => {
+            const active = isActive(pathname, t.to);
+            const Icon = t.icon;
+            return (
+              <Link
+                key={t.to}
+                to={t.to}
+                className={[
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-white/10 text-gold-soft"
+                    : "text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground",
+                ].join(" ")}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{t.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="border-t border-white/10 p-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gold font-display text-xs font-semibold text-gold-foreground">
+                  {initiales}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{nom}</span>
+                  <span className="block truncate text-[10px] text-ink-foreground/60">
+                    Compte
+                  </span>
+                </span>
+                <MoreHorizontal className="h-4 w-4 shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>{nom}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/parametres">Paramètres</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Se déconnecter
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </aside>
+
+      {/* Zone principale */}
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        {/* Top bar mobile/tablet */}
+        <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 lg:hidden">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold font-semibold text-gold-foreground shadow-soft">
               {initiales}
             </div>
-            <div className="leading-tight">
+            <div className="min-w-0 leading-tight">
               <div className="font-display text-lg font-semibold">MonRegistre</div>
-              <div className="text-[10px] uppercase tracking-[0.22em] text-ink-foreground/60">
+              <div className="truncate text-[10px] uppercase tracking-[0.22em] text-ink-foreground/60">
                 {annee}
               </div>
             </div>
@@ -68,7 +158,7 @@ export function AppShell({ children }: AppShellProps) {
             <DropdownMenuTrigger asChild>
               <button
                 aria-label="Menu du profil"
-                className="rounded-full p-2 text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground"
+                className="shrink-0 rounded-full p-2 text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground"
               >
                 <MoreHorizontal className="h-5 w-5" />
               </button>
@@ -89,16 +179,17 @@ export function AppShell({ children }: AppShellProps) {
         </header>
 
         {/* Contenu */}
-        <main className="flex-1 pb-24">{children}</main>
+        <main className="flex-1 pb-24 lg:pb-10">
+          <div className="mx-auto w-full max-w-[440px] sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl">
+            {children}
+          </div>
+        </main>
 
-        {/* Bottom nav */}
-        <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-[430px] border-t border-border bg-card/95 backdrop-blur md:max-w-lg lg:max-w-xl">
-          <ul className="grid grid-cols-5">
-            {tabs.map((t) => {
-              const active =
-                t.to === "/accueil"
-                  ? pathname === "/accueil" || pathname === "/"
-                  : pathname.startsWith(t.to);
+        {/* Bottom nav mobile/tablet */}
+        <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
+          <ul className="mx-auto grid max-w-2xl grid-cols-5">
+            {bottomTabs.map((t) => {
+              const active = isActive(pathname, t.to);
               const Icon = t.icon;
               return (
                 <li key={t.to}>
