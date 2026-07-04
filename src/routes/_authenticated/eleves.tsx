@@ -177,8 +177,8 @@ function ElevesPage() {
           </Button>
         </div>
       ) : (
-        <ul className="space-y-2">
-          {filtered.map((e) => {
+        (() => {
+          const renderItem = (e: Eleve) => {
             const moy = moyennesByEleve.get(e.id);
             const cls = classeById[e.classe_id];
             const isChef = cls?.chef_id === e.id;
@@ -203,7 +203,10 @@ function ElevesPage() {
                       )}
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate">
-                      {cls?.nom ?? "Classe inconnue"}
+                      <span className="rounded-sm bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
+                        {ecoleById[e.ecole_id] ?? "École ?"}
+                      </span>
+                      {" · "}{cls?.nom ?? "Classe inconnue"}
                       {e.numero_eleve ? ` · ${e.numero_eleve}` : ""}
                       {e.tuteur_numero ? ` · Tuteur ${e.tuteur_numero}` : ""}
                     </div>
@@ -222,9 +225,27 @@ function ElevesPage() {
                 </div>
               </li>
             );
-          })}
-        </ul>
+          };
+          if (grouped) {
+            return (
+              <div className="space-y-4">
+                {grouped.map(([ecoleId, list]) => (
+                  <section key={ecoleId}>
+                    <h2 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+                      {ecoleById[ecoleId] ?? "École ?"}
+                      <span className="ml-auto text-[10px] font-normal">{list.length}</span>
+                    </h2>
+                    <ul className="space-y-2">{list.map(renderItem)}</ul>
+                  </section>
+                ))}
+              </div>
+            );
+          }
+          return <ul className="space-y-2">{filtered.map(renderItem)}</ul>;
+        })()
       )}
+
 
       {canAdd && (
         <button
