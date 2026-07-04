@@ -247,6 +247,7 @@ export function AppShell({ children }: AppShellProps) {
           </ul>
         </nav>
       </div>
+      <OfflineIndicator />
     </div>
   );
 }
