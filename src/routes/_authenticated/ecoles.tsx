@@ -1,12 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2, Lock } from "lucide-react";
+import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2, Lock, Sparkles, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { ecolesQO, requireUserId, type Ecole } from "@/lib/queries/data";
 import { planCapabilitiesQO } from "@/lib/queries/profil";
-import { PLAN_LABEL } from "@/config/support";
+import { PLAN_LABEL, upgradeWhatsAppHref, type PlanKey } from "@/config/support";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
