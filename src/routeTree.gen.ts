@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedRapportsRouteImport } from './routes/_authenticated/rapports'
 import { Route as AuthenticatedProgressionRouteImport } from './routes/_authenticated/progression'
 import { Route as AuthenticatedPlusRouteImport } from './routes/_authenticated/plus'
@@ -43,6 +44,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRapportsRoute = AuthenticatedRapportsRouteImport.update({
   id: '/rapports',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/plus': typeof AuthenticatedPlusRoute
   '/progression': typeof AuthenticatedProgressionRoute
   '/rapports': typeof AuthenticatedRapportsRoute
+  '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/plus': typeof AuthenticatedPlusRoute
   '/progression': typeof AuthenticatedProgressionRoute
   '/rapports': typeof AuthenticatedRapportsRoute
+  '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/_authenticated/plus': typeof AuthenticatedPlusRoute
   '/_authenticated/progression': typeof AuthenticatedProgressionRoute
   '/_authenticated/rapports': typeof AuthenticatedRapportsRoute
+  '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/plus'
     | '/progression'
     | '/rapports'
+    | '/support'
     | '/admin/annees-scolaires'
     | '/admin/plans'
     | '/admin/utilisateurs'
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/plus'
     | '/progression'
     | '/rapports'
+    | '/support'
     | '/admin/annees-scolaires'
     | '/admin/plans'
     | '/admin/utilisateurs'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plus'
     | '/_authenticated/progression'
     | '/_authenticated/rapports'
+    | '/_authenticated/support'
     | '/_authenticated/admin/annees-scolaires'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/utilisateurs'
@@ -293,6 +305,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rapports': {
       id: '/_authenticated/rapports'
@@ -448,6 +467,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlusRoute: typeof AuthenticatedPlusRoute
   AuthenticatedProgressionRoute: typeof AuthenticatedProgressionRoute
   AuthenticatedRapportsRoute: typeof AuthenticatedRapportsRoute
+  AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -464,6 +484,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlusRoute: AuthenticatedPlusRoute,
   AuthenticatedProgressionRoute: AuthenticatedProgressionRoute,
   AuthenticatedRapportsRoute: AuthenticatedRapportsRoute,
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
