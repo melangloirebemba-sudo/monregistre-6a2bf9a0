@@ -184,7 +184,7 @@ function EcolesPage() {
   );
 }
 
-function EmptyState({ onAdd }: { onAdd: () => void }) {
+function EmptyState({ onAdd, disabled }: { onAdd: () => void; disabled?: boolean }) {
   return (
     <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-ink">
@@ -196,23 +196,30 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           Commencez par ajouter l'école où vous enseignez.
         </p>
       </div>
-      <Button onClick={onAdd} className="mt-2">
+      <Button onClick={onAdd} disabled={disabled} className="mt-2">
         <Plus className="mr-1 h-4 w-4" /> Ajouter une école
       </Button>
     </div>
   );
 }
 
-function FloatingAdd({ onClick }: { onClick: () => void }) {
+function FloatingAdd({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
-      aria-label="Ajouter"
-      className="fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-teal text-teal-foreground shadow-[var(--shadow-hero)] transition-transform hover:scale-105 lg:bottom-8"
+      disabled={disabled}
+      aria-label={disabled ? "Limite atteinte — plan actuel" : "Ajouter"}
+      aria-disabled={disabled}
+      className={`fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full shadow-[var(--shadow-hero)] transition-transform lg:bottom-8 ${
+        disabled
+          ? "cursor-not-allowed bg-muted text-muted-foreground opacity-70"
+          : "bg-teal text-teal-foreground hover:scale-105"
+      }`}
     >
-      <Plus className="h-6 w-6" />
+      {disabled ? <Lock className="h-5 w-5" /> : <Plus className="h-6 w-6" />}
     </button>
   );
+}
 }
 
 function EcoleDialog({
