@@ -68,7 +68,23 @@ export const adminApi = {
     callAdminApi<{ ok: true; archived: number }>("annees.archive", { libelle }),
   anneesDelete: (libelle: string) =>
     callAdminApi<{ ok: true; deleted: number }>("annees.delete", { libelle }),
+
+  plansList: () => callAdminApi<{ plans: PlanLimit[] }>("plans.list").then((r) => r.plans),
+  plansUpdate: (patch: Partial<PlanLimit> & { plan: PlanLimit["plan"] }) =>
+    callAdminApi<{ ok: true }>("plans.update", patch),
 };
+
+export interface PlanLimit {
+  plan: "gratuit" | "lite" | "premium";
+  max_ecoles: number;
+  max_classes_par_ecole: number;
+  max_eleves: number;
+  bulletins_pdf: boolean;
+  rapports: boolean;
+  progression: boolean;
+  updated_at?: string;
+}
+
 
 export interface AdminStats {
   totalUsers: number;
