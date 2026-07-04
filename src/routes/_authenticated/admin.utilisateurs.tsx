@@ -485,4 +485,46 @@ function PlanLimitsBadges({ limit }: { limit: PlanLimit | undefined }) {
   );
 }
 
+type SortKey = "nom" | "email" | "plan" | "statut" | "created";
+
+function SortableHeader({
+  label,
+  sortKey,
+  currentKey,
+  dir,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  currentKey: SortKey;
+  dir: "asc" | "desc";
+  onSort: (k: SortKey) => void;
+}) {
+  const active = currentKey === sortKey;
+  const ariaSort: "ascending" | "descending" | "none" = active
+    ? dir === "asc"
+      ? "ascending"
+      : "descending"
+    : "none";
+  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <th scope="col" aria-sort={ariaSort} className="px-3 py-2">
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal"
+        aria-label={
+          active
+            ? `Trier par ${label}, actuellement ${dir === "asc" ? "croissant" : "décroissant"}. Cliquez pour inverser.`
+            : `Trier par ${label}`
+        }
+      >
+        {label}
+        <Icon aria-hidden="true" className="h-3 w-3" />
+      </button>
+    </th>
+  );
+}
+
+
 
