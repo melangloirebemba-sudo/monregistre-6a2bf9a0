@@ -208,22 +208,39 @@ function EleveDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eleve: Eleve | null;
-  classes: Array<{ id: string; nom: string; ecole_id: string }>;
+  classes: Array<{ id: string; nom: string; ecole_id: string; chef_id: string | null }>;
   defaultClasseId?: string;
 }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ nom: "", prenom: "", sexe: "M", classe_id: "" });
+  const [form, setForm] = useState({
+    nom: "",
+    prenom: "",
+    sexe: "M",
+    classe_id: "",
+    numero_eleve: "",
+    adresse: "",
+    tuteur_nom: "",
+    tuteur_numero: "",
+    chef: false,
+  });
 
   useEffect(() => {
     if (open) {
+      const classeId = eleve?.classe_id ?? defaultClasseId ?? "";
+      const cls = classes.find((c) => c.id === classeId);
       setForm({
         nom: eleve?.nom ?? "",
         prenom: eleve?.prenom ?? "",
         sexe: eleve?.sexe ?? "M",
-        classe_id: eleve?.classe_id ?? defaultClasseId ?? "",
+        classe_id: classeId,
+        numero_eleve: eleve?.numero_eleve ?? "",
+        adresse: eleve?.adresse ?? "",
+        tuteur_nom: eleve?.tuteur_nom ?? "",
+        tuteur_numero: eleve?.tuteur_numero ?? "",
+        chef: !!(eleve && cls && cls.chef_id === eleve.id),
       });
     }
-  }, [open, eleve, defaultClasseId]);
+  }, [open, eleve, defaultClasseId, classes]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -238,18 +255,34 @@ function EleveDialog({
         sexe: form.sexe,
         classe_id: form.classe_id,
         ecole_id: classe.ecole_id,
+        numero_eleve: form.numero_eleve.trim() || null,
+        adresse: form.adresse.trim() || null,
+        tuteur_nom: form.tuteur_nom.trim() || null,
+        tuteur_numero: form.tuteur_numero.trim() || null,
       };
+      let eleveId = eleve?.id;
       if (eleve) {
         const { error } = await supabase.from("eleves").update(payload).eq("id", eleve.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("eleves").insert({ ...payload, user_id });
+        const { data, error } = await supabase.from("eleves").insert({ ...payload, user_id }).select("id").single();
+        if (error) throw error;
+        eleveId = data.id;
+      }
+      // Chef de classe
+      const wasChef = eleve && classe.chef_id === eleve.id;
+      if (form.chef && eleveId) {
+        const { error } = await supabase.from("classes").update({ chef_id: eleveId }).eq("id", form.classe_id);
+        if (error) throw error;
+      } else if (wasChef && !form.chef) {
+        const { error } = await supabase.from("classes").update({ chef_id: null }).eq("id", form.classe_id);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       toast.success(eleve ? "Élève modifié" : "Élève ajouté");
       qc.invalidateQueries({ queryKey: ["eleves"] });
+      qc.invalidateQueries({ queryKey: ["classes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
       onOpenChange(false);
     },
@@ -258,7 +291,7 @@ function EleveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[380px]">
+      <DialogContent className="max-w-[420px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">{eleve ? "Modifier l'élève" : "Nouvel élève"}</DialogTitle>
         </DialogHeader>
@@ -294,6 +327,36 @@ function EleveDialog({
               </Select>
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="enum">Numéro de l'élève</Label>
+            <Input id="enum" value={form.numero_eleve} onChange={(e) => setForm({ ...form, numero_eleve: e.target.value })} placeholder="Téléphone ou matricule" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="eadr">Adresse de l'élève</Label>
+            <Input id="eadr" value={form.adresse} onChange={(e) => setForm({ ...form, adresse: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="etnom">Nom du tuteur</Label>
+              <Input id="etnom" value={form.tuteur_nom} onChange={(e) => setForm({ ...form, tuteur_nom: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="etnum">Numéro du tuteur</Label>
+              <Input id="etnum" value={form.tuteur_numero} onChange={(e) => setForm({ ...form, tuteur_numero: e.target.value })} />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 rounded-lg border border-input bg-cream-deep/40 px-3 py-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.chef}
+              onChange={(e) => setForm({ ...form, chef: e.target.checked })}
+              className="h-4 w-4 accent-teal"
+            />
+            <span className="flex items-center gap-1.5 text-sm">
+              <Crown className="h-3.5 w-3.5 text-gold" />
+              Chef de classe
+            </span>
+          </label>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             <Button type="submit" disabled={save.isPending}>{save.isPending ? "…" : "Enregistrer"}</Button>
