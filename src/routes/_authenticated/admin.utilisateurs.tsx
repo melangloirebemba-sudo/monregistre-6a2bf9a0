@@ -391,7 +391,7 @@ function AdminContent() {
                   </tr>
                 </thead>
                 <tbody ref={tbodyRef} className="divide-y divide-border">
-                  {filtered.map((u, i) => {
+                  {paged.map((u, i) => {
                     const displayName = u.nom_affiche || u.email;
                     const isAdmin = u.roles.includes("admin");
                     const suspended = u.statut === "suspendu";
