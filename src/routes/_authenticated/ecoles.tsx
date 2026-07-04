@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 import { ecolesQO, requireUserId, type Ecole } from "@/lib/queries/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
