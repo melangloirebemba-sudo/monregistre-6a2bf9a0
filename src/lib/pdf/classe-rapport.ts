@@ -48,9 +48,32 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
   const line2 = [ctx.periode?.label, annee].filter(Boolean).join("  •  ");
   if (line2) doc.text(line2, pageW / 2, 26, { align: "center" });
 
-  // Info block
+  // École badge (chip visible)
   let y = 40;
   doc.setTextColor(26, 26, 46);
+  if (ctx.ecole?.nom) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    const label = "ÉCOLE";
+    const labelW = doc.getTextWidth(label);
+    doc.setFontSize(9);
+    const value = ctx.ecole.nom;
+    const valueW = doc.getTextWidth(value);
+    const padX = 3;
+    const gap = 3;
+    const chipW = padX + labelW + gap + valueW + padX;
+    const chipH = 6.5;
+    doc.setFillColor(26, 122, 110);
+    doc.roundedRect(15, y - 4.5, chipW, chipH, 1.5, 1.5, "F");
+    doc.setTextColor(245, 240, 232);
+    doc.setFontSize(8);
+    doc.text(label, 15 + padX, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(value, 15 + padX + labelW + gap, y);
+    doc.setTextColor(26, 26, 46);
+    y += 8;
+  }
 
   const labelValue = (label: string, value: string | undefined, x: number, yy: number) => {
     doc.setFont("helvetica", "bold");
@@ -61,17 +84,16 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
     doc.text(value ?? "—", x + labelW + 2, yy);
   };
 
-  labelValue("École :", ctx.ecole?.nom, 15, y);
+  labelValue("Classe :", ctx.classe?.nom, 15, y);
   labelValue("Année scolaire :", annee, pageW / 2 + 5, y);
 
   y += 6;
-  labelValue("Classe :", ctx.classe?.nom, 15, y);
-  labelValue("Période :", ctx.periode?.label, pageW / 2 + 5, y);
+  labelValue("Période :", ctx.periode?.label, 15, y);
+  labelValue("Enseignant :", ctx.enseignant, pageW / 2 + 5, y);
 
-  y += 6;
-  labelValue("Enseignant :", ctx.enseignant, 15, y);
   if (ctx.telephone) {
-    labelValue("Téléphone :", ctx.telephone, pageW / 2 + 5, y);
+    y += 6;
+    labelValue("Téléphone :", ctx.telephone, 15, y);
   }
 
   y += 10;

@@ -14,12 +14,13 @@ import {
   CalendarX,
   AlertTriangle,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
-import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO } from "@/lib/queries/data";
+import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
+import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   head: () => ({
@@ -34,11 +35,14 @@ export const Route = createFileRoute("/_authenticated/accueil")({
 function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: counts } = useQuery(countsQueryOptions());
+  const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: creneaux = [] } = useQuery(creneauxQO());
   const { data: classes = [] } = useQuery(classesQO());
   const { data: notes = [] } = useQuery(notesQO());
   const { data: absences = [] } = useQuery(absencesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
+
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
 
   const reminderPrefs = useReminderPrefs();
 
@@ -129,7 +133,10 @@ function AccueilPage() {
   };
   const todayCreneaux = creneaux
     .filter((c) => c.jour_semaine === todayIso)
+    .filter((c) => ecoleFilter === "all" || c.ecole_id === ecoleFilter)
     .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut));
+
+  const selectedEcole = ecoles.find((e) => e.id === ecoleFilter);
 
   const badges = [
     { label: "Écoles", value: counts?.ecoles ?? 0 },
@@ -252,7 +259,7 @@ function AccueilPage() {
 
       {/* Aujourd'hui */}
       <section className="mt-6 rounded-2xl border border-border bg-card p-5">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-teal">
             <CalendarDays className="h-4 w-4" />
             <span className="text-xs font-semibold uppercase tracking-widest">
@@ -263,9 +270,21 @@ function AccueilPage() {
             Voir tout →
           </Link>
         </div>
+        {ecoles.length > 1 && (
+          <div className="mb-3">
+            <EcoleFilter
+              value={ecoleFilter}
+              onValueChange={setEcoleFilter}
+              ecoles={ecoles}
+              placeholder="École"
+            />
+          </div>
+        )}
         {todayCreneaux.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Aucun créneau prévu aujourd'hui.
+            {ecoleFilter !== "all"
+              ? `Aucun créneau aujourd'hui pour ${selectedEcole?.nom ?? "cette école"}.`
+              : "Aucun créneau prévu aujourd'hui."}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -299,10 +318,10 @@ function AccueilPage() {
                         <span className="text-ink/60 font-normal"> · {c.matiere}</span>
                       )}
                     </p>
-                    <p className="text-xs text-ink/60 truncate">
-                      {c.ecole?.nom}
+                    <p className="text-xs text-ink/60 truncate flex items-center gap-1.5 flex-wrap">
+                      <EcoleBadge name={c.ecole?.nom} />
                       {c.salle && (
-                        <span className="inline-flex items-center gap-0.5 ml-1">
+                        <span className="inline-flex items-center gap-0.5">
                           <MapPin className="h-3 w-3" />
                           {c.salle}
                         </span>

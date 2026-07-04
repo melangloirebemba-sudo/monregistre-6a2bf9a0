@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarDays, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -63,6 +64,7 @@ function EmploiDuTempsPage() {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<Creneau | null>(null);
   const [toDelete, setToDelete] = useState<string | null>(null);
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [ecoleId, setEcoleId] = useState("");
   const [classeId, setClasseId] = useState("");
   const [jour, setJour] = useState("1");
@@ -71,9 +73,22 @@ function EmploiDuTempsPage() {
   const [matiere, setMatiere] = useState("");
   const [salle, setSalle] = useState("");
 
+  const ecoleById = useMemo(
+    () => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])),
+    [ecoles],
+  );
+
+  const filteredCreneaux = useMemo(
+    () =>
+      ecoleFilter === "all"
+        ? creneaux
+        : creneaux.filter((c) => c.ecole_id === ecoleFilter),
+    [creneaux, ecoleFilter],
+  );
+
   function openCreate() {
     setEdit(null);
-    setEcoleId(ecoles[0]?.id ?? "");
+    setEcoleId(ecoleFilter !== "all" ? ecoleFilter : (ecoles[0]?.id ?? ""));
     setClasseId("");
     setJour("1");
     setDebut("08:00");
@@ -142,10 +157,73 @@ function EmploiDuTempsPage() {
     ? classes.filter((c) => c.ecole_id === ecoleId)
     : classes;
 
-  const byJour = JOURS.map((j) => ({
-    ...j,
-    items: creneaux.filter((c) => c.jour_semaine === j.v),
-  })).filter((j) => j.items.length > 0);
+
+  const groupedByEcole = useMemo(() => {
+    if (ecoleFilter !== "all") return null;
+    const map = new Map<string, typeof filteredCreneaux>();
+    filteredCreneaux.forEach((c) => {
+      const list = map.get(c.ecole_id) ?? [];
+      list.push(c);
+      map.set(c.ecole_id, list);
+    });
+    return Array.from(map.entries()).sort((a, b) =>
+      (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+    );
+  }, [filteredCreneaux, ecoleFilter, ecoleById]);
+
+  type CreneauRow = (typeof creneaux)[number];
+
+  const renderCreneauItem = (c: CreneauRow) => (
+    <li key={c.id} className="p-3 flex items-start gap-3">
+      <div className="shrink-0 w-16 text-center">
+        <div className="text-sm font-semibold text-ink">{c.heure_debut.slice(0, 5)}</div>
+        <div className="text-[10px] text-ink/50">↓</div>
+        <div className="text-sm text-ink/70">{c.heure_fin.slice(0, 5)}</div>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-ink truncate">
+          {c.classe?.nom ?? "—"}
+          {c.matiere && <span className="text-ink/60 font-normal"> · {c.matiere}</span>}
+        </p>
+        <p className="text-xs text-ink/60 truncate flex items-center gap-1.5 flex-wrap">
+          <EcoleBadge name={c.ecole?.nom ?? ecoleById[c.ecole_id]} />
+          {c.salle && (
+            <span className="inline-flex items-center gap-0.5">
+              <MapPin className="h-3 w-3" />
+              {c.salle}
+            </span>
+          )}
+        </p>
+      </div>
+      <div className="flex flex-col gap-1 shrink-0">
+        <Button size="icon" variant="ghost" onClick={() => openEdit(c)}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button size="icon" variant="ghost" onClick={() => setToDelete(c.id)}>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+    </li>
+  );
+
+  const renderByJour = (items: CreneauRow[]) => {
+    const days = JOURS.map((j) => ({
+      ...j,
+      items: items.filter((c) => c.jour_semaine === j.v),
+    })).filter((j) => j.items.length > 0);
+    return (
+      <div className="space-y-4">
+        {days.map((j) => (
+          <section key={j.v} className="card-elevated overflow-hidden">
+            <div className="bg-ink text-cream px-4 py-2 font-serif text-sm tracking-wide">
+              {j.label}
+            </div>
+            <ul className="divide-y divide-ink/10">{j.items.map(renderCreneauItem)}</ul>
+          </section>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-5">
@@ -160,53 +238,29 @@ function EmploiDuTempsPage() {
         </Button>
       </header>
 
+      <EcoleFilter value={ecoleFilter} onValueChange={setEcoleFilter} ecoles={ecoles} />
+
       {!creneaux.length ? (
         <div className="card-elevated p-8 text-center">
           <CalendarDays className="mx-auto mb-3 h-10 w-10 text-teal/60" />
           <p className="text-ink/70">Aucun créneau. Ajoutes-en un pour construire ton emploi du temps.</p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {byJour.map((j) => (
-            <section key={j.v} className="card-elevated overflow-hidden">
-              <div className="bg-ink text-cream px-4 py-2 font-serif text-sm tracking-wide">
-                {j.label}
-              </div>
-              <ul className="divide-y divide-ink/10">
-                {j.items.map((c) => (
-                  <li key={c.id} className="p-3 flex items-start gap-3">
-                    <div className="shrink-0 w-16 text-center">
-                      <div className="text-sm font-semibold text-ink">{c.heure_debut.slice(0, 5)}</div>
-                      <div className="text-[10px] text-ink/50">↓</div>
-                      <div className="text-sm text-ink/70">{c.heure_fin.slice(0, 5)}</div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-ink truncate">
-                        {c.classe?.nom ?? "—"}
-                        {c.matiere && <span className="text-ink/60 font-normal"> · {c.matiere}</span>}
-                      </p>
-                      <p className="text-xs text-ink/60 truncate">{c.ecole?.nom}</p>
-                      {c.salle && (
-                        <p className="text-xs text-ink/60 flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3" />
-                          {c.salle}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1 shrink-0">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(c)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => setToDelete(c.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+      ) : !filteredCreneaux.length ? (
+        <div className="card-elevated p-8 text-center">
+          <CalendarDays className="mx-auto mb-3 h-10 w-10 text-teal/60" />
+          <p className="text-ink/70">Aucun créneau pour cette école.</p>
+        </div>
+      ) : groupedByEcole ? (
+        <div className="space-y-5">
+          {groupedByEcole.map(([eid, list]) => (
+            <section key={eid}>
+              <EcoleGroupHeader name={ecoleById[eid]} count={list.length} />
+              {renderByJour(list)}
             </section>
           ))}
         </div>
+      ) : (
+        renderByJour(filteredCreneaux)
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
