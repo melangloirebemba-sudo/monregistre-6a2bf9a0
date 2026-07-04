@@ -307,8 +307,12 @@ function DeleteDialog({
   const del = useMutation({
     mutationFn: async () => {
       if (!ecole) return;
-      const { error } = await supabase.from("ecoles").delete().eq("id", ecole.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "ecoles",
+        op: "delete",
+        match: { id: ecole.id },
+        label: `Supprimer école ${ecole.nom}`,
+      });
     },
     onSuccess: () => {
       toast.success("École supprimée");
