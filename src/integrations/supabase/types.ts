@@ -57,6 +57,7 @@ export type Database = {
       }
       classes: {
         Row: {
+          chef_id: string | null
           code: string
           created_at: string
           ecole_id: string
@@ -68,6 +69,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          chef_id?: string | null
           code: string
           created_at?: string
           ecole_id: string
@@ -79,6 +81,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          chef_id?: string | null
           code?: string
           created_at?: string
           ecole_id?: string
@@ -90,6 +93,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "classes_chef_id_fkey"
+            columns: ["chef_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "classes_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -194,35 +204,47 @@ export type Database = {
       }
       eleves: {
         Row: {
+          adresse: string | null
           classe_id: string
           created_at: string
           ecole_id: string
           id: string
           nom: string
+          numero_eleve: string | null
           prenom: string
           sexe: string | null
+          tuteur_nom: string | null
+          tuteur_numero: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          adresse?: string | null
           classe_id: string
           created_at?: string
           ecole_id: string
           id?: string
           nom: string
+          numero_eleve?: string | null
           prenom: string
           sexe?: string | null
+          tuteur_nom?: string | null
+          tuteur_numero?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          adresse?: string | null
           classe_id?: string
           created_at?: string
           ecole_id?: string
           id?: string
           nom?: string
+          numero_eleve?: string | null
           prenom?: string
           sexe?: string | null
+          tuteur_nom?: string | null
+          tuteur_numero?: string | null
           updated_at?: string
           user_id?: string
         }
