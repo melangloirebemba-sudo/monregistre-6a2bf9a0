@@ -219,8 +219,8 @@ function AbsencesPage() {
           </Button>
         </div>
       ) : (
-        <ul className="space-y-2">
-          {filtered.map((a) => {
+        (() => {
+          const renderItem = (a: AbsenceRow) => {
             const cls = a.eleve ? classeById[a.eleve.classe_id] : null;
             return (
               <li key={a.id} className="card-elevated p-3">
@@ -243,8 +243,11 @@ function AbsencesPage() {
                       {a.eleve ? `${a.eleve.prenom} ${a.eleve.nom}` : "Élève ?"}
                     </div>
                     <div className="truncate text-[11px] text-muted-foreground">
-                      {new Date(a.date).toLocaleDateString("fr-FR")}
+                      <span className="rounded-sm bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
+                        {cls ? ecoleById[cls.ecole_id] ?? "École ?" : "École ?"}
+                      </span>
                       {cls ? ` · ${cls.nom}` : ""}
+                      {" · "}{new Date(a.date).toLocaleDateString("fr-FR")}
                       {a.motif ? ` · ${a.motif}` : ""}
                       {a.justifiee ? " · justifiée" : ""}
                     </div>
@@ -269,9 +272,38 @@ function AbsencesPage() {
                 </div>
               </li>
             );
-          })}
-        </ul>
+          };
+          if (ecoleFilter === "all") {
+            const map = new Map<string, AbsenceRow[]>();
+            filtered.forEach((a) => {
+              const cls = a.eleve ? classeById[a.eleve.classe_id] : null;
+              const key = cls?.ecole_id ?? "__unknown__";
+              const list = map.get(key) ?? [];
+              list.push(a);
+              map.set(key, list);
+            });
+            const grouped = Array.from(map.entries()).sort((a, b) =>
+              (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+            );
+            return (
+              <div className="space-y-4">
+                {grouped.map(([ecoleId, list]) => (
+                  <section key={ecoleId}>
+                    <h2 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+                      {ecoleById[ecoleId] ?? "École ?"}
+                      <span className="ml-auto text-[10px] font-normal">{list.length}</span>
+                    </h2>
+                    <ul className="space-y-2">{list.map(renderItem)}</ul>
+                  </section>
+                ))}
+              </div>
+            );
+          }
+          return <ul className="space-y-2">{filtered.map(renderItem)}</ul>;
+        })()
       )}
+
 
       {canAdd && (
         <button
