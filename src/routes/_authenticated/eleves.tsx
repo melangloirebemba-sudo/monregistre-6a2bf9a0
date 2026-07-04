@@ -7,6 +7,7 @@ import { enqueueWrite } from "@/lib/offline-queue";
 import { parseCsvFile, downloadCsv } from "@/lib/csv";
 import {
   classesQO,
+  ecolesQO,
   elevesQO,
   notesQO,
   requireUserId,
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/_authenticated/eleves")({
 
 function ElevesPage() {
   const { data: classes = [] } = useQuery(classesQO());
+  const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: profil } = useQuery(profilQueryOptions());
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const { data: eleves = [], isLoading } = useQuery(
@@ -203,6 +205,7 @@ function ElevesPage() {
         onOpenChange={setOpen}
         eleve={editing}
         classes={classes}
+        ecoles={ecoles}
         defaultClasseId={classeFilter !== "all" ? classeFilter : classes[0]?.id}
       />
       <DeleteEleveDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)} eleve={toDelete} onDone={() => setToDelete(null)} />
@@ -211,12 +214,13 @@ function ElevesPage() {
 }
 
 function EleveDialog({
-  open, onOpenChange, eleve, classes, defaultClasseId,
+  open, onOpenChange, eleve, classes, ecoles, defaultClasseId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eleve: Eleve | null;
   classes: Array<{ id: string; nom: string; ecole_id: string; chef_id: string | null }>;
+  ecoles: Array<{ id: string; nom: string }>;
   defaultClasseId?: string;
 }) {
   const qc = useQueryClient();
@@ -224,6 +228,7 @@ function EleveDialog({
     nom: "",
     prenom: "",
     sexe: "M",
+    ecole_id: "",
     classe_id: "",
     numero_eleve: "",
     adresse: "",
@@ -236,11 +241,13 @@ function EleveDialog({
     if (open) {
       const classeId = eleve?.classe_id ?? defaultClasseId ?? "";
       const cls = classes.find((c) => c.id === classeId);
+      const ecoleId = eleve?.ecole_id ?? cls?.ecole_id ?? ecoles[0]?.id ?? "";
       setForm({
         nom: eleve?.nom ?? "",
         prenom: eleve?.prenom ?? "",
         sexe: eleve?.sexe ?? "M",
-        classe_id: classeId,
+        ecole_id: ecoleId,
+        classe_id: cls && cls.ecole_id === ecoleId ? classeId : "",
         numero_eleve: eleve?.numero_eleve ?? "",
         adresse: eleve?.adresse ?? "",
         tuteur_nom: eleve?.tuteur_nom ?? "",
@@ -248,21 +255,28 @@ function EleveDialog({
         chef: !!(eleve && cls && cls.chef_id === eleve.id),
       });
     }
-  }, [open, eleve, defaultClasseId, classes]);
+  }, [open, eleve, defaultClasseId, classes, ecoles]);
+
+  const classesForEcole = useMemo(
+    () => classes.filter((c) => c.ecole_id === form.ecole_id),
+    [classes, form.ecole_id],
+  );
 
   const save = useMutation({
     mutationFn: async () => {
       const user_id = await requireUserId();
       if (!form.nom.trim() || !form.prenom.trim()) throw new Error("Nom et prénom obligatoires");
+      if (!form.ecole_id) throw new Error("Sélectionnez une école");
       if (!form.classe_id) throw new Error("Sélectionnez une classe");
       const classe = classes.find((c) => c.id === form.classe_id);
       if (!classe) throw new Error("Classe invalide");
+      if (classe.ecole_id !== form.ecole_id) throw new Error("La classe ne correspond pas à l'école sélectionnée");
       const payload = {
         nom: form.nom.trim(),
         prenom: form.prenom.trim(),
         sexe: form.sexe,
         classe_id: form.classe_id,
-        ecole_id: classe.ecole_id,
+        ecole_id: form.ecole_id,
         numero_eleve: form.numero_eleve.trim() || null,
         adresse: form.adresse.trim() || null,
         tuteur_nom: form.tuteur_nom.trim() || null,
@@ -335,23 +349,64 @@ function EleveDialog({
               <Input id="enom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
             </div>
           </div>
+          <div className="space-y-1.5">
+            <Label>Sexe</Label>
+            <Select value={form.sexe} onValueChange={(v) => setForm({ ...form, sexe: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="M">Masculin</SelectItem>
+                <SelectItem value="F">Féminin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Sexe</Label>
-              <Select value={form.sexe} onValueChange={(v) => setForm({ ...form, sexe: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>École *</Label>
+              <Select
+                value={form.ecole_id}
+                onValueChange={(v) =>
+                  setForm({
+                    ...form,
+                    ecole_id: v,
+                    classe_id:
+                      classes.find((c) => c.id === form.classe_id)?.ecole_id === v
+                        ? form.classe_id
+                        : "",
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={ecoles.length ? "Choisir" : "Aucune école"} />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="M">Masculin</SelectItem>
-                  <SelectItem value="F">Féminin</SelectItem>
+                  {ecoles.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Classe *</Label>
-              <Select value={form.classe_id} onValueChange={(v) => setForm({ ...form, classe_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+              <Select
+                value={form.classe_id}
+                onValueChange={(v) => setForm({ ...form, classe_id: v })}
+                disabled={!form.ecole_id || classesForEcole.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      !form.ecole_id
+                        ? "École d'abord"
+                        : classesForEcole.length === 0
+                          ? "Aucune classe"
+                          : "Choisir"
+                    }
+                  />
+                </SelectTrigger>
                 <SelectContent>
-                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+                  {classesForEcole.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
