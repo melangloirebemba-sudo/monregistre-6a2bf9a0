@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
 import { Button } from "@/components/ui/button";
+import { DataPagination, usePagination } from "@/components/ui/data-pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -59,9 +60,13 @@ function ClassesPage() {
     [classes, q],
   );
 
+  const pg = usePagination(filtered.length);
+  const paged = pg.slice(filtered);
+
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
 
   const canAdd = ecoles.length > 0;
+
 
   return (
     <div className="px-5 pb-24 pt-5">
@@ -139,28 +144,47 @@ function ClassesPage() {
               </div>
             </li>
           );
-          if (ecoleFilter === "all") {
-            const map = new Map<string, Classe[]>();
-            filtered.forEach((c) => {
-              const list = map.get(c.ecole_id) ?? [];
-              list.push(c);
-              map.set(c.ecole_id, list);
-            });
-            const grouped = Array.from(map.entries()).sort((a, b) =>
-              (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
-            );
-            return (
-              <div className="space-y-4">
-                {grouped.map(([ecoleId, list]) => (
-                  <section key={ecoleId}>
-                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                    <ul className="space-y-3">{list.map(renderItem)}</ul>
-                  </section>
-                ))}
-              </div>
-            );
-          }
-          return <ul className="space-y-3">{filtered.map(renderItem)}</ul>;
+          const listView = (() => {
+            if (ecoleFilter === "all") {
+              const map = new Map<string, Classe[]>();
+              paged.forEach((c) => {
+                const list = map.get(c.ecole_id) ?? [];
+                list.push(c);
+                map.set(c.ecole_id, list);
+              });
+              const grouped = Array.from(map.entries()).sort((a, b) =>
+                (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+              );
+              return (
+                <div className="space-y-4">
+                  {grouped.map(([ecoleId, list]) => (
+                    <section key={ecoleId}>
+                      <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
+                      <ul className="space-y-3">{list.map(renderItem)}</ul>
+                    </section>
+                  ))}
+                </div>
+              );
+            }
+            return <ul className="space-y-3">{paged.map(renderItem)}</ul>;
+          })();
+          return (
+            <div className="space-y-3">
+              {listView}
+              <DataPagination
+                page={pg.page}
+                totalPages={pg.totalPages}
+                pageSize={pg.pageSize}
+                totalCount={classes.length}
+                filteredCount={filtered.length}
+                start={pg.start}
+                end={pg.end}
+                onPageChange={pg.setPage}
+                onPageSizeChange={pg.setPageSize}
+                itemLabel="classes"
+              />
+            </div>
+          );
         })()
       )}
 

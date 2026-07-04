@@ -8,6 +8,7 @@ import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
 import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 
 import { Button } from "@/components/ui/button";
+import { DataPagination, usePagination } from "@/components/ui/data-pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +102,10 @@ function AdminContent() {
     const sorted = [...base].sort(cmp);
     return sortDir === "asc" ? sorted : sorted.reverse();
   }, [users, q, sortKey, sortDir]);
+
+  const pg = usePagination(filtered.length);
+  const paged = pg.slice(filtered);
+
 
   const stats = useMemo(() => {
     return {
@@ -244,7 +249,7 @@ function AdminContent() {
           <>
             {/* Cartes empilées — mobile */}
             <ul className="divide-y divide-border sm:hidden">
-              {filtered.map((u) => {
+              {paged.map((u) => {
                 const displayName = u.nom_affiche || u.email;
                 const isAdmin = u.roles.includes("admin");
                 const suspended = u.statut === "suspendu";
@@ -386,7 +391,7 @@ function AdminContent() {
                   </tr>
                 </thead>
                 <tbody ref={tbodyRef} className="divide-y divide-border">
-                  {filtered.map((u, i) => {
+                  {paged.map((u, i) => {
                     const displayName = u.nom_affiche || u.email;
                     const isAdmin = u.roles.includes("admin");
                     const suspended = u.statut === "suspendu";
@@ -520,6 +525,20 @@ function AdminContent() {
                   })}
                 </tbody>
               </table>
+            </div>
+            <div className="border-t border-border/60 px-3 pb-3">
+              <DataPagination
+                page={pg.page}
+                totalPages={pg.totalPages}
+                pageSize={pg.pageSize}
+                totalCount={users.length}
+                filteredCount={filtered.length}
+                start={pg.start}
+                end={pg.end}
+                onPageChange={pg.setPage}
+                onPageSizeChange={pg.setPageSize}
+                itemLabel="utilisateurs"
+              />
             </div>
           </>
         )}

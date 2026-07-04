@@ -16,6 +16,7 @@ import {
 import { moyennePonderee, noteColorClass, formatNote } from "@/lib/format";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { Button } from "@/components/ui/button";
+import { DataPagination, usePagination } from "@/components/ui/data-pagination";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -98,10 +99,13 @@ function ElevesPage() {
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
   const canAdd = classes.length > 0;
 
+  const pg = usePagination(filtered.length);
+  const paged = pg.slice(filtered);
+
   const grouped = useMemo(() => {
     if (ecoleFilter !== "all") return null;
-    const map = new Map<string, typeof filtered>();
-    filtered.forEach((e) => {
+    const map = new Map<string, typeof paged>();
+    paged.forEach((e) => {
       const list = map.get(e.ecole_id) ?? [];
       list.push(e);
       map.set(e.ecole_id, list);
@@ -109,7 +113,8 @@ function ElevesPage() {
     return Array.from(map.entries()).sort((a, b) =>
       (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
     );
-  }, [filtered, ecoleFilter, ecoleById]);
+  }, [paged, ecoleFilter, ecoleById]);
+
 
 
   return (
@@ -220,21 +225,38 @@ function ElevesPage() {
               </li>
             );
           };
-          if (grouped) {
-            return (
-              <div className="space-y-4">
-                {grouped.map(([ecoleId, list]) => (
-                  <section key={ecoleId}>
-                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                    <ul className="space-y-2">{list.map(renderItem)}</ul>
-                  </section>
-                ))}
-              </div>
-            );
-          }
-          return <ul className="space-y-2">{filtered.map(renderItem)}</ul>;
+          const listView = grouped ? (
+            <div className="space-y-4">
+              {grouped.map(([ecoleId, list]) => (
+                <section key={ecoleId}>
+                  <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
+                  <ul className="space-y-2">{list.map(renderItem)}</ul>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <ul className="space-y-2">{paged.map(renderItem)}</ul>
+          );
+          return (
+            <div className="space-y-3">
+              {listView}
+              <DataPagination
+                page={pg.page}
+                totalPages={pg.totalPages}
+                pageSize={pg.pageSize}
+                totalCount={eleves.length}
+                filteredCount={filtered.length}
+                start={pg.start}
+                end={pg.end}
+                onPageChange={pg.setPage}
+                onPageSizeChange={pg.setPageSize}
+                itemLabel="élèves"
+              />
+            </div>
+          );
         })()
       )}
+
 
 
       {canAdd && (
