@@ -54,9 +54,9 @@ export function AdminShell({ children }: AdminShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
+    <div className="min-h-dvh bg-background lg:flex">
       {/* Sidebar desktop — palette identique aux enseignants */}
-      <aside className="topbar-ink hidden shrink-0 lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col xl:w-72">
+      <aside aria-label="Navigation admin" className="topbar-ink hidden shrink-0 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-64 lg:flex-col xl:w-72">
         <div className="flex items-center gap-3 px-5 py-6">
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-teal text-cream shadow-soft">
             <ShieldCheck className="h-5 w-5" />
