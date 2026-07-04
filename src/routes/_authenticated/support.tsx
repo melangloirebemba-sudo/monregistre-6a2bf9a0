@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { LifeBuoy, MessageCircle, Mail, ChevronDown, Copy, Check } from "lucide-react";
-import { profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
+import { profilQueryOptions, planCapabilitiesQO, planLimitsQO } from "@/lib/queries/profil";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/support")({
@@ -24,32 +24,78 @@ const PLAN_LABEL: Record<"gratuit" | "lite" | "premium", string> = {
   premium: "Premium",
 };
 
-const FAQ_GRATUIT: { q: string; a: string }[] = [
-  {
-    q: "Combien d'écoles puis-je créer avec le plan Gratuit ?",
-    a: "Le plan Gratuit permet de gérer 1 seule école. Pour en gérer plusieurs, passez au plan Lite (2 écoles) ou Premium (illimité).",
-  },
-  {
-    q: "Combien de classes puis-je créer par école ?",
-    a: "1 classe par école sur le plan Gratuit. Le plan Lite permet 2 classes par école, et le Premium en autorise un nombre illimité.",
-  },
-  {
-    q: "Y a-t-il une limite d'élèves ?",
-    a: "Oui, 25 élèves maximum au total sur le plan Gratuit. Les plans Lite et Premium n'imposent aucune limite d'élèves.",
-  },
-  {
-    q: "Puis-je exporter les bulletins en PDF ?",
-    a: "Non, l'export PDF des bulletins et des rapports de classe est réservé aux plans Lite et Premium.",
-  },
-  {
-    q: "Ai-je accès aux rapports détaillés ?",
-    a: "Les rapports avancés (moyennes, distribution, classements top/flop) et le suivi de progression sont disponibles à partir du plan Lite.",
-  },
-  {
-    q: "Comment passer à un plan supérieur ?",
-    a: "Contactez-nous par WhatsApp ou e-mail depuis cette page. Nous activons votre nouveau plan directement sur votre compte.",
-  },
-];
+function fmtQuota(n: number | null | undefined, unite: string): string {
+  if (n === null || n === undefined) return `${unite} — non défini`;
+  if (n <= 0) return `${unite} illimité${unite.endsWith("s") ? "s" : ""}`;
+  return `${n} ${unite}${n > 1 && !unite.endsWith("s") ? "s" : ""}`;
+}
+
+function buildFaq(
+  gratuit: import("@/lib/queries/profil").PlanLimitsRow | null,
+  lite: import("@/lib/queries/profil").PlanLimitsRow | null,
+  premium: import("@/lib/queries/profil").PlanLimitsRow | null,
+): { q: string; a: string }[] {
+  const g = gratuit;
+  const l = lite;
+  const p = premium;
+
+  const compare = (
+    getter: (r: import("@/lib/queries/profil").PlanLimitsRow) => number,
+    unite: string,
+  ) => {
+    const parts: string[] = [];
+    if (l) parts.push(`Lite : ${fmtQuota(getter(l), unite)}`);
+    if (p) parts.push(`Premium : ${fmtQuota(getter(p), unite)}`);
+    return parts.length ? ` ${parts.join(" · ")}.` : "";
+  };
+
+  return [
+    {
+      q: "Combien d'écoles puis-je créer avec le plan Gratuit ?",
+      a: g
+        ? `Le plan Gratuit permet ${fmtQuota(g.max_ecoles, "école")}.${compare((r) => r.max_ecoles, "école")}`
+        : "Les quotas d'écoles sont configurables par l'administrateur.",
+    },
+    {
+      q: "Combien de classes puis-je créer par école ?",
+      a: g
+        ? `${fmtQuota(g.max_classes_par_ecole, "classe")} par école sur le plan Gratuit.${compare((r) => r.max_classes_par_ecole, "classe")}`
+        : "Quotas de classes configurables par l'administrateur.",
+    },
+    {
+      q: "Y a-t-il une limite d'élèves ?",
+      a: g
+        ? `Oui, ${fmtQuota(g.max_eleves, "élève")} maximum sur le plan Gratuit.${compare((r) => r.max_eleves, "élève")}`
+        : "Quota d'élèves configurable par l'administrateur.",
+    },
+    {
+      q: "Puis-je exporter les bulletins en PDF ?",
+      a: g
+        ? g.bulletins_pdf
+          ? "Oui, l'export PDF des bulletins est inclus dans le plan Gratuit."
+          : `Non, l'export PDF des bulletins et des rapports de classe est réservé aux plans ${[l?.bulletins_pdf ? "Lite" : null, p?.bulletins_pdf ? "Premium" : null].filter(Boolean).join(" et ") || "supérieurs"}.`
+        : "L'export PDF dépend de votre plan.",
+    },
+    {
+      q: "Ai-je accès aux rapports détaillés et au suivi de progression ?",
+      a: g
+        ? [
+            `Rapports : ${g.rapports ? "inclus" : "non inclus"} dans le plan Gratuit.`,
+            `Progression : ${g.progression ? "incluse" : "non incluse"} dans le plan Gratuit.`,
+            l ? `Lite — rapports : ${l.rapports ? "oui" : "non"}, progression : ${l.progression ? "oui" : "non"}.` : "",
+            p ? `Premium — rapports : ${p.rapports ? "oui" : "non"}, progression : ${p.progression ? "oui" : "non"}.` : "",
+          ]
+            .filter(Boolean)
+            .join(" ")
+        : "Ces fonctionnalités dépendent de votre plan.",
+    },
+    {
+      q: "Comment passer à un plan supérieur ?",
+      a: "Contactez-nous par WhatsApp ou e-mail depuis cette page. Nous activons votre nouveau plan directement sur votre compte.",
+    },
+  ];
+}
+
 
 function buildWhatsAppMessage(ecole: string, plan: string) {
   const lines = [
@@ -64,6 +110,11 @@ function buildWhatsAppMessage(ecole: string, plan: string) {
 function SupportPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: caps } = useQuery(planCapabilitiesQO());
+  const { data: gratuitLimits } = useQuery(planLimitsQO("gratuit"));
+  const { data: liteLimits } = useQuery(planLimitsQO("lite"));
+  const { data: premiumLimits } = useQuery(planLimitsQO("premium"));
+  const faq = buildFaq(gratuitLimits ?? null, liteLimits ?? null, premiumLimits ?? null);
+
 
   const ecoleNom = profil?.etablissement?.trim() ?? "";
   const planLabel = caps ? PLAN_LABEL[caps.plan] : "Gratuit";
@@ -167,7 +218,7 @@ function SupportPage() {
           Ce que vous pouvez faire avec le plan Gratuit et ce qui nécessite un plan supérieur.
         </p>
         <ul className="mt-3 space-y-2">
-          {FAQ_GRATUIT.map((item, i) => (
+          {faq.map((item, i) => (
             <FaqItem key={i} question={item.q} answer={item.a} />
           ))}
         </ul>
