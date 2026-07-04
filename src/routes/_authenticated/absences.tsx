@@ -469,6 +469,8 @@ function DeleteAbsenceDialog({
         op: "delete",
         match: { id: absence.id },
         label: "Supprimer absence",
+        baseUpdatedAt: absence.updated_at,
+        conflictStrategy: "merge",
       });
     },
     onSuccess: () => {
