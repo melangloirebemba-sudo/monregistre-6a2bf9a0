@@ -375,6 +375,8 @@ function DeleteNoteDialog({ open, onOpenChange, note, onDone }: { open: boolean;
         op: "delete",
         match: { id: note.id },
         label: "Supprimer note",
+        baseUpdatedAt: note.updated_at,
+        conflictStrategy: "merge",
       });
     },
     onSuccess: () => {
