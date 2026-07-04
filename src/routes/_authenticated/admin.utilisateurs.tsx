@@ -206,97 +206,182 @@ function AdminContent() {
         </div>
       </div>
 
-      {/* Liste */}
+      {/* Annonce de tri (lecteurs d'écran) */}
+      <p className="sr-only" role="status" aria-live="polite">{sortMsg}</p>
+
+      {/* Table des utilisateurs */}
       <div className="card-elevated overflow-hidden">
         {isLoading && <div className="p-6 text-sm text-muted-foreground">Chargement…</div>}
         {error && <div className="p-6 text-sm text-destructive">Erreur : {(error as Error).message}</div>}
         {!isLoading && !error && filtered.length === 0 && (
           <div className="p-6 text-sm text-muted-foreground">Aucun utilisateur.</div>
         )}
-        <ul className="divide-y divide-border">
-          {filtered.map((u) => (
-            <li key={u.id} className="p-4">
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate font-medium text-foreground">{u.nom_affiche || u.email}</span>
-                    {u.roles.includes("admin") && (
-                      <Badge className="bg-teal text-cream">
-                        <Crown className="mr-1 h-3 w-3" /> Admin
-                      </Badge>
-                    )}
-                    {u.statut === "suspendu" && (
-                      <Badge variant="destructive">Suspendu</Badge>
-                    )}
-                  </div>
-                  <div className="truncate text-xs text-muted-foreground">{u.email}</div>
-                  <div className="mt-1 text-[11px] text-muted-foreground">
-                    Créé le {new Date(u.created_at).toLocaleDateString("fr-FR")}
-                    {u.last_sign_in_at && (
-                      <> · Dernière connexion {new Date(u.last_sign_in_at).toLocaleDateString("fr-FR")}</>
-                    )}
-                  </div>
-                  <PlanLimitsBadges limit={limitsByPlan.get(u.plan)} />
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:flex-wrap lg:items-center lg:justify-end">
-                  <div className="col-span-2 flex items-center gap-1.5 sm:col-span-1 lg:col-auto">
-                    <Label className="sr-only">Plan</Label>
-                    <Select
-                      value={u.plan}
-                      onValueChange={(v) =>
-                        changePlan.mutate({ userId: u.id, plan: v as AppPlan })
-                      }
+        {!isLoading && !error && filtered.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-sm">
+              <caption className="sr-only">
+                Liste des utilisateurs enseignants — utilisez les flèches haut et bas pour parcourir les lignes,
+                Tab pour atteindre les actions, et activez un en-tête pour trier.
+              </caption>
+              <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <SortableHeader
+                    label="Nom"
+                    sortKey="nom"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onSort={requestSort}
+                  />
+                  <SortableHeader
+                    label="Email"
+                    sortKey="email"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onSort={requestSort}
+                  />
+                  <SortableHeader
+                    label="Plan"
+                    sortKey="plan"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onSort={requestSort}
+                  />
+                  <SortableHeader
+                    label="Statut"
+                    sortKey="statut"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onSort={requestSort}
+                  />
+                  <SortableHeader
+                    label="Créé le"
+                    sortKey="created"
+                    currentKey={sortKey}
+                    dir={sortDir}
+                    onSort={requestSort}
+                  />
+                  <th scope="col" className="px-3 py-2 text-right">
+                    <span className="sr-only">Actions</span>
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody ref={tbodyRef} className="divide-y divide-border">
+                {filtered.map((u, i) => {
+                  const displayName = u.nom_affiche || u.email;
+                  const isAdmin = u.roles.includes("admin");
+                  const suspended = u.statut === "suspendu";
+                  return (
+                    <tr
+                      key={u.id}
+                      tabIndex={0}
+                      onKeyDown={onRowKeyDown}
+                      aria-label={`${displayName}, ${u.email}, plan ${PLAN_LABELS[u.plan]}, ${suspended ? "suspendu" : "actif"}`}
+                      aria-rowindex={i + 2}
+                      className="align-top outline-none focus-visible:bg-teal/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal"
                     >
-                      <SelectTrigger className="h-8 w-full lg:w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gratuit">{PLAN_LABELS.gratuit}</SelectItem>
-                        <SelectItem value="lite">{PLAN_LABELS.lite}</SelectItem>
-                        <SelectItem value="premium">{PLAN_LABELS.premium}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <th scope="row" className="px-3 py-3 font-normal text-foreground">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate font-medium">{displayName}</span>
+                          {isAdmin && (
+                            <Badge className="bg-teal text-cream">
+                              <Crown aria-hidden="true" className="mr-1 h-3 w-3" /> Admin
+                            </Badge>
+                          )}
+                        </div>
+                        <PlanLimitsBadges limit={limitsByPlan.get(u.plan)} />
+                      </th>
+                      <td className="px-3 py-3 text-muted-foreground">
+                        <span className="block truncate">{u.email}</span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <Label htmlFor={`plan-${u.id}`} className="sr-only">
+                          Plan de {displayName}
+                        </Label>
+                        <Select
+                          value={u.plan}
+                          onValueChange={(v) =>
+                            changePlan.mutate({ userId: u.id, plan: v as AppPlan })
+                          }
+                        >
+                          <SelectTrigger id={`plan-${u.id}`} className="h-8 w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gratuit">{PLAN_LABELS.gratuit}</SelectItem>
+                            <SelectItem value="lite">{PLAN_LABELS.lite}</SelectItem>
+                            <SelectItem value="premium">{PLAN_LABELS.premium}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-3 py-3">
+                        {suspended ? (
+                          <Badge variant="destructive">Suspendu</Badge>
+                        ) : (
+                          <Badge className="bg-teal/15 text-teal hover:bg-teal/20">Actif</Badge>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">
+                        {new Date(u.created_at).toLocaleDateString("fr-FR")}
+                        {u.last_sign_in_at && (
+                          <div className="text-[11px]">
+                            Vu {new Date(u.last_sign_in_at).toLocaleDateString("fr-FR")}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            aria-label={
+                              suspended
+                                ? `Réactiver le compte de ${displayName}`
+                                : `Suspendre le compte de ${displayName}`
+                            }
+                            onClick={() =>
+                              toggleSuspend.mutate({ userId: u.id, suspendre: !suspended })
+                            }
+                          >
+                            {suspended ? (
+                              <><CheckCircle2 aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> Réactiver</>
+                            ) : (
+                              <><Ban aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> Suspendre</>
+                            )}
+                          </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      toggleSuspend.mutate({ userId: u.id, suspendre: u.statut !== "suspendu" })
-                    }
-                  >
-                    {u.statut === "suspendu" ? (
-                      <><CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Réactiver</>
-                    ) : (
-                      <><Ban className="mr-1 h-3.5 w-3.5" /> Suspendre</>
-                    )}
-                  </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            aria-label={`Réinitialiser le mot de passe de ${displayName}`}
+                            onClick={() => { setPwdTarget(u); setNewPwd(""); }}
+                          >
+                            <KeyRound aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> Mot de passe
+                          </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { setPwdTarget(u); setNewPwd(""); }}
-                  >
-                    <KeyRound className="mr-1 h-3.5 w-3.5" /> Mot de passe
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => setDelTarget(u)}
-                    disabled={u.roles.includes("admin")}
-                    title={u.roles.includes("admin") ? "Impossible de supprimer un admin" : undefined}
-                  >
-                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Supprimer
-                  </Button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            aria-label={`Supprimer le compte de ${displayName}`}
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setDelTarget(u)}
+                            disabled={isAdmin}
+                            title={isAdmin ? "Impossible de supprimer un admin" : undefined}
+                          >
+                            <Trash2 aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> Supprimer
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
 
       {/* Dialog reset password */}
       <Dialog open={!!pwdTarget} onOpenChange={(v) => !v && setPwdTarget(null)}>
