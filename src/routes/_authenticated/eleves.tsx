@@ -52,6 +52,7 @@ function ElevesPage() {
   const { data: classes = [] } = useQuery(classesQO());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: profil } = useQuery(profilQueryOptions());
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const { data: eleves = [], isLoading } = useQuery(
     elevesQO(classeFilter === "all" ? undefined : classeFilter),
@@ -64,12 +65,17 @@ function ElevesPage() {
   const [open, setOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Eleve | null>(null);
 
+  const classesForEcole = useMemo(
+    () => (ecoleFilter === "all" ? classes : classes.filter((c) => c.ecole_id === ecoleFilter)),
+    [classes, ecoleFilter],
+  );
+
   const filtered = useMemo(
     () =>
-      eleves.filter((e) =>
-        `${e.nom} ${e.prenom}`.toLowerCase().includes(q.toLowerCase()),
-      ),
-    [eleves, q],
+      eleves
+        .filter((e) => ecoleFilter === "all" || e.ecole_id === ecoleFilter)
+        .filter((e) => `${e.nom} ${e.prenom}`.toLowerCase().includes(q.toLowerCase())),
+    [eleves, q, ecoleFilter],
   );
 
   const moyennesByEleve = useMemo(() => {
@@ -88,7 +94,22 @@ function ElevesPage() {
   }, [notes]);
 
   const classeById = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c])), [classes]);
+  const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
   const canAdd = classes.length > 0;
+
+  const grouped = useMemo(() => {
+    if (ecoleFilter !== "all") return null;
+    const map = new Map<string, typeof filtered>();
+    filtered.forEach((e) => {
+      const list = map.get(e.ecole_id) ?? [];
+      list.push(e);
+      map.set(e.ecole_id, list);
+    });
+    return Array.from(map.entries()).sort((a, b) =>
+      (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+    );
+  }, [filtered, ecoleFilter, ecoleById]);
+
 
   return (
     <div className="px-5 pb-24 pt-5">
