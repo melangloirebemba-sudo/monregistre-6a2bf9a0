@@ -22,7 +22,13 @@ export const listAllUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-
+    console.log("[admin] listAllUsers ENV", {
+      hasUrl: !!process.env.SUPABASE_URL,
+      hasSrv: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      srvLen: process.env.SUPABASE_SERVICE_ROLE_KEY?.length ?? 0,
+      srvPrefix: process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 10),
+      hasSecrets: !!process.env.SUPABASE_SECRET_KEYS,
+    });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const [{ data: usersRes, error: usersErr }, { data: profilsRes, error: profilsErr }, { data: rolesRes }] = await Promise.all([
