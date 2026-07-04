@@ -130,9 +130,11 @@ function RapportsPage() {
       eleves,
       notes,
       enseignant: profil?.nom_affiche ?? undefined,
+      telephone: profil?.telephone ?? undefined,
       echelle,
     });
     toast.success("Rapport de classe généré");
+
   }
 
   return (
