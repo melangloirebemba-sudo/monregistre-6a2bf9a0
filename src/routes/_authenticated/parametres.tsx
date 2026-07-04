@@ -287,10 +287,9 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
             </span>
           </div>
         </div>
+        {caps.plan !== "premium" && !caps.isAdmin && <UpgradeDialog currentPlan={caps.plan} />}
       </div>
 
-      <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
-        <div className="rounded-lg border border-border bg-background/60 p-2.5">
           <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Écoles</dt>
           <dd className="mt-1 font-serif text-base text-ink">{fmtLimit(caps.max_ecoles)}</dd>
         </div>
