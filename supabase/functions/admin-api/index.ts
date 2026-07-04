@@ -163,6 +163,50 @@ Deno.serve(async (req) => {
         return json({ ok: true });
       }
 
+      case "sendPasswordResetEmail": {
+        const { userId, redirectTo } = payload;
+        if (!userId) return json({ error: "Bad input" }, 400);
+        const { data: u, error: uErr } = await admin.auth.admin.getUserById(userId);
+        if (uErr) throw uErr;
+        const email = u?.user?.email;
+        if (!email) return json({ error: "Utilisateur sans adresse e-mail" }, 400);
+        const { error } = await admin.auth.resetPasswordForEmail(email, {
+          redirectTo: typeof redirectTo === "string" && redirectTo ? redirectTo : undefined,
+        });
+        if (error) throw error;
+        return json({ ok: true, email });
+      }
+
+      /* ============ APP SETTINGS ============ */
+      case "settings.get": {
+        const { data, error } = await admin.from("app_settings").select("*").eq("id", 1).maybeSingle();
+        if (error) throw error;
+        return json({ settings: data });
+      }
+
+      case "settings.update": {
+        const { whatsapp_number, whatsapp_display, support_email } = payload;
+        const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (typeof whatsapp_number === "string") {
+          const n = whatsapp_number.replace(/\D/g, "");
+          if (n.length < 6 || n.length > 20) return json({ error: "Numéro WhatsApp invalide" }, 400);
+          patch.whatsapp_number = n;
+        }
+        if (typeof whatsapp_display === "string") {
+          if (whatsapp_display.trim().length < 3) return json({ error: "Libellé WhatsApp invalide" }, 400);
+          patch.whatsapp_display = whatsapp_display.trim();
+        }
+        if (typeof support_email === "string") {
+          const em = support_email.trim();
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return json({ error: "E-mail support invalide" }, 400);
+          patch.support_email = em;
+        }
+        if (Object.keys(patch).length === 1) return json({ error: "Aucun champ à mettre à jour" }, 400);
+        const { error } = await admin.from("app_settings").update(patch).eq("id", 1);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
       case "deleteUser": {
         const { userId } = payload;
         if (!userId) return json({ error: "Bad input" }, 400);
