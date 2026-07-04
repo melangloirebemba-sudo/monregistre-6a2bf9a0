@@ -14,6 +14,7 @@ import {
   Settings,
   BookMarked,
   Shield,
+  CalendarX,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,7 @@ const sideNav = [
   { to: "/classes", label: "Classes", icon: GraduationCap },
   { to: "/eleves", label: "Élèves", icon: Users },
   { to: "/notes", label: "Notes", icon: ClipboardList },
+  { to: "/absences", label: "Absences", icon: CalendarX },
   { to: "/rapports", label: "Rapports", icon: BarChart3 },
   { to: "/emploi-du-temps", label: "Emploi du temps", icon: CalendarDays },
   { to: "/progression", label: "Progression", icon: BookOpen },
