@@ -20,7 +20,9 @@ export interface Classe {
   ecole_id: string;
   user_id: string;
   chef_id: string | null;
+  annee_scolaire: string | null;
 }
+
 
 export interface Eleve {
   id: string;
@@ -98,12 +100,26 @@ export const ecolesQO = () =>
     },
   });
 
+async function getAnneeActive(): Promise<string | null> {
+  const { data: userRes } = await supabase.auth.getUser();
+  if (!userRes.user) return null;
+  const { data } = await supabase
+    .from("profils_enseignant")
+    .select("annee_active")
+    .eq("user_id", userRes.user.id)
+    .maybeSingle();
+  const val = (data as { annee_active?: string } | null)?.annee_active;
+  return val && val.trim() ? val : null;
+}
+
 export const classesQO = (ecoleId?: string) =>
   queryOptions({
     queryKey: ["classes", ecoleId ?? "all"],
     queryFn: async (): Promise<Classe[]> => {
+      const annee = await getAnneeActive();
       let q = supabase.from("classes").select("*").order("nom");
       if (ecoleId) q = q.eq("ecole_id", ecoleId);
+      if (annee) q = q.or(`annee_scolaire.eq.${annee},annee_scolaire.is.null`);
       const { data, error } = await q;
       if (error) throw error;
       return data as Classe[];
@@ -126,14 +142,15 @@ export const periodesQO = () =>
   queryOptions({
     queryKey: ["periodes"],
     queryFn: async (): Promise<Periode[]> => {
-      const { data, error } = await supabase
-        .from("periodes")
-        .select("*")
-        .order("ordre");
+      const annee = await getAnneeActive();
+      let q = supabase.from("periodes").select("*").order("ordre");
+      if (annee) q = q.eq("annee_scolaire", annee);
+      const { data, error } = await q;
       if (error) throw error;
       return data as Periode[];
     },
   });
+
 
 export const notesQO = (opts: { classeId?: string; eleveId?: string; periodeId?: string } = {}) =>
   queryOptions({

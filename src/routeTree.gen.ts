@@ -22,6 +22,7 @@ import { Route as AuthenticatedEmploiDuTempsRouteImport } from './routes/_authen
 import { Route as AuthenticatedElevesRouteImport } from './routes/_authenticated/eleves'
 import { Route as AuthenticatedEcolesRouteImport } from './routes/_authenticated/ecoles'
 import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
+import { Route as AuthenticatedAnneesScolairesRouteImport } from './routes/_authenticated/annees-scolaires'
 import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticated/accueil'
 
 const AuthRoute = AuthRouteImport.update({
@@ -90,6 +91,12 @@ const AuthenticatedClassesRoute = AuthenticatedClassesRouteImport.update({
   path: '/classes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAnneesScolairesRoute =
+  AuthenticatedAnneesScolairesRouteImport.update({
+    id: '/annees-scolaires',
+    path: '/annees-scolaires',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAccueilRoute = AuthenticatedAccueilRouteImport.update({
   id: '/accueil',
   path: '/accueil',
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accueil': typeof AuthenticatedAccueilRoute
+  '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/ecoles': typeof AuthenticatedEcolesRoute
   '/eleves': typeof AuthenticatedElevesRoute
@@ -115,6 +123,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/accueil': typeof AuthenticatedAccueilRoute
+  '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/ecoles': typeof AuthenticatedEcolesRoute
   '/eleves': typeof AuthenticatedElevesRoute
@@ -132,6 +141,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/accueil': typeof AuthenticatedAccueilRoute
+  '/_authenticated/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/_authenticated/classes': typeof AuthenticatedClassesRoute
   '/_authenticated/ecoles': typeof AuthenticatedEcolesRoute
   '/_authenticated/eleves': typeof AuthenticatedElevesRoute
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/accueil'
+    | '/annees-scolaires'
     | '/classes'
     | '/ecoles'
     | '/eleves'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/accueil'
+    | '/annees-scolaires'
     | '/classes'
     | '/ecoles'
     | '/eleves'
@@ -180,6 +192,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/accueil'
+    | '/_authenticated/annees-scolaires'
     | '/_authenticated/classes'
     | '/_authenticated/ecoles'
     | '/_authenticated/eleves'
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClassesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/annees-scolaires': {
+      id: '/_authenticated/annees-scolaires'
+      path: '/annees-scolaires'
+      fullPath: '/annees-scolaires'
+      preLoaderRoute: typeof AuthenticatedAnneesScolairesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/accueil': {
       id: '/_authenticated/accueil'
       path: '/accueil'
@@ -303,6 +323,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccueilRoute: typeof AuthenticatedAccueilRoute
+  AuthenticatedAnneesScolairesRoute: typeof AuthenticatedAnneesScolairesRoute
   AuthenticatedClassesRoute: typeof AuthenticatedClassesRoute
   AuthenticatedEcolesRoute: typeof AuthenticatedEcolesRoute
   AuthenticatedElevesRoute: typeof AuthenticatedElevesRoute
@@ -317,6 +338,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccueilRoute: AuthenticatedAccueilRoute,
+  AuthenticatedAnneesScolairesRoute: AuthenticatedAnneesScolairesRoute,
   AuthenticatedClassesRoute: AuthenticatedClassesRoute,
   AuthenticatedEcolesRoute: AuthenticatedEcolesRoute,
   AuthenticatedElevesRoute: AuthenticatedElevesRoute,

@@ -55,8 +55,45 @@ export type Database = {
           },
         ]
       }
+      annees_scolaires: {
+        Row: {
+          created_at: string
+          date_debut: string | null
+          date_fin: string | null
+          id: string
+          libelle: string
+          notes: string | null
+          statut: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          id?: string
+          libelle: string
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          id?: string
+          libelle?: string
+          notes?: string | null
+          statut?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
+          annee_scolaire: string | null
           chef_id: string | null
           code: string
           created_at: string
@@ -69,6 +106,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          annee_scolaire?: string | null
           chef_id?: string | null
           code: string
           created_at?: string
@@ -81,6 +119,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          annee_scolaire?: string | null
           chef_id?: string | null
           code?: string
           created_at?: string

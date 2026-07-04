@@ -190,6 +190,14 @@ function ClasseDialog({
   const save = useMutation({
     mutationFn: async () => {
       const user_id = await requireUserId();
+      // Récupère l'année active pour rattacher la classe
+      const { data: prof } = await supabase
+        .from("profils_enseignant")
+        .select("annee_active")
+        .eq("user_id", user_id)
+        .maybeSingle();
+      const annee_scolaire = prof?.annee_active?.trim() || null;
+
       const payload = {
         nom: form.nom.trim(),
         code: form.code.trim(),
@@ -203,10 +211,13 @@ function ClasseDialog({
         const { error } = await supabase.from("classes").update(payload).eq("id", classe.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("classes").insert({ ...payload, user_id });
+        const { error } = await supabase
+          .from("classes")
+          .insert({ ...payload, user_id, annee_scolaire });
         if (error) throw error;
       }
     },
+
     onSuccess: () => {
       toast.success(classe ? "Classe modifiée" : "Classe ajoutée");
       qc.invalidateQueries({ queryKey: ["classes"] });
