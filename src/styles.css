@@ -65,9 +65,9 @@
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", Georgia, serif;
 
-  --shadow-soft: 0 4px 16px -6px oklch(0.2 0.05 260 / 0.15);
-  --shadow-card: 0 8px 24px -12px oklch(0.2 0.05 260 / 0.18);
-  --shadow-hero: 0 20px 50px -20px oklch(0.15 0.06 265 / 0.5);
+  --shadow-soft: 0 4px 14px -6px oklch(0.25 0.02 60 / 0.14);
+  --shadow-card: 0 8px 22px -14px oklch(0.22 0.02 60 / 0.18);
+  --shadow-hero: 0 18px 44px -22px oklch(0.18 0.03 60 / 0.35);
 }
 
 :root {
