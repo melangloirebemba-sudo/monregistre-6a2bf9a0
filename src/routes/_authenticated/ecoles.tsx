@@ -218,11 +218,20 @@ function EcoleDialog({
       };
       if (!payload.nom) throw new Error("Le nom est obligatoire");
       if (ecole) {
-        const { error } = await supabase.from("ecoles").update(payload).eq("id", ecole.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "ecoles",
+          op: "update",
+          payload,
+          match: { id: ecole.id },
+          label: `Modifier école ${payload.nom}`,
+        });
       } else {
-        const { error } = await supabase.from("ecoles").insert({ ...payload, user_id });
-        if (error) throw error;
+        await enqueueWrite({
+          table: "ecoles",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID(), user_id },
+          label: `Ajouter école ${payload.nom}`,
+        });
       }
     },
     onSuccess: () => {
