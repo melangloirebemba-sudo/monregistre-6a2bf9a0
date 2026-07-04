@@ -100,7 +100,7 @@ function ClassesPage() {
         </div>
       ) : isLoading ? (
         <ListSkeleton rows={4} />
-      ) : filtered.length === 0 ? (
+      ) : pq.isEmpty ? (
         classes.length === 0 ? (
           <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
             <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
@@ -181,15 +181,15 @@ function ClassesPage() {
             <div className="space-y-3">
               {listView}
               <DataPagination
-                page={pg.page}
-                totalPages={pg.totalPages}
-                pageSize={pg.pageSize}
-                totalCount={classes.length}
-                filteredCount={filtered.length}
-                start={pg.start}
-                end={pg.end}
-                onPageChange={pg.setPage}
-                onPageSizeChange={pg.setPageSize}
+                page={pq.page}
+                totalPages={pq.totalPages}
+                pageSize={pq.pageSize}
+                totalCount={pq.totalCount}
+                filteredCount={pq.filteredCount}
+                start={pq.start}
+                end={pq.end}
+                onPageChange={pq.setPage}
+                onPageSizeChange={pq.setPageSize}
                 itemLabel="classes"
               />
             </div>
