@@ -330,6 +330,8 @@ function AbsenceDialog({
           payload,
           match: { id: absence.id },
           label: "Modifier absence",
+          baseUpdatedAt: absence.updated_at,
+          conflictStrategy: "merge",
         });
       } else {
         await enqueueWrite({
