@@ -18,7 +18,7 @@ import {
   notesQO,
   periodesQO,
 } from "@/lib/queries/data";
-import { profilQueryOptions } from "@/lib/queries/profil";
+import { profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { moyennePonderee, noteColorClass } from "@/lib/format";
 import { generateBulletinPDF } from "@/lib/pdf/bulletin";
 import { generateClasseRapportPDF } from "@/lib/pdf/classe-rapport";
