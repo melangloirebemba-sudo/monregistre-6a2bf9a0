@@ -414,6 +414,39 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_limits: {
+        Row: {
+          bulletins_pdf: boolean
+          max_classes_par_ecole: number
+          max_ecoles: number
+          max_eleves: number
+          plan: Database["public"]["Enums"]["app_plan"]
+          progression: boolean
+          rapports: boolean
+          updated_at: string
+        }
+        Insert: {
+          bulletins_pdf?: boolean
+          max_classes_par_ecole: number
+          max_ecoles: number
+          max_eleves: number
+          plan: Database["public"]["Enums"]["app_plan"]
+          progression?: boolean
+          rapports?: boolean
+          updated_at?: string
+        }
+        Update: {
+          bulletins_pdf?: boolean
+          max_classes_par_ecole?: number
+          max_ecoles?: number
+          max_eleves?: number
+          plan?: Database["public"]["Enums"]["app_plan"]
+          progression?: boolean
+          rapports?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profils_enseignant: {
         Row: {
           annee_active: string
