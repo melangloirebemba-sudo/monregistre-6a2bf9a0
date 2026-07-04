@@ -74,6 +74,9 @@ Deno.serve(async (req) => {
             nom_affiche: profByUser.get(u.id)?.nom_affiche ?? null,
             plan: profByUser.get(u.id)?.plan ?? "gratuit",
             statut: profByUser.get(u.id)?.statut ?? "actif",
+            plan_periode: profByUser.get(u.id)?.plan_periode ?? null,
+            plan_started_at: profByUser.get(u.id)?.plan_started_at ?? null,
+            plan_expires_at: profByUser.get(u.id)?.plan_expires_at ?? null,
             roles: rolesByUser.get(u.id) ?? [],
           })),
         });
