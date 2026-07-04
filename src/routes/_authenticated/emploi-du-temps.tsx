@@ -157,10 +157,6 @@ function EmploiDuTempsPage() {
     ? classes.filter((c) => c.ecole_id === ecoleId)
     : classes;
 
-  const byJour = JOURS.map((j) => ({
-    ...j,
-    items: filteredCreneaux.filter((c) => c.jour_semaine === j.v),
-  })).filter((j) => j.items.length > 0);
 
   const groupedByEcole = useMemo(() => {
     if (ecoleFilter !== "all") return null;
