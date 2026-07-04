@@ -175,8 +175,12 @@ export function AppShell({ children }: AppShellProps) {
               <DropdownMenuLabel>{nom}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
+                <Link to="/mon-profil">Mon profil</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/parametres">Paramètres</Link>
               </DropdownMenuItem>
+
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
