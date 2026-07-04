@@ -606,11 +606,44 @@ function AdminContent() {
               <KeyRound className="h-5 w-5 text-teal" /> Réinitialiser le mot de passe
             </DialogTitle>
             <DialogDescription>
-              Nouveau mot de passe pour <strong>{pwdTarget?.email}</strong>.
+              Deux options pour <strong>{pwdTarget?.email}</strong>.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="new-pwd">Nouveau mot de passe</Label>
+
+          {/* Option 1 : lien e-mail */}
+          <div className="rounded-xl border border-border/60 bg-cream-deep/20 p-3">
+            <div className="flex items-start gap-2">
+              <Mail className="mt-0.5 h-4 w-4 text-teal" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">
+                  Envoyer un lien de réinitialisation par e-mail
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  L'utilisateur reçoit un lien pour choisir lui-même son mot de passe.
+                </p>
+              </div>
+            </div>
+            <Button
+              className="mt-2 w-full"
+              variant="secondary"
+              disabled={sendResetEmail.isPending || !pwdTarget}
+              onClick={() => {
+                if (!pwdTarget) return;
+                sendResetEmail.mutate(pwdTarget.id, {
+                  onSuccess: () => setPwdTarget(null),
+                });
+              }}
+            >
+              {sendResetEmail.isPending ? "Envoi…" : "Envoyer le lien"}
+            </Button>
+          </div>
+
+          {/* Option 2 : reset immédiat */}
+          <div className="mt-3 space-y-2 rounded-xl border border-border/60 p-3">
+            <p className="text-sm font-semibold text-foreground">
+              Définir un mot de passe temporaire
+            </p>
+            <Label htmlFor="new-pwd" className="text-xs">Nouveau mot de passe</Label>
             <Input
               id="new-pwd"
               type="text"
@@ -622,8 +655,9 @@ function AdminContent() {
             />
             <PasswordCriteria value={newPwd} />
           </div>
+
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setPwdTarget(null)}>Annuler</Button>
+            <Button variant="ghost" onClick={() => setPwdTarget(null)}>Fermer</Button>
             <Button
               disabled={!isPasswordValid(newPwd) || resetPwd.isPending}
               onClick={() => {
@@ -632,7 +666,7 @@ function AdminContent() {
                 setPwdTarget(null);
               }}
             >
-              Réinitialiser
+              Définir le mot de passe
             </Button>
           </DialogFooter>
         </DialogContent>
