@@ -27,9 +27,23 @@ export const Route = createFileRoute("/_authenticated/accueil")({
 function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: counts } = useQuery(countsQueryOptions());
+  const { data: creneaux = [] } = useQuery(creneauxQO());
 
   const nom = profil?.nom_affiche?.split(" ")[0] || "Enseignant";
   const annee = profil?.annee_active || "Aucune année active";
+
+  // ISO day: Mon=1 ... Sun=7
+  const jsDay = new Date().getDay();
+  const todayIso = jsDay === 0 ? 7 : jsDay;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const todayCreneaux = creneaux
+    .filter((c) => c.jour_semaine === todayIso)
+    .sort((a, b) => a.heure_debut.localeCompare(b.heure_debut));
 
   const badges = [
     { label: "Écoles", value: counts?.ecoles ?? 0 },
