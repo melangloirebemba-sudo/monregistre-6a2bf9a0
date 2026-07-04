@@ -14,11 +14,13 @@ import { toast } from "sonner";
 import {
   absencesQO,
   classesQO,
+  ecolesQO,
   elevesQO,
   requireUserId,
   type Absence,
 } from "@/lib/queries/data";
 import { enqueueWrite, flushQueue, subscribeOfflineConflicts } from "@/lib/offline-queue";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
