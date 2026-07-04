@@ -289,7 +289,9 @@ function PasswordChangesLogCard() {
       </div>
 
       {isLoading && (
-        <p className="mt-4 text-sm text-muted-foreground">Chargement…</p>
+        <div className="mt-4">
+          <ListSkeleton rows={4} />
+        </div>
       )}
       {error && (
         <p className="mt-4 text-sm text-destructive">
@@ -304,9 +306,13 @@ function PasswordChangesLogCard() {
       )}
 
       {data && data.length > 0 && filtered.length === 0 && (
-        <p className="mt-4 rounded-lg border border-dashed border-border/60 bg-cream-deep/20 p-4 text-center text-sm text-muted-foreground">
-          Aucune entrée ne correspond aux filtres.
-        </p>
+        <div className="mt-4">
+          <NoResults
+            query={query}
+            onReset={hasFilters ? resetFilters : undefined}
+            description="Aucune entrée ne correspond aux filtres appliqués."
+          />
+        </div>
       )}
 
       {filtered.length > 0 && (
