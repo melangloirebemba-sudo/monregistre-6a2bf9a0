@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 import {
   classesQO,
   elevesQO,
