@@ -25,8 +25,10 @@ export const Route = createFileRoute("/_authenticated/parametres")({
 
 function ParametresPage() {
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: caps } = useQuery(planCapabilitiesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
   const qc = useQueryClient();
+
 
   const [nom, setNom] = useState("");
   const [initiales, setInitiales] = useState("");
