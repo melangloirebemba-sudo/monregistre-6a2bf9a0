@@ -112,7 +112,7 @@ function EcolesPage() {
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : filtered.length === 0 ? (
-        <EmptyState onAdd={handleAdd} disabled={atLimit} />
+        <EmptyState onAdd={handleAdd} locked={atLimit} />
       ) : (
         <ul className="space-y-3">
           {filtered.map((e) => (
