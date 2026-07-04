@@ -526,6 +526,20 @@ function AdminContent() {
                 </tbody>
               </table>
             </div>
+            <div className="border-t border-border/60 px-3 pb-3">
+              <DataPagination
+                page={pg.page}
+                totalPages={pg.totalPages}
+                pageSize={pg.pageSize}
+                totalCount={users.length}
+                filteredCount={filtered.length}
+                start={pg.start}
+                end={pg.end}
+                onPageChange={pg.setPage}
+                onPageSizeChange={pg.setPageSize}
+                itemLabel="utilisateurs"
+              />
+            </div>
           </>
         )}
       </div>
