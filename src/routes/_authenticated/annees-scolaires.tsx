@@ -225,13 +225,15 @@ function AnneeDialog({
   const [notes, setNotes] = useState(annee?.notes ?? "");
 
   // reset when opened
-  useState(() => {
+  useEffect(() => {
+    if (!open) return;
     setLibelle(annee?.libelle ?? "");
     setDateDebut(annee?.date_debut ?? "");
     setDateFin(annee?.date_fin ?? "");
     setStatut(annee?.statut ?? "a_venir");
     setNotes(annee?.notes ?? "");
-  });
+  }, [open, annee]);
+
 
   const save = useMutation({
     mutationFn: async () => {
