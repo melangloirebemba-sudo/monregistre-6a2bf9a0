@@ -4,8 +4,7 @@ import { useState } from "react";
 import { LifeBuoy, MessageCircle, Mail, ChevronDown, Copy, Check, Sparkles, ArrowUpRight } from "lucide-react";
 import { profilQueryOptions, planCapabilitiesQO, planLimitsQO } from "@/lib/queries/profil";
 import {
-  SUPPORT_EMAIL,
-  WHATSAPP_DISPLAY,
+  supportConfig,
   PLAN_LABEL,
   supportWhatsAppHref,
   upgradeWhatsAppHref,
@@ -118,7 +117,7 @@ function SupportPage() {
   const [copied, setCopied] = useState(false);
   const copyEmail = async () => {
     try {
-      await navigator.clipboard.writeText(SUPPORT_EMAIL);
+      await navigator.clipboard.writeText(supportConfig.supportEmail);
       setCopied(true);
       toast.success("Adresse e-mail copiée");
       setTimeout(() => setCopied(false), 1500);
@@ -156,7 +155,7 @@ function SupportPage() {
             <span className="block text-xs text-muted-foreground">
               Message pré-rempli avec votre école et plan
             </span>
-            <span className="mt-1 block truncate text-xs text-teal">{WHATSAPP_DISPLAY}</span>
+            <span className="mt-1 block truncate text-xs text-teal">{supportConfig.whatsappDisplay}</span>
           </span>
         </a>
 
@@ -172,7 +171,7 @@ function SupportPage() {
                 href={mailHref}
                 className="truncate text-xs text-teal underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
               >
-                {SUPPORT_EMAIL}
+                {supportConfig.supportEmail}
               </a>
               <button
                 type="button"

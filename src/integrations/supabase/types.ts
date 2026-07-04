@@ -91,6 +91,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          id: number
+          support_email: string
+          updated_at: string
+          whatsapp_display: string
+          whatsapp_number: string
+        }
+        Insert: {
+          id?: number
+          support_email?: string
+          updated_at?: string
+          whatsapp_display?: string
+          whatsapp_number?: string
+        }
+        Update: {
+          id?: number
+          support_email?: string
+          updated_at?: string
+          whatsapp_display?: string
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           annee_scolaire: string | null

@@ -74,9 +74,16 @@ export const adminApi = {
     callAdminApi<{ ok: true }>("setSuspension", { userId, suspendre }),
   resetPassword: (userId: string, newPassword: string) =>
     callAdminApi<{ ok: true }>("resetPassword", { userId, newPassword }),
+  sendPasswordResetEmail: (userId: string, redirectTo?: string) =>
+    callAdminApi<{ ok: true; email: string }>("sendPasswordResetEmail", { userId, redirectTo }),
   deleteUser: (userId: string) =>
     callAdminApi<{ ok: true }>("deleteUser", { userId }),
   stats: () => callAdminApi<AdminStats>("stats"),
+
+  settingsGet: () =>
+    callAdminApi<{ settings: AppSettings | null }>("settings.get").then((r) => r.settings),
+  settingsUpdate: (patch: Partial<Omit<AppSettings, "id" | "updated_at">>) =>
+    callAdminApi<{ ok: true }>("settings.update", patch),
 
   anneesList: () => callAdminApi<{ annees: AdminAnneeAggregate[] }>("annees.list").then((r) => r.annees),
   anneesCreate: (params: { libelle: string; date_debut?: string | null; date_fin?: string | null; statut?: "active" | "archivee" | "a_venir" }) =>
@@ -128,4 +135,12 @@ export interface AdminAnneeAggregate {
   enseignants: number;
   date_debut: string | null;
   date_fin: string | null;
+}
+
+export interface AppSettings {
+  id: number;
+  whatsapp_number: string;
+  whatsapp_display: string;
+  support_email: string;
+  updated_at: string;
 }

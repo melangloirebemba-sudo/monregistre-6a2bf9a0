@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -31,8 +32,14 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedParametresRappelsRouteImport } from './routes/_authenticated/parametres.rappels'
 import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
+import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
 import { Route as AuthenticatedAdminAnneesScolairesRouteImport } from './routes/_authenticated/admin.annees-scolaires'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -147,6 +154,12 @@ const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
   path: '/plans',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminParametresRoute =
+  AuthenticatedAdminParametresRouteImport.update({
+    id: '/parametres',
+    path: '/parametres',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAnneesScolairesRoute =
   AuthenticatedAdminAnneesScolairesRouteImport.update({
     id: '/annees-scolaires',
@@ -157,6 +170,7 @@ const AuthenticatedAdminAnneesScolairesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/absences': typeof AuthenticatedAbsencesRoute
   '/accueil': typeof AuthenticatedAccueilRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -173,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/rapports': typeof AuthenticatedRapportsRoute
   '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
+  '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
@@ -181,6 +196,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/absences': typeof AuthenticatedAbsencesRoute
   '/accueil': typeof AuthenticatedAccueilRoute
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
@@ -196,6 +212,7 @@ export interface FileRoutesByTo {
   '/rapports': typeof AuthenticatedRapportsRoute
   '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
+  '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
@@ -206,6 +223,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/absences': typeof AuthenticatedAbsencesRoute
   '/_authenticated/accueil': typeof AuthenticatedAccueilRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -222,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated/rapports': typeof AuthenticatedRapportsRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
+  '/_authenticated/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/_authenticated/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
@@ -232,6 +251,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/reset-password'
     | '/absences'
     | '/accueil'
     | '/admin'
@@ -248,6 +268,7 @@ export interface FileRouteTypes {
     | '/rapports'
     | '/support'
     | '/admin/annees-scolaires'
+    | '/admin/parametres'
     | '/admin/plans'
     | '/admin/utilisateurs'
     | '/parametres/rappels'
@@ -256,6 +277,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/reset-password'
     | '/absences'
     | '/accueil'
     | '/annees-scolaires'
@@ -271,6 +293,7 @@ export interface FileRouteTypes {
     | '/rapports'
     | '/support'
     | '/admin/annees-scolaires'
+    | '/admin/parametres'
     | '/admin/plans'
     | '/admin/utilisateurs'
     | '/parametres/rappels'
@@ -280,6 +303,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/reset-password'
     | '/_authenticated/absences'
     | '/_authenticated/accueil'
     | '/_authenticated/admin'
@@ -296,6 +320,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rapports'
     | '/_authenticated/support'
     | '/_authenticated/admin/annees-scolaires'
+    | '/_authenticated/admin/parametres'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/utilisateurs'
     | '/_authenticated/parametres/rappels'
@@ -306,10 +331,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -464,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPlansRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/parametres': {
+      id: '/_authenticated/admin/parametres'
+      path: '/parametres'
+      fullPath: '/admin/parametres'
+      preLoaderRoute: typeof AuthenticatedAdminParametresRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/annees-scolaires': {
       id: '/_authenticated/admin/annees-scolaires'
       path: '/annees-scolaires'
@@ -476,6 +516,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnneesScolairesRoute: typeof AuthenticatedAdminAnneesScolairesRoute
+  AuthenticatedAdminParametresRoute: typeof AuthenticatedAdminParametresRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminUtilisateursRoute: typeof AuthenticatedAdminUtilisateursRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -484,6 +525,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAnneesScolairesRoute:
     AuthenticatedAdminAnneesScolairesRoute,
+  AuthenticatedAdminParametresRoute: AuthenticatedAdminParametresRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
   AuthenticatedAdminUtilisateursRoute: AuthenticatedAdminUtilisateursRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
@@ -549,6 +591,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
