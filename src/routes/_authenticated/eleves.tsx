@@ -171,7 +171,7 @@ function ElevesPage() {
         <button
           onClick={() => { setEditing(null); setOpen(true); }}
           aria-label="Ajouter"
-          className="fixed bottom-24 right-1/2 z-20 grid h-14 w-14 translate-x-[195px] place-items-center rounded-full bg-teal text-teal-foreground shadow-[var(--shadow-hero)] md:translate-x-[240px] lg:translate-x-[280px]"
+          className="fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-teal text-teal-foreground shadow-[var(--shadow-hero)] transition-transform hover:scale-105 lg:bottom-8"
         >
           <Plus className="h-6 w-6" />
         </button>
