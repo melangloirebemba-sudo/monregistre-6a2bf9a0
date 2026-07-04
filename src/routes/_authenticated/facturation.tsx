@@ -178,8 +178,9 @@ function FacturationPage() {
         <NoResults
           query={hasQuery ? q : ""}
           onReset={hasQuery ? () => { setQ(""); setPlanFilter("all"); } : undefined}
-          message={paiements.length === 0 ? "Aucun paiement pour le moment." : undefined}
+          description={paiements.length === 0 ? "Aucun paiement pour le moment." : undefined}
         />
+
       ) : (
         <ul className="space-y-2">
           {pq.items.map((r) => (
@@ -237,10 +238,15 @@ function FacturationPage() {
         page={pq.page}
         totalPages={pq.totalPages}
         onPageChange={pq.setPage}
+        pageSize={pq.pageSize}
+        onPageSizeChange={pq.setPageSize}
+        start={pq.start}
+        end={pq.end}
         totalCount={paiements.length}
         filteredCount={pq.filteredCount}
         itemLabel="paiements"
       />
+
     </div>
   );
 }
