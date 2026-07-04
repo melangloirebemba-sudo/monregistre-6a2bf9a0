@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { EcoleFilter } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/rapports")({
   head: () => ({ meta: [{ title: "Rapports — MonRegistre" }] }),
@@ -163,14 +164,13 @@ function RapportsPage() {
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label>École</Label>
-            <Select value={ecoleId} onValueChange={(v) => { setEcoleId(v); setClasseId(""); }}>
-              <SelectTrigger><SelectValue placeholder="Toutes" /></SelectTrigger>
-              <SelectContent>
-                {ecoles.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <EcoleFilter
+              value={ecoleId}
+              ecoles={ecoles}
+              emptyLabel={null}
+              placeholder="Toutes"
+              onValueChange={(v) => { setEcoleId(v); setClasseId(""); }}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Classe</Label>

@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/classes")({
   head: () => ({ meta: [{ title: "Classes — MonRegistre" }] }),
@@ -75,15 +76,12 @@ function ClassesPage() {
       </header>
 
       <div className="mb-3 space-y-2">
-        <Select value={ecoleFilter} onValueChange={setEcoleFilter}>
-          <SelectTrigger><SelectValue placeholder="Filtrer par école" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les écoles</SelectItem>
-            {ecoles.map((e) => (
-              <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <EcoleFilter
+          value={ecoleFilter}
+          onValueChange={setEcoleFilter}
+          ecoles={ecoles}
+          placeholder="Filtrer par école"
+        />
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher une classe…" className="pl-9" />
@@ -125,9 +123,7 @@ function ClassesPage() {
                     <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-semibold text-ink">{c.code}</span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    <span className="rounded-sm bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
-                      {ecoleById[c.ecole_id] ?? "École inconnue"}
-                    </span>
+                    <EcoleBadge name={ecoleById[c.ecole_id]} fallback="École inconnue" />
                     {c.matiere ? ` · ${c.matiere}` : ""}
                     {" · "}{c.effectif} élève{c.effectif > 1 ? "s" : ""}
                   </div>
@@ -157,11 +153,7 @@ function ClassesPage() {
               <div className="space-y-4">
                 {grouped.map(([ecoleId, list]) => (
                   <section key={ecoleId}>
-                    <h2 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <span className="h-1.5 w-1.5 rounded-full bg-teal" />
-                      {ecoleById[ecoleId] ?? "École ?"}
-                      <span className="ml-auto text-[10px] font-normal">{list.length}</span>
-                    </h2>
+                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
                     <ul className="space-y-3">{list.map(renderItem)}</ul>
                   </section>
                 ))}

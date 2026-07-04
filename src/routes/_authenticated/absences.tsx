@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -155,22 +156,15 @@ function AbsencesPage() {
       <SyncStatusInline className="mb-3" />
 
       <div className="mb-3 grid grid-cols-2 gap-2">
-        <Select
+        <EcoleFilter
           value={ecoleFilter}
+          ecoles={ecoles}
           onValueChange={(v) => {
             setEcoleFilter(v);
             const cls = classes.find((c) => c.id === classeFilter);
             if (v !== "all" && cls && cls.ecole_id !== v) setClasseFilter("all");
           }}
-        >
-          <SelectTrigger><SelectValue placeholder="École" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les écoles</SelectItem>
-            {ecoles.map((e) => (
-              <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
         <Select value={classeFilter} onValueChange={setClasseFilter}>
           <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
           <SelectContent>
@@ -243,9 +237,7 @@ function AbsencesPage() {
                       {a.eleve ? `${a.eleve.prenom} ${a.eleve.nom}` : "Élève ?"}
                     </div>
                     <div className="truncate text-[11px] text-muted-foreground">
-                      <span className="rounded-sm bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
-                        {cls ? ecoleById[cls.ecole_id] ?? "École ?" : "École ?"}
-                      </span>
+                      <EcoleBadge name={cls ? ecoleById[cls.ecole_id] : undefined} />
                       {cls ? ` · ${cls.nom}` : ""}
                       {" · "}{new Date(a.date).toLocaleDateString("fr-FR")}
                       {a.motif ? ` · ${a.motif}` : ""}
@@ -289,11 +281,7 @@ function AbsencesPage() {
               <div className="space-y-4">
                 {grouped.map(([ecoleId, list]) => (
                   <section key={ecoleId}>
-                    <h2 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <span className="h-1.5 w-1.5 rounded-full bg-teal" />
-                      {ecoleById[ecoleId] ?? "École ?"}
-                      <span className="ml-auto text-[10px] font-normal">{list.length}</span>
-                    </h2>
+                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
                     <ul className="space-y-2">{list.map(renderItem)}</ul>
                   </section>
                 ))}
