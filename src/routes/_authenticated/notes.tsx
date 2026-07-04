@@ -278,15 +278,15 @@ function NotesPage() {
             <div className="space-y-3">
               {listView}
               <DataPagination
-                page={pg.page}
-                totalPages={pg.totalPages}
-                pageSize={pg.pageSize}
-                totalCount={notes.length}
-                filteredCount={filtered.length}
-                start={pg.start}
-                end={pg.end}
-                onPageChange={pg.setPage}
-                onPageSizeChange={pg.setPageSize}
+                page={pq.page}
+                totalPages={pq.totalPages}
+                pageSize={pq.pageSize}
+                totalCount={pq.totalCount}
+                filteredCount={pq.filteredCount}
+                start={pq.start}
+                end={pq.end}
+                onPageChange={pq.setPage}
+                onPageSizeChange={pq.setPageSize}
                 itemLabel="notes"
               />
             </div>
