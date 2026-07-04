@@ -19,6 +19,7 @@ export interface Classe {
   effectif: number;
   ecole_id: string;
   user_id: string;
+  chef_id: string | null;
 }
 
 export interface Eleve {
@@ -29,6 +30,10 @@ export interface Eleve {
   classe_id: string;
   ecole_id: string;
   user_id: string;
+  tuteur_nom: string | null;
+  tuteur_numero: string | null;
+  adresse: string | null;
+  numero_eleve: string | null;
 }
 
 export interface Periode {
