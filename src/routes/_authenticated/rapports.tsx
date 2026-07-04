@@ -337,35 +337,15 @@ function RapportsPage() {
                 L'export PDF des bulletins est disponible à partir du plan <strong>Lite</strong>. Votre plan actuel est <strong>{caps?.plan ?? "gratuit"}</strong>.
               </p>
             )}
-            <ul className="divide-y divide-ink/10">
-              {stats.sorted.map(({ eleve, moyenne, nbNotes }) => (
-                <li key={eleve.id} className="py-2.5 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-medium text-ink truncate">{eleve.prenom} {eleve.nom}</p>
-                    <p className="text-xs text-ink/60">{nbNotes} note{nbNotes > 1 ? "s" : ""}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`px-2 py-1 rounded-md text-xs font-semibold ${noteColorClass(moyenne, echelle)}`}>
-                      {moyenne.toFixed(2)}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleExport(eleve.id)}
-                      disabled={!canPdf}
-                      aria-disabled={!canPdf}
-                      title={!canPdf ? "Export PDF réservé aux plans Lite et Premium" : `Exporter le bulletin de ${eleve.prenom} ${eleve.nom}`}
-                    >
-                      <FileDown className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
-              {!stats.sorted.length && (
-                <li className="py-6 text-center text-sm text-ink/60">Aucun élève noté.</li>
-              )}
-            </ul>
+            <BulletinsList
+              sorted={stats.sorted}
+              echelle={echelle}
+              canPdf={canPdf}
+              isLoading={notesLoading}
+              onExport={handleExport}
+            />
           </div>
+
 
         </>
       )}
