@@ -3,6 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { LifeBuoy, MessageCircle, Mail, ChevronDown, Copy, Check, Sparkles, ArrowUpRight } from "lucide-react";
 import { profilQueryOptions, planCapabilitiesQO, planLimitsQO } from "@/lib/queries/profil";
+import {
+  SUPPORT_EMAIL,
+  WHATSAPP_DISPLAY,
+  PLAN_LABEL,
+  supportWhatsAppHref,
+  upgradeWhatsAppHref,
+  supportMailtoHref,
+} from "@/config/support";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/support")({
@@ -15,16 +23,6 @@ export const Route = createFileRoute("/_authenticated/support")({
   component: SupportPage,
 });
 
-// wa.me exige le numéro en format international sans "+", sans zéro initial ni espace.
-// +242 06 962 65 40 → 24269626540
-const WHATSAPP_NUMBER = "24269626540";
-const SUPPORT_EMAIL = "support@monregistre.app";
-
-const PLAN_LABEL: Record<"gratuit" | "lite" | "premium", string> = {
-  gratuit: "Gratuit",
-  lite: "Lite",
-  premium: "Premium",
-};
 
 function fmtQuota(n: number | null | undefined, unite: string): string {
   if (n === null || n === undefined) return `${unite} — non défini`;
