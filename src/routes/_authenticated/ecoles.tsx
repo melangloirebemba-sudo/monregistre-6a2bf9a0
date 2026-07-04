@@ -113,7 +113,7 @@ function EcolesPage() {
 
       {isLoading ? (
         <ListSkeleton rows={4} />
-      ) : filtered.length === 0 ? (
+      ) : pq.isEmpty ? (
         ecoles.length === 0 ? (
           <EmptyState onAdd={handleAdd} locked={atLimit} />
         ) : (
@@ -174,15 +174,15 @@ function EcolesPage() {
             ))}
           </ul>
           <DataPagination
-            page={pg.page}
-            totalPages={pg.totalPages}
-            pageSize={pg.pageSize}
-            totalCount={ecoles.length}
-            filteredCount={filtered.length}
-            start={pg.start}
-            end={pg.end}
-            onPageChange={pg.setPage}
-            onPageSizeChange={pg.setPageSize}
+            page={pq.page}
+            totalPages={pq.totalPages}
+            pageSize={pq.pageSize}
+            totalCount={pq.totalCount}
+            filteredCount={pq.filteredCount}
+            start={pq.start}
+            end={pq.end}
+            onPageChange={pq.setPage}
+            onPageSizeChange={pq.setPageSize}
             itemLabel="écoles"
           />
         </div>
