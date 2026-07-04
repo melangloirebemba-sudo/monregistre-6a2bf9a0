@@ -148,3 +148,13 @@ export interface AppSettings {
   support_email: string;
   updated_at: string;
 }
+
+export interface AdminPasswordChange {
+  id: string;
+  user_id: string;
+  user_email: string | null;
+  changed_by: string | null;
+  changed_by_email: string | null;
+  source: string;
+  created_at: string;
+}
