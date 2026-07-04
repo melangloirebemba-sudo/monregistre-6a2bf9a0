@@ -365,15 +365,13 @@ function EleveDialog({
               <Select
                 value={form.ecole_id}
                 onValueChange={(v) =>
-                  setForm({
-                    ...form,
-                    ecole_id: v,
-                    classe_id:
-                      classes.find((c) => c.id === form.classe_id)?.ecole_id === v
-                        ? form.classe_id
-                        : "",
-                  })
+                  setForm((prev) =>
+                    prev.ecole_id === v
+                      ? prev
+                      : { ...prev, ecole_id: v, classe_id: "" },
+                  )
                 }
+
               >
                 <SelectTrigger>
                   <SelectValue placeholder={ecoles.length ? "Choisir" : "Aucune école"} />
