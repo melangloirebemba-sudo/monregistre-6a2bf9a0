@@ -72,8 +72,13 @@ export function DataPagination({
   itemLabel = "éléments",
   className,
 }: DataPaginationProps) {
-  const showingFrom = totalCount === 0 ? 0 : start + 1;
+  // Coherence with loading / empty states: no data → no pagination bar.
+  if (totalCount === 0 || (filteredCount !== undefined && filteredCount === 0)) {
+    return null;
+  }
+  const showingFrom = start + 1;
   const total = filteredCount ?? totalCount;
+  const singlePage = totalPages <= 1;
   return (
     <div
       className={cn(
@@ -82,16 +87,10 @@ export function DataPagination({
       )}
     >
       <div className="text-xs text-muted-foreground">
-        {totalCount === 0 ? (
-          <>Aucun {itemLabel}</>
-        ) : (
-          <>
-            {showingFrom}–{end} sur <span className="font-semibold text-foreground">{total}</span>{" "}
-            {itemLabel}
-            {filteredCount !== undefined && filteredCount !== totalCount && (
-              <> (filtrés sur {totalCount})</>
-            )}
-          </>
+        {showingFrom}–{end} sur <span className="font-semibold text-foreground">{total}</span>{" "}
+        {itemLabel}
+        {filteredCount !== undefined && filteredCount !== totalCount && (
+          <> (filtrés sur {totalCount})</>
         )}
       </div>
       <div className="flex items-center gap-2">
