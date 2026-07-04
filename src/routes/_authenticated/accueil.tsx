@@ -111,6 +111,8 @@ function AccueilPage() {
     return list.slice(0, 5);
   }, [classes, notes, absences, periodes, reminderPrefs]);
 
+  useReminderNotifications(reminders, reminderPrefs.notificationsEnabled);
+
 
 
   const nom = profil?.nom_affiche?.split(" ")[0] || "Enseignant";
