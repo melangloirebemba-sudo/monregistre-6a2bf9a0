@@ -379,9 +379,20 @@ function PaginatedLog({
               </li>
             );
           })}
-        </ul>
-      )}
-    </section>
+      </ul>
+      <DataPagination
+        page={pg.page}
+        totalPages={pg.totalPages}
+        pageSize={pg.pageSize}
+        totalCount={totalCount}
+        filteredCount={entries.length}
+        start={pg.start}
+        end={pg.end}
+        onPageChange={pg.setPage}
+        onPageSizeChange={pg.setPageSize}
+        itemLabel="entrées"
+      />
+    </>
   );
 }
 
