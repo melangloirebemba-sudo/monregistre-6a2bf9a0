@@ -4,8 +4,7 @@ import { useState } from "react";
 import { LifeBuoy, MessageCircle, Mail, ChevronDown, Copy, Check, Sparkles, ArrowUpRight } from "lucide-react";
 import { profilQueryOptions, planCapabilitiesQO, planLimitsQO } from "@/lib/queries/profil";
 import {
-  SUPPORT_EMAIL,
-  WHATSAPP_DISPLAY,
+  supportConfig,
   PLAN_LABEL,
   supportWhatsAppHref,
   upgradeWhatsAppHref,
