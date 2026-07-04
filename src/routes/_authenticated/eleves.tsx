@@ -96,6 +96,13 @@ function ElevesPage() {
           <h1 className="mt-1 font-display text-3xl font-semibold text-foreground">Élèves</h1>
           <span className="rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal">{eleves.length}</span>
         </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <ImportElevesButton
+            classes={classes}
+            defaultClasseId={classeFilter !== "all" ? classeFilter : undefined}
+          />
+          <ExportElevesButton eleves={filtered} classeById={classeById} />
+        </div>
       </header>
 
       <div className="mb-3 space-y-2">
