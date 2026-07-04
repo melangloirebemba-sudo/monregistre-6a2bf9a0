@@ -54,6 +54,18 @@ export interface Note {
   user_id: string;
 }
 
+export interface Creneau {
+  id: string;
+  classe_id: string;
+  ecole_id: string;
+  jour_semaine: number; // 1=Lun ... 7=Dim
+  heure_debut: string; // "HH:MM:SS"
+  heure_fin: string;
+  matiere: string | null;
+  salle: string | null;
+  user_id: string;
+}
+
 export const ecolesQO = () =>
   queryOptions({
     queryKey: ["ecoles"],
