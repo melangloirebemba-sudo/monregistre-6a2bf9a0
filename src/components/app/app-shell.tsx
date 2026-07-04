@@ -110,6 +110,20 @@ export function AppShell({ children }: AppShellProps) {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={[
+                "mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                isActive(pathname, "/admin")
+                  ? "bg-teal/30 text-gold-soft"
+                  : "bg-teal/15 text-ink-foreground/90 hover:bg-teal/25",
+              ].join(" ")}
+            >
+              <Shield className="h-4 w-4 shrink-0" />
+              <span className="truncate">Espace admin</span>
+            </Link>
+          )}
         </nav>
         <div className="border-t border-white/10 p-3">
           <DropdownMenu>
