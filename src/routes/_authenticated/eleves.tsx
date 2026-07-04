@@ -50,6 +50,7 @@ export const Route = createFileRoute("/_authenticated/eleves")({
 
 function ElevesPage() {
   const { data: classes = [] } = useQuery(classesQO());
+  const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: profil } = useQuery(profilQueryOptions());
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const { data: eleves = [], isLoading } = useQuery(
