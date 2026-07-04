@@ -13,6 +13,8 @@ import {
   KeyRound,
   AlertCircle,
   History,
+  Search,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -20,6 +22,13 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ThemeToggle } from "@/components/app/theme-toggle";
 import { adminApi } from "@/lib/admin-api";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,12 +129,62 @@ function sourceLabel(src: string): { label: string; tone: string } {
   }
 }
 
+type PeriodKey = "all" | "24h" | "7d" | "30d" | "90d";
+type InitiatorKey = "all" | "self" | "other";
+type SourceKey = "all" | "self" | "admin-reset" | "reset";
+
+const PERIOD_MS: Record<Exclude<PeriodKey, "all">, number> = {
+  "24h": 24 * 3600 * 1000,
+  "7d": 7 * 24 * 3600 * 1000,
+  "30d": 30 * 24 * 3600 * 1000,
+  "90d": 90 * 24 * 3600 * 1000,
+};
+
 function PasswordChangesLogCard() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-password-changes"],
-    queryFn: () => adminApi.passwordChangesList(50),
+    queryFn: () => adminApi.passwordChangesList(200),
     staleTime: 15_000,
   });
+
+  const [period, setPeriod] = useState<PeriodKey>("all");
+  const [initiator, setInitiator] = useState<InitiatorKey>("all");
+  const [source, setSource] = useState<SourceKey>("all");
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    const now = Date.now();
+    const q = query.trim().toLowerCase();
+    return data.filter((e) => {
+      if (period !== "all") {
+        const cutoff = now - PERIOD_MS[period];
+        if (new Date(e.created_at).getTime() < cutoff) return false;
+      }
+      if (source !== "all" && e.source !== source) return false;
+      if (initiator !== "all") {
+        const isSelf = !!(e.changed_by && e.user_id && e.changed_by === e.user_id);
+        if (initiator === "self" && !isSelf) return false;
+        if (initiator === "other" && isSelf) return false;
+      }
+      if (q) {
+        const hay =
+          `${e.user_email ?? ""} ${e.changed_by_email ?? ""} ${e.source}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [data, period, initiator, source, query]);
+
+  const hasFilters =
+    period !== "all" || initiator !== "all" || source !== "all" || query.trim().length > 0;
+
+  const resetFilters = () => {
+    setPeriod("all");
+    setInitiator("all");
+    setSource("all");
+    setQuery("");
+  };
 
   return (
     <section className="card-elevated p-4 sm:p-5">
@@ -138,6 +197,101 @@ function PasswordChangesLogCard() {
       <p className="mt-1 text-sm text-muted-foreground">
         Historique des modifications de mot de passe des comptes administrateurs.
       </p>
+
+      {/* Filters */}
+      <div className="mt-4 space-y-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher par e-mail…"
+            className="pl-8 pr-8"
+            aria-label="Rechercher dans le journal"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Effacer la recherche"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div>
+            <Label className="mb-1 block text-[11px] text-muted-foreground">
+              Période
+            </Label>
+            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les périodes</SelectItem>
+                <SelectItem value="24h">Dernières 24 heures</SelectItem>
+                <SelectItem value="7d">7 derniers jours</SelectItem>
+                <SelectItem value="30d">30 derniers jours</SelectItem>
+                <SelectItem value="90d">90 derniers jours</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-1 block text-[11px] text-muted-foreground">
+              Initiateur
+            </Label>
+            <Select
+              value={initiator}
+              onValueChange={(v) => setInitiator(v as InitiatorKey)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value="self">Par le compte lui-même</SelectItem>
+                <SelectItem value="other">Par un autre admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-1 block text-[11px] text-muted-foreground">
+              Source
+            </Label>
+            <Select value={source} onValueChange={(v) => setSource(v as SourceKey)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les sources</SelectItem>
+                <SelectItem value="self">Auto-modification</SelectItem>
+                <SelectItem value="admin-reset">Réinit. par admin</SelectItem>
+                <SelectItem value="reset">Lien e-mail</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-1 text-[11.5px] text-muted-foreground">
+          <span>
+            {data
+              ? `${filtered.length} résultat${filtered.length > 1 ? "s" : ""}${
+                  hasFilters ? ` / ${data.length}` : ""
+                }`
+              : ""}
+          </span>
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="rounded-md px-2 py-1 text-teal hover:bg-teal/10"
+            >
+              Réinitialiser les filtres
+            </button>
+          )}
+        </div>
+      </div>
 
       {isLoading && (
         <p className="mt-4 text-sm text-muted-foreground">Chargement…</p>
@@ -154,14 +308,23 @@ function PasswordChangesLogCard() {
         </p>
       )}
 
-      {data && data.length > 0 && (
+      {data && data.length > 0 && filtered.length === 0 && (
+        <p className="mt-4 rounded-lg border border-dashed border-border/60 bg-cream-deep/20 p-4 text-center text-sm text-muted-foreground">
+          Aucune entrée ne correspond aux filtres.
+        </p>
+      )}
+
+      {filtered.length > 0 && (
         <ul className="mt-4 divide-y divide-border/60 rounded-xl border border-border/60 bg-cream-deep/10">
-          {data.map((entry) => {
+          {filtered.map((entry) => {
             const s = sourceLabel(entry.source);
             const isSelf =
               entry.changed_by && entry.user_id && entry.changed_by === entry.user_id;
             return (
-              <li key={entry.id} className="flex flex-col gap-1 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <li
+                key={entry.id}
+                className="flex flex-col gap-1 p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium text-foreground">
                     {entry.user_email ?? "(compte supprimé)"}
