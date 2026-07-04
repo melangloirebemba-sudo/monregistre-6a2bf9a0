@@ -309,3 +309,29 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "wa
   );
 }
 
+const UNLIMITED = 2147483647;
+function fmt(n: number | undefined) {
+  if (n === undefined) return "—";
+  return n >= UNLIMITED ? "∞" : String(n);
+}
+function PlanLimitsBadges({ limit }: { limit: PlanLimit | undefined }) {
+  if (!limit) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        Écoles {fmt(limit.max_ecoles)}
+      </span>
+      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        Classes/école {fmt(limit.max_classes_par_ecole)}
+      </span>
+      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        Élèves {fmt(limit.max_eleves)}
+      </span>
+      {limit.bulletins_pdf && <span className="rounded bg-teal/15 text-teal px-1.5 py-0.5 text-[10px]">Bulletins</span>}
+      {limit.rapports && <span className="rounded bg-teal/15 text-teal px-1.5 py-0.5 text-[10px]">Rapports</span>}
+      {limit.progression && <span className="rounded bg-teal/15 text-teal px-1.5 py-0.5 text-[10px]">Progression</span>}
+    </div>
+  );
+}
+
+
