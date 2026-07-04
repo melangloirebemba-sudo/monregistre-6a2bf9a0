@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarDays, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -63,6 +64,7 @@ function EmploiDuTempsPage() {
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<Creneau | null>(null);
   const [toDelete, setToDelete] = useState<string | null>(null);
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [ecoleId, setEcoleId] = useState("");
   const [classeId, setClasseId] = useState("");
   const [jour, setJour] = useState("1");
@@ -71,9 +73,22 @@ function EmploiDuTempsPage() {
   const [matiere, setMatiere] = useState("");
   const [salle, setSalle] = useState("");
 
+  const ecoleById = useMemo(
+    () => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])),
+    [ecoles],
+  );
+
+  const filteredCreneaux = useMemo(
+    () =>
+      ecoleFilter === "all"
+        ? creneaux
+        : creneaux.filter((c) => c.ecole_id === ecoleFilter),
+    [creneaux, ecoleFilter],
+  );
+
   function openCreate() {
     setEdit(null);
-    setEcoleId(ecoles[0]?.id ?? "");
+    setEcoleId(ecoleFilter !== "all" ? ecoleFilter : (ecoles[0]?.id ?? ""));
     setClasseId("");
     setJour("1");
     setDebut("08:00");
