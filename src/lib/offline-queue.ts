@@ -10,6 +10,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type QueueOp = "insert" | "update" | "delete";
+export type ConflictStrategy = "client-wins" | "server-wins" | "merge";
 
 export interface QueuedWrite {
   id: string;
@@ -23,9 +24,24 @@ export interface QueuedWrite {
   match?: Record<string, unknown>;
   // Optional label for the UI
   label?: string;
+  // ISO timestamp of the server row when the edit started (for conflict detection).
+  baseUpdatedAt?: string;
+  // How to resolve when server has changed since baseUpdatedAt. Default: "merge".
+  conflictStrategy?: ConflictStrategy;
   // Number of failed attempts
   attempts: number;
   lastError?: string;
+}
+
+export interface ConflictEvent {
+  table: string;
+  op: QueueOp;
+  match?: Record<string, unknown>;
+  label?: string;
+  baseUpdatedAt: string;
+  serverUpdatedAt: string;
+  strategy: ConflictStrategy;
+  resolution: "client-applied" | "server-kept";
 }
 
 const DB_NAME = "monregistre-offline";
@@ -33,7 +49,9 @@ const DB_VERSION = 1;
 const STORE = "writes";
 
 type Listener = () => void;
+type ConflictListener = (e: ConflictEvent) => void;
 const listeners = new Set<Listener>();
+const conflictListeners = new Set<ConflictListener>();
 let syncing = false;
 let flushChain: Promise<void> = Promise.resolve();
 
@@ -41,10 +59,21 @@ function notify() {
   for (const l of listeners) l();
 }
 
+function notifyConflict(e: ConflictEvent) {
+  for (const l of conflictListeners) l(e);
+}
+
 export function subscribeOfflineQueue(fn: Listener): () => void {
   listeners.add(fn);
   return () => {
     listeners.delete(fn);
+  };
+}
+
+export function subscribeOfflineConflicts(fn: ConflictListener): () => void {
+  conflictListeners.add(fn);
+  return () => {
+    conflictListeners.delete(fn);
   };
 }
 
@@ -159,6 +188,10 @@ export interface EnqueueInput {
   payload?: Record<string, unknown>;
   match?: Record<string, unknown>;
   label?: string;
+  /** Server updated_at known by the client when the edit started. */
+  baseUpdatedAt?: string;
+  /** Conflict policy when server row changed since baseUpdatedAt. Default "merge". */
+  conflictStrategy?: ConflictStrategy;
 }
 
 /**
@@ -202,6 +235,50 @@ function isNetworkError(err: unknown): boolean {
   return /network|failed to fetch|offline|timeout/i.test(msg);
 }
 
+/**
+ * Detects a conflict on update/delete: fetches the current server row and
+ * compares `updated_at` with the client's `baseUpdatedAt`. Emits a conflict
+ * event and applies the requested strategy:
+ *   - "client-wins" (or "merge"): proceed with the write, overwriting server changes.
+ *     "merge" is treated as last-write-wins at row granularity + user notification.
+ *   - "server-wins": skip the write, keep the server version.
+ */
+async function detectConflict(
+  input: EnqueueInput,
+): Promise<{ skip: boolean }> {
+  if (!input.baseUpdatedAt || !input.match) return { skip: false };
+  if (input.op !== "update" && input.op !== "delete") return { skip: false };
+
+  const strategy: ConflictStrategy = input.conflictStrategy ?? "merge";
+  const from = (supabase.from as unknown as (t: string) => any)(input.table);
+  let q = from.select("updated_at").limit(1);
+  for (const [k, v] of Object.entries(input.match)) q = q.eq(k, v);
+  const { data, error } = await q.maybeSingle();
+  if (error) {
+    if (isNetworkError(error)) throw error;
+    // Row not found or other read error — let the write proceed and surface its own error.
+    return { skip: false };
+  }
+  const serverUpdatedAt: string | undefined = data?.updated_at;
+  if (!serverUpdatedAt) return { skip: false };
+  if (new Date(serverUpdatedAt).getTime() <= new Date(input.baseUpdatedAt).getTime()) {
+    return { skip: false };
+  }
+
+  const skip = strategy === "server-wins";
+  notifyConflict({
+    table: input.table,
+    op: input.op,
+    match: input.match,
+    label: input.label,
+    baseUpdatedAt: input.baseUpdatedAt,
+    serverUpdatedAt,
+    strategy,
+    resolution: skip ? "server-kept" : "client-applied",
+  });
+  return { skip };
+}
+
 async function runWrite(input: EnqueueInput): Promise<unknown> {
   const { table, op, payload, match } = input;
   // Cast to loose typing — this queue is a generic writer that must accept
@@ -213,8 +290,15 @@ async function runWrite(input: EnqueueInput): Promise<unknown> {
     if (error) throw error;
     return data;
   }
+
+  // Conflict detection for update/delete
+  const { skip } = await detectConflict(input);
+  if (skip) return null;
+
   if (op === "update") {
-    let q = from.update(payload ?? {});
+    // Bump updated_at so subsequent conflict checks compare correctly.
+    const patch = { ...(payload ?? {}), updated_at: new Date().toISOString() };
+    let q = from.update(patch);
     for (const [k, v] of Object.entries(match ?? {})) q = q.eq(k, v);
     const { data, error } = await q.select();
     if (error) throw error;

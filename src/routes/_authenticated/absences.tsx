@@ -18,7 +18,7 @@ import {
   requireUserId,
   type Absence,
 } from "@/lib/queries/data";
-import { enqueueWrite } from "@/lib/offline-queue";
+import { enqueueWrite, flushQueue, subscribeOfflineConflicts } from "@/lib/offline-queue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,6 +57,7 @@ type AbsenceRow = Absence & {
 };
 
 function AbsencesPage() {
+  const qc = useQueryClient();
   const { data: classes = [] } = useQuery(classesQO());
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const { data: absences = [], isLoading } = useQuery(
@@ -67,6 +68,38 @@ function AbsencesPage() {
   const [editing, setEditing] = useState<AbsenceRow | null>(null);
   const [open, setOpen] = useState(false);
   const [toDelete, setToDelete] = useState<AbsenceRow | null>(null);
+
+  // Écoute des conflits de synchronisation (retour réseau) sur les Absences.
+  useEffect(() => {
+    const unsub = subscribeOfflineConflicts((e) => {
+      if (e.table !== "absences") return;
+      if (e.resolution === "client-applied") {
+        toast.warning(
+          `Conflit détecté sur une absence — votre version a été appliquée (le serveur avait été modifié entre-temps).`,
+        );
+      } else {
+        toast.warning(
+          `Conflit détecté sur une absence — la version serveur a été conservée.`,
+        );
+      }
+      qc.invalidateQueries({ queryKey: ["absences"] });
+    });
+    return unsub;
+  }, [qc]);
+
+  // Relance automatique de la synchronisation dès que le réseau revient.
+  useEffect(() => {
+    const onOnline = async () => {
+      await flushQueue();
+      qc.invalidateQueries({ queryKey: ["absences"] });
+    };
+    window.addEventListener("online", onOnline);
+    // Tentative immédiate si l'onglet redevient visible en ligne.
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      void flushQueue();
+    }
+    return () => window.removeEventListener("online", onOnline);
+  }, [qc]);
 
   const filtered = useMemo(
     () =>
@@ -297,6 +330,8 @@ function AbsenceDialog({
           payload,
           match: { id: absence.id },
           label: "Modifier absence",
+          baseUpdatedAt: absence.updated_at,
+          conflictStrategy: "merge",
         });
       } else {
         await enqueueWrite({
@@ -434,6 +469,8 @@ function DeleteAbsenceDialog({
         op: "delete",
         match: { id: absence.id },
         label: "Supprimer absence",
+        baseUpdatedAt: absence.updated_at,
+        conflictStrategy: "merge",
       });
     },
     onSuccess: () => {

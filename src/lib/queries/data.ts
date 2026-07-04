@@ -93,6 +93,7 @@ export interface Absence {
   motif: string | null;
   justifiee: boolean;
   user_id: string;
+  updated_at: string;
 }
 
 export const absencesQO = (opts: { classeId?: string; eleveId?: string } = {}) =>
