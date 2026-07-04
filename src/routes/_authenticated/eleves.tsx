@@ -225,21 +225,38 @@ function ElevesPage() {
               </li>
             );
           };
-          if (grouped) {
-            return (
-              <div className="space-y-4">
-                {grouped.map(([ecoleId, list]) => (
-                  <section key={ecoleId}>
-                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                    <ul className="space-y-2">{list.map(renderItem)}</ul>
-                  </section>
-                ))}
-              </div>
-            );
-          }
-          return <ul className="space-y-2">{filtered.map(renderItem)}</ul>;
+          const listView = grouped ? (
+            <div className="space-y-4">
+              {grouped.map(([ecoleId, list]) => (
+                <section key={ecoleId}>
+                  <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
+                  <ul className="space-y-2">{list.map(renderItem)}</ul>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <ul className="space-y-2">{paged.map(renderItem)}</ul>
+          );
+          return (
+            <div className="space-y-3">
+              {listView}
+              <DataPagination
+                page={pg.page}
+                totalPages={pg.totalPages}
+                pageSize={pg.pageSize}
+                totalCount={eleves.length}
+                filteredCount={filtered.length}
+                start={pg.start}
+                end={pg.end}
+                onPageChange={pg.setPage}
+                onPageSizeChange={pg.setPageSize}
+                itemLabel="élèves"
+              />
+            </div>
+          );
         })()
       )}
+
 
 
       {canAdd && (
