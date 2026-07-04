@@ -155,7 +155,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
         {/* Contenu */}
         <main className="flex-1 pb-24 lg:pb-10">
-          <div className="mx-auto w-full max-w-[440px] sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl">
+          <div className="mx-auto w-full max-w-2xl px-1 sm:px-0 lg:max-w-5xl xl:max-w-6xl">
             {children}
           </div>
         </main>
@@ -166,17 +166,19 @@ export function AdminShell({ children }: AdminShellProps) {
             {adminNav.map((t) => {
               const active = isActive(pathname, t.to);
               const Icon = t.icon;
+              const short =
+                t.label === "Tableau de bord" ? "Accueil" : t.label;
               return (
                 <li key={t.to}>
                   <Link
                     to={t.to}
                     className={[
-                      "flex flex-col items-center gap-1 px-2 py-3 text-[11px] font-medium transition-colors",
+                      "flex flex-col items-center gap-1 px-1 py-2.5 text-[10.5px] font-medium leading-tight transition-colors",
                       active ? "text-teal" : "text-muted-foreground hover:text-foreground",
                     ].join(" ")}
                   >
                     <Icon className={["h-5 w-5", active ? "scale-110" : ""].join(" ")} />
-                    {t.label}
+                    <span className="truncate">{short}</span>
                   </Link>
                 </li>
               );
