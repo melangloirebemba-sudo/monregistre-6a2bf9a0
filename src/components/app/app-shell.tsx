@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { OfflineIndicator } from "@/components/app/offline-indicator";
 import { toast } from "sonner";
 
 interface AppShellProps {
