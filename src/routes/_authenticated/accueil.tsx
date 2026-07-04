@@ -17,6 +17,7 @@ import {
 import { useMemo } from "react";
 import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO } from "@/lib/queries/data";
+import { SyncStatusCard } from "@/components/app/sync-status-card";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   head: () => ({
