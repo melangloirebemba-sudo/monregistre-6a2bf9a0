@@ -284,8 +284,12 @@ function DeleteDialog({ open, onOpenChange, classe, onDone }: { open: boolean; o
   const del = useMutation({
     mutationFn: async () => {
       if (!classe) return;
-      const { error } = await supabase.from("classes").delete().eq("id", classe.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "classes",
+        op: "delete",
+        match: { id: classe.id },
+        label: `Supprimer classe ${classe.nom}`,
+      });
     },
     onSuccess: () => {
       toast.success("Classe supprimée");
