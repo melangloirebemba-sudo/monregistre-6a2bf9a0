@@ -39,13 +39,15 @@ function AccueilPage() {
   const { data: absences = [] } = useQuery(absencesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
 
+  const reminderPrefs = useReminderPrefs();
+
   const reminders = useMemo(() => {
     const list: Array<{ id: string; label: string; to: string; tone: "warn" | "info" }> = [];
     const now = Date.now();
     const DAY = 86400000;
 
     // Aucune période définie
-    if (periodes.length === 0) {
+    if (reminderPrefs.noPeriodes && periodes.length === 0) {
       list.push({
         id: "no-periodes",
         label: "Aucune période définie — configurez trimestres ou semestres.",
@@ -54,51 +56,60 @@ function AccueilPage() {
       });
     }
 
-    // Classes sans note depuis 14 jours (ou jamais)
-    const lastNoteByClasse = new Map<string, number>();
-    for (const n of notes) {
-      const cid = n.eleve?.classe_id;
-      if (!cid) continue;
-      const t = new Date(n.date).getTime();
-      const prev = lastNoteByClasse.get(cid) ?? 0;
-      if (t > prev) lastNoteByClasse.set(cid, t);
+    // Classes sans note (jamais) ou sans note récente
+    if (reminderPrefs.noNotes || reminderPrefs.staleNotes) {
+      const lastNoteByClasse = new Map<string, number>();
+      for (const n of notes) {
+        const cid = n.eleve?.classe_id;
+        if (!cid) continue;
+        const t = new Date(n.date).getTime();
+        const prev = lastNoteByClasse.get(cid) ?? 0;
+        if (t > prev) lastNoteByClasse.set(cid, t);
+      }
+      for (const c of classes) {
+        const last = lastNoteByClasse.get(c.id);
+        if (last === undefined) {
+          if (reminderPrefs.noNotes) {
+            list.push({
+              id: `nonotes-${c.id}`,
+              label: `${c.nom} — aucune note enregistrée.`,
+              to: "/notes",
+              tone: "warn",
+            });
+          }
+        } else if (reminderPrefs.staleNotes) {
+          const days = Math.floor((now - last) / DAY);
+          if (days >= reminderPrefs.staleNotesDays) {
+            list.push({
+              id: `stale-${c.id}`,
+              label: `${c.nom} — pas de note depuis ${days} jours.`,
+              to: "/notes",
+              tone: "warn",
+            });
+          }
+        }
+      }
     }
-    for (const c of classes) {
-      const last = lastNoteByClasse.get(c.id);
-      const days = last ? Math.floor((now - last) / DAY) : null;
-      if (last === undefined) {
+
+    // Absences non justifiées sur la fenêtre configurée
+    if (reminderPrefs.absencesUnj) {
+      const cutoff = now - reminderPrefs.absencesWindowDays * DAY;
+      const recentUnj = absences.filter(
+        (a) => !a.justifiee && new Date(a.date).getTime() >= cutoff,
+      ).length;
+      if (recentUnj > 0) {
         list.push({
-          id: `nonotes-${c.id}`,
-          label: `${c.nom} — aucune note enregistrée.`,
-          to: "/notes",
-          tone: "warn",
-        });
-      } else if (days !== null && days >= 14) {
-        list.push({
-          id: `stale-${c.id}`,
-          label: `${c.nom} — pas de note depuis ${days} jours.`,
-          to: "/notes",
+          id: "absences-unj",
+          label: `${recentUnj} absence(s) non justifiée(s) sur ${reminderPrefs.absencesWindowDays} j.`,
+          to: "/absences",
           tone: "warn",
         });
       }
     }
 
-    // Absences non justifiées des 7 derniers jours
-    const cutoff = now - 7 * DAY;
-    const recentUnj = absences.filter(
-      (a) => !a.justifiee && new Date(a.date).getTime() >= cutoff,
-    ).length;
-    if (recentUnj > 0) {
-      list.push({
-        id: "absences-unj",
-        label: `${recentUnj} absence(s) non justifiée(s) cette semaine.`,
-        to: "/absences",
-        tone: "warn",
-      });
-    }
-
     return list.slice(0, 5);
-  }, [classes, notes, absences, periodes]);
+  }, [classes, notes, absences, periodes, reminderPrefs]);
+
 
 
   const nom = profil?.nom_affiche?.split(" ")[0] || "Enseignant";
