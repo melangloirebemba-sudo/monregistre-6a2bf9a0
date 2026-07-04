@@ -112,8 +112,8 @@ function ClassesPage() {
           </Button>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {filtered.map((c) => (
+        (() => {
+          const renderItem = (c: Classe) => (
             <li key={c.id} className="card-elevated p-4">
               <div className="flex items-start gap-3">
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal/15 text-ink">
@@ -125,7 +125,9 @@ function ClassesPage() {
                     <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-semibold text-ink">{c.code}</span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    {ecoleById[c.ecole_id] ?? "École inconnue"}
+                    <span className="rounded-sm bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
+                      {ecoleById[c.ecole_id] ?? "École inconnue"}
+                    </span>
                     {c.matiere ? ` · ${c.matiere}` : ""}
                     {" · "}{c.effectif} élève{c.effectif > 1 ? "s" : ""}
                   </div>
@@ -140,9 +142,36 @@ function ClassesPage() {
                 </div>
               </div>
             </li>
-          ))}
-        </ul>
+          );
+          if (ecoleFilter === "all") {
+            const map = new Map<string, Classe[]>();
+            filtered.forEach((c) => {
+              const list = map.get(c.ecole_id) ?? [];
+              list.push(c);
+              map.set(c.ecole_id, list);
+            });
+            const grouped = Array.from(map.entries()).sort((a, b) =>
+              (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+            );
+            return (
+              <div className="space-y-4">
+                {grouped.map(([ecoleId, list]) => (
+                  <section key={ecoleId}>
+                    <h2 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+                      {ecoleById[ecoleId] ?? "École ?"}
+                      <span className="ml-auto text-[10px] font-normal">{list.length}</span>
+                    </h2>
+                    <ul className="space-y-3">{list.map(renderItem)}</ul>
+                  </section>
+                ))}
+              </div>
+            );
+          }
+          return <ul className="space-y-3">{filtered.map(renderItem)}</ul>;
+        })()
       )}
+
 
       {canAdd && (
         <button
