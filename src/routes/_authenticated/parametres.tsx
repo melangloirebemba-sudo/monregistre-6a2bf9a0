@@ -342,13 +342,7 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
 function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanCapabilities["plan"]; variant?: "header" | "inline" }) {
   const { data: profil } = useQuery(profilQueryOptions());
   const ecoleNom = profil?.etablissement?.trim() ?? "";
-  const waMessage = [
-    `Bonjour, je souhaite passer du plan ${PLAN_LABEL[currentPlan]} à un plan supérieur sur MonRegistre.`,
-    "",
-    `École : ${ecoleNom || "(non renseignée)"}`,
-    `Plan actuel : ${PLAN_LABEL[currentPlan]}`,
-  ].join("\n");
-  const waHref = `https://wa.me/24269626540?text=${encodeURIComponent(waMessage)}`;
+  const waHref = upgradeWhatsAppHref(ecoleNom, PLAN_LABEL[currentPlan]);
 
   const trigger =
     variant === "header" ? (
