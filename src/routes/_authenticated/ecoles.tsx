@@ -196,42 +196,51 @@ function EcolesPage() {
 }
 
 
-function EmptyState({ onAdd, disabled }: { onAdd: () => void; disabled?: boolean }) {
+function EmptyState({ onAdd, locked }: { onAdd: () => void; locked?: boolean }) {
   return (
     <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-ink">
-        <SchoolIcon className="h-6 w-6" />
+        {locked ? <Lock className="h-6 w-6" /> : <SchoolIcon className="h-6 w-6" />}
       </span>
       <div>
         <div className="font-display text-lg font-semibold">Aucune école</div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Commencez par ajouter l'école où vous enseignez.
+          {locked
+            ? "Ajout d'école bloqué : la limite de votre plan est atteinte."
+            : "Commencez par ajouter l'école où vous enseignez."}
         </p>
       </div>
-      <Button onClick={onAdd} disabled={disabled} className="mt-2">
-        <Plus className="mr-1 h-4 w-4" /> Ajouter une école
+      <Button onClick={onAdd} className="mt-2" variant={locked ? "outline" : "default"}>
+        {locked ? (
+          <>
+            <Sparkles className="mr-1 h-4 w-4" /> Débloquer avec un plan supérieur
+          </>
+        ) : (
+          <>
+            <Plus className="mr-1 h-4 w-4" /> Ajouter une école
+          </>
+        )}
       </Button>
     </div>
   );
 }
 
-function FloatingAdd({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+function FloatingAdd({ onClick, locked }: { onClick: () => void; locked?: boolean }) {
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
-      aria-label={disabled ? "Limite atteinte — plan actuel" : "Ajouter"}
-      aria-disabled={disabled}
-      className={`fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full shadow-[var(--shadow-hero)] transition-transform lg:bottom-8 ${
-        disabled
-          ? "cursor-not-allowed bg-muted text-muted-foreground opacity-70"
-          : "bg-teal text-teal-foreground hover:scale-105"
+      aria-label={locked ? "Limite atteinte — mettre à niveau" : "Ajouter"}
+      className={`fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full shadow-[var(--shadow-hero)] transition-transform hover:scale-105 lg:bottom-8 ${
+        locked
+          ? "bg-muted text-muted-foreground ring-2 ring-gold/50"
+          : "bg-teal text-teal-foreground"
       }`}
     >
-      {disabled ? <Lock className="h-5 w-5" /> : <Plus className="h-6 w-6" />}
+      {locked ? <Lock className="h-5 w-5" /> : <Plus className="h-6 w-6" />}
     </button>
   );
 }
+
 
 
 function EcoleDialog({
