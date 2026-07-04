@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
+import { EcoleFilter, EcoleGroupHeader } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/rapports")({
   head: () => ({ meta: [{ title: "Rapports — MonRegistre" }] }),
@@ -159,7 +159,7 @@ function RapportsPage() {
         <p className="text-sm text-ink/60">Moyennes, statistiques et bulletins PDF.</p>
         {ecole && (
           <div className="mt-2">
-            <EcoleBadge name={ecole.nom} />
+            <EcoleGroupHeader name={ecole.nom} count={classes.length} />
           </div>
         )}
       </header>
