@@ -55,7 +55,7 @@ function RapportsPage() {
 
   const { data: classes = [] } = useQuery(classesQO(ecoleId || undefined));
   const { data: eleves = [] } = useQuery(elevesQO(classeId || undefined));
-  const { data: notes = [] } = useQuery(
+  const { data: notes = [], isLoading: notesLoading } = useQuery(
     notesQO({ classeId: classeId || undefined, periodeId: periodeId || undefined }),
   );
 
