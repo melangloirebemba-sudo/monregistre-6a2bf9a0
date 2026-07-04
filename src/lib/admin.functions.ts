@@ -135,3 +135,51 @@ export const deleteUserAccount = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/* ==================== ADMIN STATS ==================== */
+export const getAdminStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [usersRes, profilsRes, rolesRes, ecolesRes, classesRes, elevesRes] = await Promise.all([
+      supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabaseAdmin as any).from("profils_enseignant").select("plan, statut"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabaseAdmin as any).from("user_roles").select("user_id, role"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabaseAdmin as any).from("ecoles").select("id", { count: "exact", head: true }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabaseAdmin as any).from("classes").select("id", { count: "exact", head: true }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabaseAdmin as any).from("eleves").select("id", { count: "exact", head: true }),
+    ]);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const profils: any[] = profilsRes.data ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const roles: any[] = rolesRes.data ?? [];
+    const users = usersRes.data?.users ?? [];
+
+    const now = Date.now();
+    const THIRTY_D = 30 * 24 * 60 * 60 * 1000;
+    const actifs30j = users.filter((u) => {
+      const t = u.last_sign_in_at ? new Date(u.last_sign_in_at).getTime() : 0;
+      return t > 0 && now - t < THIRTY_D;
+    }).length;
+
+    return {
+      totalUsers: users.length,
+      admins: roles.filter((r) => r.role === "admin").length,
+      suspendus: profils.filter((p) => p.statut === "suspendu").length,
+      actifs30j,
+      planGratuit: profils.filter((p) => p.plan === "gratuit").length,
+      planLite: profils.filter((p) => p.plan === "lite").length,
+      planPremium: profils.filter((p) => p.plan === "premium").length,
+      totalEcoles: ecolesRes.count ?? 0,
+      totalClasses: classesRes.count ?? 0,
+      totalEleves: elevesRes.count ?? 0,
+    };
+  });
