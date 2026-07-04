@@ -7,7 +7,28 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-const SESSION_DISMISS_KEY = "monregistre.installPromptDismissed";
+const LAST_SHOWN_KEY = "monregistre.installPromptLastShownAt";
+const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 h
+
+function wasShownRecently(): boolean {
+  try {
+    const raw = localStorage.getItem(LAST_SHOWN_KEY);
+    if (!raw) return false;
+    const ts = Number(raw);
+    if (!Number.isFinite(ts)) return false;
+    return Date.now() - ts < COOLDOWN_MS;
+  } catch {
+    return false;
+  }
+}
+
+function markShown() {
+  try {
+    localStorage.setItem(LAST_SHOWN_KEY, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+}
 
 function isPreviewOrIframe(): boolean {
   if (typeof window === "undefined") return true;
