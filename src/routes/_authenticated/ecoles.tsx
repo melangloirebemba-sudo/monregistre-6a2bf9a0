@@ -194,9 +194,7 @@ function EcoleDialog({
     directeur_etudes: "",
   });
 
-  // reset form when dialog opens
-  const resetKey = `${open}-${ecole?.id ?? "new"}`;
-  useMemo(() => {
+  useEffect(() => {
     if (open) {
       setForm({
         nom: ecole?.nom ?? "",
@@ -206,8 +204,7 @@ function EcoleDialog({
         directeur_etudes: ecole?.directeur_etudes ?? "",
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetKey]);
+  }, [open, ecole]);
 
   const save = useMutation({
     mutationFn: async () => {
