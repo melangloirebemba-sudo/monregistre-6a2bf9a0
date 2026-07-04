@@ -1,16 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucide-react";
 import { toast } from "sonner";
-import {
-  listAllUsers,
-  updateUserPlan,
-  setUserSuspension,
-  resetUserPassword,
-  deleteUserAccount,
-} from "@/lib/admin.functions";
+import { adminApi, type AdminUser } from "@/lib/admin-api";
 import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,34 +25,15 @@ export const Route = createFileRoute("/_authenticated/admin/utilisateurs")({
   component: AdminContent,
 });
 
-interface AdminUser {
-  id: string;
-  email: string;
-  created_at: string;
-  last_sign_in_at: string | null;
-  banned_until: string | null;
-  email_confirmed_at: string | null;
-  nom_affiche: string | null;
-  plan: AppPlan;
-  statut: "actif" | "suspendu";
-  roles: string[];
-}
-
-
-
 function AdminContent() {
   const qc = useQueryClient();
-  const listFn = useServerFn(listAllUsers);
-  const updatePlanFn = useServerFn(updateUserPlan);
-  const suspendFn = useServerFn(setUserSuspension);
-  const resetPwdFn = useServerFn(resetUserPassword);
-  const deleteFn = useServerFn(deleteUserAccount);
 
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ["admin-users"],
-    queryFn: () => listFn() as Promise<AdminUser[]>,
+    queryFn: () => adminApi.listUsers(),
     staleTime: 15_000,
   });
+
 
   const [q, setQ] = useState("");
 
