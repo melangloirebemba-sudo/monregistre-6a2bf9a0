@@ -201,35 +201,71 @@ function NotesPage() {
           </Button>
         </div>
       ) : (
-        <ul className="space-y-2">
-          {filtered.map((n) => (
-            <li key={n.id} className="card-elevated p-3">
-              <div className="flex items-center gap-3">
-                <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl font-display text-sm font-semibold ${noteColorClass(n.valeur, echelle)}`}>
-                  {formatNote(n.valeur)}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-display text-sm font-semibold text-foreground">
-                    {n.eleve ? `${n.eleve.prenom} ${n.eleve.nom}` : "Élève ?"}
+        (() => {
+          const renderItem = (n: NoteRow) => {
+            const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
+            return (
+              <li key={n.id} className="card-elevated p-3">
+                <div className="flex items-center gap-3">
+                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl font-display text-sm font-semibold ${noteColorClass(n.valeur, echelle)}`}>
+                    {formatNote(n.valeur)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-display text-sm font-semibold text-foreground">
+                      {n.eleve ? `${n.eleve.prenom} ${n.eleve.nom}` : "Élève ?"}
+                    </div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      <span className="rounded-sm bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
+                        {cls ? ecoleById[cls.ecole_id] ?? "École ?" : "École ?"}
+                      </span>
+                      {cls ? ` · ${cls.nom}` : ""}
+                      {" · "}{n.libelle}
+                      {n.coefficient !== 1 ? ` · coef ${n.coefficient}` : ""}
+                      {n.matiere ? ` · ${n.matiere}` : ""}
+                      {" · "}{new Date(n.date).toLocaleDateString("fr-FR")}
+                    </div>
                   </div>
-                  <div className="truncate text-[11px] text-muted-foreground">
-                    {n.libelle}
-                    {n.coefficient !== 1 ? ` · coef ${n.coefficient}` : ""}
-                    {n.matiere ? ` · ${n.matiere}` : ""}
-                    {" · "}{new Date(n.date).toLocaleDateString("fr-FR")}
-                  </div>
+                  <button onClick={() => { setEditing(n); setOpen(true); }} aria-label="Modifier" className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground">
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => setToDelete(n)} aria-label="Supprimer" className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-                <button onClick={() => { setEditing(n); setOpen(true); }} aria-label="Modifier" className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground">
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button onClick={() => setToDelete(n)} aria-label="Supprimer" className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                </button>
+              </li>
+            );
+          };
+          if (ecoleFilter === "all") {
+            const map = new Map<string, NoteRow[]>();
+            filtered.forEach((n) => {
+              const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
+              const key = cls?.ecole_id ?? "__unknown__";
+              const list = map.get(key) ?? [];
+              list.push(n);
+              map.set(key, list);
+            });
+            const grouped = Array.from(map.entries()).sort((a, b) =>
+              (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+            );
+            return (
+              <div className="space-y-4">
+                {grouped.map(([ecoleId, list]) => (
+                  <section key={ecoleId}>
+                    <h2 className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-teal" />
+                      {ecoleById[ecoleId] ?? "École ?"}
+                      <span className="ml-auto text-[10px] font-normal">{list.length}</span>
+                    </h2>
+                    <ul className="space-y-2">{list.map(renderItem)}</ul>
+                  </section>
+                ))}
               </div>
-            </li>
-          ))}
-        </ul>
+            );
+          }
+          return <ul className="space-y-2">{filtered.map(renderItem)}</ul>;
+        })()
       )}
+
 
       {canAdd && (
         <button
