@@ -13,6 +13,8 @@ import {
   KeyRound,
   AlertCircle,
   History,
+  Search,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
