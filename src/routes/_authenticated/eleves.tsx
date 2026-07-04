@@ -214,12 +214,13 @@ function ElevesPage() {
 }
 
 function EleveDialog({
-  open, onOpenChange, eleve, classes, defaultClasseId,
+  open, onOpenChange, eleve, classes, ecoles, defaultClasseId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eleve: Eleve | null;
   classes: Array<{ id: string; nom: string; ecole_id: string; chef_id: string | null }>;
+  ecoles: Array<{ id: string; nom: string }>;
   defaultClasseId?: string;
 }) {
   const qc = useQueryClient();
@@ -227,6 +228,7 @@ function EleveDialog({
     nom: "",
     prenom: "",
     sexe: "M",
+    ecole_id: "",
     classe_id: "",
     numero_eleve: "",
     adresse: "",
@@ -239,11 +241,13 @@ function EleveDialog({
     if (open) {
       const classeId = eleve?.classe_id ?? defaultClasseId ?? "";
       const cls = classes.find((c) => c.id === classeId);
+      const ecoleId = eleve?.ecole_id ?? cls?.ecole_id ?? ecoles[0]?.id ?? "";
       setForm({
         nom: eleve?.nom ?? "",
         prenom: eleve?.prenom ?? "",
         sexe: eleve?.sexe ?? "M",
-        classe_id: classeId,
+        ecole_id: ecoleId,
+        classe_id: cls && cls.ecole_id === ecoleId ? classeId : "",
         numero_eleve: eleve?.numero_eleve ?? "",
         adresse: eleve?.adresse ?? "",
         tuteur_nom: eleve?.tuteur_nom ?? "",
@@ -251,7 +255,12 @@ function EleveDialog({
         chef: !!(eleve && cls && cls.chef_id === eleve.id),
       });
     }
-  }, [open, eleve, defaultClasseId, classes]);
+  }, [open, eleve, defaultClasseId, classes, ecoles]);
+
+  const classesForEcole = useMemo(
+    () => classes.filter((c) => c.ecole_id === form.ecole_id),
+    [classes, form.ecole_id],
+  );
 
   const save = useMutation({
     mutationFn: async () => {
