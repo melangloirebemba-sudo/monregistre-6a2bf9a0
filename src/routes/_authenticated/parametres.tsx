@@ -189,6 +189,17 @@ function ParametresPage() {
         </Button>
       </form>
 
+      <section className="card-elevated mt-6 space-y-3 p-5">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Apparence</h2>
+          <p className="text-xs text-muted-foreground">
+            Choisissez un thème clair, sombre, ou suivez les préférences de votre appareil.
+          </p>
+        </div>
+        <ThemeToggle />
+      </section>
+
+
       <section className="card-elevated mt-6 space-y-4 p-5">
         <div>
           <h2 className="font-display text-lg font-semibold">Périodes scolaires</h2>
