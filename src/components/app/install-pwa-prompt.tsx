@@ -75,7 +75,12 @@ export function InstallPwaPrompt() {
     if (typeof window === "undefined") return;
     if (isPreviewOrIframe()) return;
     if (isStandalone()) return;
-    if (sessionStorage.getItem(SESSION_DISMISS_KEY) === "1") return;
+    if (wasShownRecently()) return;
+
+    const show = () => {
+      markShown();
+      setVisible(true);
+    };
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
