@@ -183,3 +183,76 @@ export const getAdminStats = createServerFn({ method: "GET" })
       totalEleves: elevesRes.count ?? 0,
     };
   });
+
+/* ==================== ANNEES SCOLAIRES (agrégat) ==================== */
+export const listAnneesGlobal = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabaseAdmin as any)
+      .from("annees_scolaires")
+      .select("id, user_id, libelle, statut, created_at");
+    if (error) throw new Error(error.message);
+
+    // Agrégation par libellé
+    const byLibelle = new Map<string, { libelle: string; active: number; archivee: number; a_venir: number; enseignants: Set<string> }>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const a of (data ?? []) as any[]) {
+      const key = a.libelle as string;
+      const bucket = byLibelle.get(key) ?? { libelle: key, active: 0, archivee: 0, a_venir: 0, enseignants: new Set<string>() };
+      if (a.statut === "active") bucket.active += 1;
+      else if (a.statut === "archivee") bucket.archivee += 1;
+      else bucket.a_venir += 1;
+      bucket.enseignants.add(a.user_id);
+      byLibelle.set(key, bucket);
+    }
+    return Array.from(byLibelle.values())
+      .map((b) => ({
+        libelle: b.libelle,
+        active: b.active,
+        archivee: b.archivee,
+        a_venir: b.a_venir,
+        enseignants: b.enseignants.size,
+      }))
+      .sort((a, b) => b.libelle.localeCompare(a.libelle));
+  });
+
+/** Archive globalement toutes les entrées « active » du libellé donné (clôture de fin d'année). */
+export const bulkArchiveAnnee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { libelle: string }) =>
+    z.object({ libelle: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error, count } = await (supabaseAdmin as any)
+      .from("annees_scolaires")
+      .update({ statut: "archivee" }, { count: "exact" })
+      .eq("libelle", data.libelle)
+      .eq("statut", "active");
+    if (error) throw new Error(error.message);
+    return { ok: true, archived: count ?? 0 };
+  });
+
+/** Supprime définitivement toutes les entrées d'un libellé (irréversible). */
+export const bulkDeleteAnnee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { libelle: string }) =>
+    z.object({ libelle: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error, count } = await (supabaseAdmin as any)
+      .from("annees_scolaires")
+      .delete({ count: "exact" })
+      .eq("libelle", data.libelle);
+    if (error) throw new Error(error.message);
+    return { ok: true, deleted: count ?? 0 };
+  });
