@@ -86,9 +86,34 @@ Deno.serve(async (req) => {
         const { userId, plan } = payload;
         if (!userId || !["gratuit", "lite", "premium"].includes(plan))
           return json({ error: "Bad input" }, 400);
-        const { error } = await admin.from("profils_enseignant").update({ plan }).eq("user_id", userId);
+        // Réinitialise la période/expiration lors d'un changement direct.
+        const patch: Record<string, unknown> =
+          plan === "gratuit"
+            ? { plan, plan_periode: null, plan_started_at: null, plan_expires_at: null }
+            : { plan };
+        const { error } = await admin.from("profils_enseignant").update(patch).eq("user_id", userId);
         if (error) throw error;
         return json({ ok: true });
+      }
+
+      case "activatePlan": {
+        const { userId, plan, periode } = payload;
+        if (!userId || !["lite", "premium"].includes(plan))
+          return json({ error: "Plan invalide (lite ou premium)" }, 400);
+        if (!["mensuelle", "trimestrielle", "annuelle"].includes(periode))
+          return json({ error: "Période invalide" }, 400);
+        const days = periode === "mensuelle" ? 30 : periode === "trimestrielle" ? 90 : 300;
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + days * 86_400_000);
+        const { error } = await admin.from("profils_enseignant").update({
+          plan,
+          plan_periode: periode,
+          plan_started_at: now.toISOString(),
+          plan_expires_at: expiresAt.toISOString(),
+          statut: "actif",
+        }).eq("user_id", userId);
+        if (error) throw error;
+        return json({ ok: true, plan_expires_at: expiresAt.toISOString() });
       }
 
       case "setSuspension": {
