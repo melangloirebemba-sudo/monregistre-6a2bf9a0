@@ -210,6 +210,21 @@ function ParametresPage() {
         <SyncStatusCard />
       </section>
 
+      <Link
+        to="/parametres/rappels"
+        className="card-elevated mt-6 flex items-center justify-between gap-3 p-5 transition-colors hover:bg-cream-deep/50"
+      >
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold">Rappels</h2>
+          <p className="text-xs text-muted-foreground">
+            Activez chaque type d'alerte et ajustez les seuils.
+          </p>
+        </div>
+        <span className="text-sm text-muted-foreground">→</span>
+      </Link>
+
+
+
 
       <section className="card-elevated mt-6 space-y-4 p-5">
         <div>
