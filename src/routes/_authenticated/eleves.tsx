@@ -455,7 +455,7 @@ function EleveDialog({
           </label>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-            <Button type="submit" disabled={save.isPending}>{save.isPending ? "…" : "Enregistrer"}</Button>
+            <Button type="submit" disabled={save.isPending || classeMismatch}>{save.isPending ? "…" : "Enregistrer"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
