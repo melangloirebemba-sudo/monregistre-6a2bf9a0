@@ -368,8 +368,12 @@ function DeleteNoteDialog({ open, onOpenChange, note, onDone }: { open: boolean;
   const del = useMutation({
     mutationFn: async () => {
       if (!note) return;
-      const { error } = await supabase.from("notes").delete().eq("id", note.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "notes",
+        op: "delete",
+        match: { id: note.id },
+        label: "Supprimer note",
+      });
     },
     onSuccess: () => {
       toast.success("Note supprimée");
