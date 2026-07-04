@@ -647,5 +647,86 @@ function SortableHeader({
   );
 }
 
+const PERIODE_LABEL: Record<PlanPeriode, string> = {
+  mensuelle: "Mensuelle (30 j)",
+  trimestrielle: "Trimestrielle (90 j)",
+  annuelle: "Annuelle (300 j)",
+};
+
+function HistoryDialog({ target, onClose }: { target: AdminUser | null; onClose: () => void }) {
+  const enabled = !!target;
+  const { data: activations = [], isLoading, error } = useQuery({
+    queryKey: ["admin-activations", target?.id],
+    queryFn: () => adminApi.activationsList(target!.id),
+    enabled,
+    staleTime: 10_000,
+  });
+
+  const fmtDateTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+  const fmtDate = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("fr-FR") : "—";
+
+  return (
+    <Dialog open={enabled} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 text-teal" aria-hidden="true" /> Historique des activations
+          </DialogTitle>
+          <DialogDescription>
+            Journal des activations de plan pour <strong>{target?.nom_affiche || target?.email}</strong>.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto">
+          {isLoading && <div className="p-4 text-sm text-muted-foreground">Chargement…</div>}
+          {error && <div className="p-4 text-sm text-destructive">Erreur : {(error as Error).message}</div>}
+          {!isLoading && !error && activations.length === 0 && (
+            <div className="p-4 text-sm text-muted-foreground">Aucune activation enregistrée.</div>
+          )}
+          {!isLoading && !error && activations.length > 0 && (
+            <ol className="space-y-2">
+              {activations.map((a: PlanActivation) => (
+                <li key={a.id} className="rounded-lg border border-border bg-background/60 p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="bg-teal/15 text-teal hover:bg-teal/20">
+                        {PLAN_LABELS[a.plan]}
+                      </Badge>
+                      {a.periode && (
+                        <span className="text-xs text-muted-foreground">{PERIODE_LABEL[a.periode]}</span>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{fmtDateTime(a.created_at)}</span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                    <div>
+                      Début : <span className="text-foreground">{fmtDate(a.plan_started_at)}</span>
+                    </div>
+                    <div>
+                      Expire : <span className="text-foreground">{fmtDate(a.plan_expires_at)}</span>
+                    </div>
+                    <div className="sm:col-span-2">
+                      Activé par :{" "}
+                      <span className="text-foreground">{a.activated_by_email ?? "—"}</span>
+                    </div>
+                    {a.note && (
+                      <div className="sm:col-span-2">Note : <span className="text-foreground">{a.note}</span></div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Fermer</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 
 
