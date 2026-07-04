@@ -175,7 +175,9 @@ function EmploiDuTempsPage() {
     );
   }, [filteredCreneaux, ecoleFilter, ecoleById]);
 
-  const renderCreneauItem = (c: Creneau) => (
+  type CreneauRow = (typeof creneaux)[number];
+
+  const renderCreneauItem = (c: CreneauRow) => (
     <li key={c.id} className="p-3 flex items-start gap-3">
       <div className="shrink-0 w-16 text-center">
         <div className="text-sm font-semibold text-ink">{c.heure_debut.slice(0, 5)}</div>
@@ -208,7 +210,7 @@ function EmploiDuTempsPage() {
     </li>
   );
 
-  const renderByJour = (items: Creneau[]) => {
+  const renderByJour = (items: CreneauRow[]) => {
     const days = JOURS.map((j) => ({
       ...j,
       items: items.filter((c) => c.jour_semaine === j.v),
