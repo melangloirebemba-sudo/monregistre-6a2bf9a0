@@ -442,6 +442,65 @@ export type Database = {
           },
         ]
       }
+      paiements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          devise: string
+          id: string
+          montant: number
+          moyen_paiement: string
+          note: string | null
+          numero_recu: string | null
+          paye_le: string
+          periode: Database["public"]["Enums"]["plan_periode"]
+          plan: Database["public"]["Enums"]["app_plan"]
+          plan_activation_id: string | null
+          plan_expires_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          devise?: string
+          id?: string
+          montant?: number
+          moyen_paiement?: string
+          note?: string | null
+          numero_recu?: string | null
+          paye_le?: string
+          periode: Database["public"]["Enums"]["plan_periode"]
+          plan: Database["public"]["Enums"]["app_plan"]
+          plan_activation_id?: string | null
+          plan_expires_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          devise?: string
+          id?: string
+          montant?: number
+          moyen_paiement?: string
+          note?: string | null
+          numero_recu?: string | null
+          paye_le?: string
+          periode?: Database["public"]["Enums"]["plan_periode"]
+          plan?: Database["public"]["Enums"]["app_plan"]
+          plan_activation_id?: string | null
+          plan_expires_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_plan_activation_id_fkey"
+            columns: ["plan_activation_id"]
+            isOneToOne: true
+            referencedRelation: "plan_activations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       periodes: {
         Row: {
           active: boolean
@@ -544,6 +603,33 @@ export type Database = {
           progression?: boolean
           rapports?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      plan_prices: {
+        Row: {
+          devise: string
+          montant: number
+          periode: Database["public"]["Enums"]["plan_periode"]
+          plan: Database["public"]["Enums"]["app_plan"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          devise?: string
+          montant?: number
+          periode: Database["public"]["Enums"]["plan_periode"]
+          plan: Database["public"]["Enums"]["app_plan"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          devise?: string
+          montant?: number
+          periode?: Database["public"]["Enums"]["plan_periode"]
+          plan?: Database["public"]["Enums"]["app_plan"]
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
