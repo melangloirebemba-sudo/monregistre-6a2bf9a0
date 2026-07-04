@@ -123,7 +123,7 @@ function AdminContent() {
         <div>
           <div className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">Espace administrateur</div>
           <h1 className="mt-1 flex items-center gap-2 font-display text-3xl font-semibold text-foreground">
-            <Shield className="h-7 w-7 text-teal" /> Gestion des utilisateurs
+            <Users className="h-7 w-7 text-teal" /> Gestion des utilisateurs
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Gérez les comptes, les plans et les statuts de tous les enseignants.
