@@ -122,6 +122,7 @@ function EcolesPage() {
         ) : (
           <NoResults query={q} onReset={() => setQ("")} resetLabel="Effacer la recherche" />
         )
+      ) : (
         <div className="space-y-3">
           <ul className="space-y-3">
             {paged.map((e) => (
