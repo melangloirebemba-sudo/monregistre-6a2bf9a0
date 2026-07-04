@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { GraduationCap, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -208,13 +209,20 @@ function ClasseDialog({
       if (!payload.nom || !payload.code) throw new Error("Nom et code obligatoires");
       if (!payload.ecole_id) throw new Error("Sélectionnez une école");
       if (classe) {
-        const { error } = await supabase.from("classes").update(payload).eq("id", classe.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "classes",
+          op: "update",
+          payload,
+          match: { id: classe.id },
+          label: `Modifier classe ${payload.nom}`,
+        });
       } else {
-        const { error } = await supabase
-          .from("classes")
-          .insert({ ...payload, user_id, annee_scolaire });
-        if (error) throw error;
+        await enqueueWrite({
+          table: "classes",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID(), user_id, annee_scolaire },
+          label: `Ajouter classe ${payload.nom}`,
+        });
       }
     },
 
@@ -276,8 +284,12 @@ function DeleteDialog({ open, onOpenChange, classe, onDone }: { open: boolean; o
   const del = useMutation({
     mutationFn: async () => {
       if (!classe) return;
-      const { error } = await supabase.from("classes").delete().eq("id", classe.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "classes",
+        op: "delete",
+        match: { id: classe.id },
+        label: `Supprimer classe ${classe.nom}`,
+      });
     },
     onSuccess: () => {
       toast.success("Classe supprimée");
