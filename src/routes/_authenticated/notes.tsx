@@ -275,6 +275,8 @@ function NoteDialog({
           payload,
           match: { id: note.id },
           label: `Modifier note ${form.libelle}`,
+          baseUpdatedAt: note.updated_at,
+          conflictStrategy: "merge",
         });
       } else {
         await enqueueWrite({
@@ -373,6 +375,8 @@ function DeleteNoteDialog({ open, onOpenChange, note, onDone }: { open: boolean;
         op: "delete",
         match: { id: note.id },
         label: "Supprimer note",
+        baseUpdatedAt: note.updated_at,
+        conflictStrategy: "merge",
       });
     },
     onSuccess: () => {

@@ -59,6 +59,7 @@ export interface Note {
   periode_id: string | null;
   sequence_id: string | null;
   user_id: string;
+  updated_at: string;
 }
 
 export interface Creneau {
