@@ -17,6 +17,7 @@ import { Route as AuthenticatedProgressionRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPlusRouteImport } from './routes/_authenticated/plus'
 import { Route as AuthenticatedParametresRouteImport } from './routes/_authenticated/parametres'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
+import { Route as AuthenticatedMonProfilRouteImport } from './routes/_authenticated/mon-profil'
 import { Route as AuthenticatedEmploiDuTempsRouteImport } from './routes/_authenticated/emploi-du-temps'
 import { Route as AuthenticatedElevesRouteImport } from './routes/_authenticated/eleves'
 import { Route as AuthenticatedEcolesRouteImport } from './routes/_authenticated/ecoles'
@@ -63,6 +64,11 @@ const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
   path: '/notes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMonProfilRoute = AuthenticatedMonProfilRouteImport.update({
+  id: '/mon-profil',
+  path: '/mon-profil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedEmploiDuTempsRoute =
   AuthenticatedEmploiDuTempsRouteImport.update({
     id: '/emploi-du-temps',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/ecoles': typeof AuthenticatedEcolesRoute
   '/eleves': typeof AuthenticatedElevesRoute
   '/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
+  '/mon-profil': typeof AuthenticatedMonProfilRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/parametres': typeof AuthenticatedParametresRoute
   '/plus': typeof AuthenticatedPlusRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/ecoles': typeof AuthenticatedEcolesRoute
   '/eleves': typeof AuthenticatedElevesRoute
   '/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
+  '/mon-profil': typeof AuthenticatedMonProfilRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/parametres': typeof AuthenticatedParametresRoute
   '/plus': typeof AuthenticatedPlusRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_authenticated/ecoles': typeof AuthenticatedEcolesRoute
   '/_authenticated/eleves': typeof AuthenticatedElevesRoute
   '/_authenticated/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
+  '/_authenticated/mon-profil': typeof AuthenticatedMonProfilRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/parametres': typeof AuthenticatedParametresRoute
   '/_authenticated/plus': typeof AuthenticatedPlusRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/ecoles'
     | '/eleves'
     | '/emploi-du-temps'
+    | '/mon-profil'
     | '/notes'
     | '/parametres'
     | '/plus'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/ecoles'
     | '/eleves'
     | '/emploi-du-temps'
+    | '/mon-profil'
     | '/notes'
     | '/parametres'
     | '/plus'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ecoles'
     | '/_authenticated/eleves'
     | '/_authenticated/emploi-du-temps'
+    | '/_authenticated/mon-profil'
     | '/_authenticated/notes'
     | '/_authenticated/parametres'
     | '/_authenticated/plus'
@@ -244,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/mon-profil': {
+      id: '/_authenticated/mon-profil'
+      path: '/mon-profil'
+      fullPath: '/mon-profil'
+      preLoaderRoute: typeof AuthenticatedMonProfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/emploi-du-temps': {
       id: '/_authenticated/emploi-du-temps'
       path: '/emploi-du-temps'
@@ -288,6 +307,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEcolesRoute: typeof AuthenticatedEcolesRoute
   AuthenticatedElevesRoute: typeof AuthenticatedElevesRoute
   AuthenticatedEmploiDuTempsRoute: typeof AuthenticatedEmploiDuTempsRoute
+  AuthenticatedMonProfilRoute: typeof AuthenticatedMonProfilRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedParametresRoute: typeof AuthenticatedParametresRoute
   AuthenticatedPlusRoute: typeof AuthenticatedPlusRoute
@@ -301,6 +321,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEcolesRoute: AuthenticatedEcolesRoute,
   AuthenticatedElevesRoute: AuthenticatedElevesRoute,
   AuthenticatedEmploiDuTempsRoute: AuthenticatedEmploiDuTempsRoute,
+  AuthenticatedMonProfilRoute: AuthenticatedMonProfilRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedParametresRoute: AuthenticatedParametresRoute,
   AuthenticatedPlusRoute: AuthenticatedPlusRoute,

@@ -10,6 +10,7 @@ export interface ClasseRapportContext {
   eleves: Eleve[];
   notes: Note[];
   enseignant?: string;
+  telephone?: string;
   echelle?: number;
 }
 
@@ -30,98 +31,104 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
-  // Header
+  // Header ink band
   doc.setFillColor(26, 26, 46);
-  doc.rect(0, 0, pageW, 28, "F");
+  doc.rect(0, 0, pageW, 34, "F");
   doc.setTextColor(245, 240, 232);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("RAPPORT DE CLASSE", pageW / 2, 13, { align: "center" });
+  doc.text("RAPPORT DE CLASSE", pageW / 2, 12, { align: "center" });
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(
-    `${ctx.ecole?.nom ?? ""}${ctx.classe ? "  •  " + ctx.classe.nom : ""}${ctx.periode ? "  •  " + ctx.periode.label : ""}${ctx.periode?.annee_scolaire ? "  •  " + ctx.periode.annee_scolaire : ""}`,
-    pageW / 2,
-    21,
-    { align: "center" },
-  );
+  const line1 = [ctx.ecole?.nom, ctx.classe?.nom].filter(Boolean).join("  •  ");
+  if (line1) doc.text(line1, pageW / 2, 20, { align: "center" });
+  const line2 = [ctx.periode?.label, ctx.periode?.annee_scolaire]
+    .filter(Boolean)
+    .join("  •  ");
+  if (line2) doc.text(line2, pageW / 2, 26, { align: "center" });
 
+  // Teacher block
+  let y = 40;
   doc.setTextColor(26, 26, 46);
-  let y = 36;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Enseignant :", 15, y);
+  doc.setFont("helvetica", "normal");
+  doc.text(ctx.enseignant ?? "—", 40, y);
 
+  if (ctx.telephone) {
+    doc.setFont("helvetica", "bold");
+    doc.text("Téléphone :", pageW / 2 + 5, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(ctx.telephone, pageW / 2 + 30, y);
+  }
+
+  if (ctx.ecole?.nom) {
+    y += 6;
+    doc.setFont("helvetica", "bold");
+    doc.text("École :", 15, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(ctx.ecole.nom, 40, y);
+  }
+
+  y += 8;
+
+  // Simple flat table: all students with all their notes and appreciation
   const sorted = [...ctx.eleves].sort((a, b) =>
     (a.nom + a.prenom).localeCompare(b.nom + b.prenom, "fr"),
   );
 
-  for (let i = 0; i < sorted.length; i++) {
-    const eleve = sorted[i];
+  const rows = sorted.map((eleve, i) => {
     const eleveNotes = ctx.notes
       .filter((n) => n.eleve_id === eleve.id)
       .sort((a, b) => a.date.localeCompare(b.date));
     const moy = moyennePonderee(eleveNotes);
 
-    // Estimate height needed
-    const rowsCount = Math.max(eleveNotes.length, 1);
-    const estimatedH = 14 + rowsCount * 6 + 14;
-    if (y + estimatedH > pageH - 15) {
-      doc.addPage();
-      y = 20;
-    }
+    const notesStr =
+      eleveNotes.length === 0
+        ? "—"
+        : eleveNotes
+            .map(
+              (n) =>
+                `${n.libelle}${n.matiere ? ` (${n.matiere})` : ""} : ${n.valeur.toFixed(
+                  2,
+                )}/${echelle}${n.coefficient !== 1 ? ` × ${n.coefficient}` : ""}`,
+            )
+            .join("\n");
 
-    // Student header bar
-    doc.setFillColor(245, 240, 232);
-    doc.rect(15, y, pageW - 30, 9, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(26, 26, 46);
-    doc.text(`${i + 1}. ${eleve.nom.toUpperCase()} ${eleve.prenom}`, 17, y + 6);
-    if (eleve.numero_eleve) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.text(`N° ${eleve.numero_eleve}`, pageW - 17, y + 6, { align: "right" });
-    }
-    y += 11;
+    return [
+      String(i + 1),
+      `${eleve.nom.toUpperCase()} ${eleve.prenom}`,
+      notesStr,
+      moy !== null ? `${moy.toFixed(2)} / ${echelle}` : "—",
+      appreciation(moy, echelle),
+    ];
+  });
 
-    // Notes table
-    const rows = eleveNotes.map((n) => [
-      new Date(n.date).toLocaleDateString("fr-FR"),
-      n.libelle,
-      n.matiere ?? "-",
-      String(n.coefficient),
-      `${n.valeur.toFixed(2)} / ${echelle}`,
-    ]);
-
-    autoTable(doc, {
-      startY: y,
-      head: [["Date", "Évaluation", "Matière", "Coef.", "Note"]],
-      body: rows.length ? rows : [["-", "Aucune note", "-", "-", "-"]],
-      styles: { fontSize: 9, cellPadding: 2 },
-      headStyles: { fillColor: [26, 122, 110], textColor: 245, fontSize: 9 },
-      alternateRowStyles: { fillColor: [250, 247, 240] },
-      columnStyles: { 3: { halign: "center" }, 4: { halign: "right" } },
-      margin: { left: 15, right: 15 },
-    });
-
-    const finalY = (doc as unknown as { lastAutoTable: { finalY: number } })
-      .lastAutoTable.finalY;
-
-    // Moyenne + appréciation
-    doc.setFillColor(201, 168, 76);
-    doc.rect(15, finalY + 2, pageW - 30, 10, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(26, 26, 46);
-    doc.text(
-      `Moyenne : ${moy !== null ? moy.toFixed(2) + " / " + echelle : "—"}`,
-      17,
-      finalY + 8.5,
-    );
-    doc.text(`Appréciation : ${appreciation(moy, echelle)}`, pageW - 17, finalY + 8.5, {
-      align: "right",
-    });
-
-    y = finalY + 16;
-  }
+  autoTable(doc, {
+    startY: y,
+    head: [["N°", "Élève", "Notes", "Moyenne", "Appréciation"]],
+    body: rows.length
+      ? rows
+      : [["—", "Aucun élève", "—", "—", "—"]],
+    styles: { fontSize: 9, cellPadding: 2.5, valign: "top" },
+    headStyles: {
+      fillColor: [26, 122, 110],
+      textColor: 245,
+      fontSize: 10,
+      halign: "left",
+    },
+    alternateRowStyles: { fillColor: [250, 247, 240] },
+    columnStyles: {
+      0: { halign: "center", cellWidth: 10 },
+      1: { cellWidth: 45, fontStyle: "bold" },
+      2: { cellWidth: "auto" },
+      3: { halign: "right", cellWidth: 22 },
+      4: { halign: "left", cellWidth: 28 },
+    },
+    margin: { left: 15, right: 15 },
+  });
 
   // Footer on all pages
   const pageCount = doc.getNumberOfPages();
@@ -130,7 +137,9 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
     doc.setFontSize(8);
     doc.setTextColor(120);
     doc.text(
-      `MonRegistre — édité le ${new Date().toLocaleDateString("fr-FR")}${ctx.enseignant ? " — " + ctx.enseignant : ""}   •   Page ${p} / ${pageCount}`,
+      `MonRegistre — édité le ${new Date().toLocaleDateString("fr-FR")}${
+        ctx.enseignant ? " — " + ctx.enseignant : ""
+      }   •   Page ${p} / ${pageCount}`,
       pageW / 2,
       pageH - 8,
       { align: "center" },

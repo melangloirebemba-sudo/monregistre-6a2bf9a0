@@ -8,6 +8,12 @@ export interface Profil {
   initiales: string;
   echelle_notation: number;
   annee_active: string;
+  prenom: string | null;
+  nom_famille: string | null;
+  telephone: string | null;
+  email: string | null;
+  matiere_principale: string | null;
+  etablissement: string | null;
 }
 
 export function profilQueryOptions() {

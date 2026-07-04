@@ -380,9 +380,15 @@ export type Database = {
           annee_active: string
           created_at: string
           echelle_notation: number
+          email: string | null
+          etablissement: string | null
           id: string
           initiales: string
+          matiere_principale: string | null
           nom_affiche: string
+          nom_famille: string | null
+          prenom: string | null
+          telephone: string | null
           updated_at: string
           user_id: string
         }
@@ -390,9 +396,15 @@ export type Database = {
           annee_active?: string
           created_at?: string
           echelle_notation?: number
+          email?: string | null
+          etablissement?: string | null
           id?: string
           initiales?: string
+          matiere_principale?: string | null
           nom_affiche?: string
+          nom_famille?: string | null
+          prenom?: string | null
+          telephone?: string | null
           updated_at?: string
           user_id: string
         }
@@ -400,9 +412,15 @@ export type Database = {
           annee_active?: string
           created_at?: string
           echelle_notation?: number
+          email?: string | null
+          etablissement?: string | null
           id?: string
           initiales?: string
+          matiere_principale?: string | null
           nom_affiche?: string
+          nom_famille?: string | null
+          prenom?: string | null
+          telephone?: string | null
           updated_at?: string
           user_id?: string
         }

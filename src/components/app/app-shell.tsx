@@ -125,10 +125,13 @@ export function AppShell({ children }: AppShellProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{nom}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/mon-profil">Mon profil</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/parametres">Paramètres</Link>
               </DropdownMenuItem>
+
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
@@ -144,9 +147,13 @@ export function AppShell({ children }: AppShellProps) {
         {/* Top bar mobile/tablet */}
         <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 lg:hidden">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold font-semibold text-gold-foreground shadow-soft">
+            <Link
+              to="/mon-profil"
+              aria-label="Mon profil"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gold font-semibold text-gold-foreground shadow-soft transition-transform hover:scale-105"
+            >
               {initiales}
-            </div>
+            </Link>
             <div className="min-w-0 leading-tight">
               <div className="font-display text-lg font-semibold">MonRegistre</div>
               <div className="truncate text-[10px] uppercase tracking-[0.22em] text-ink-foreground/60">
@@ -154,6 +161,7 @@ export function AppShell({ children }: AppShellProps) {
               </div>
             </div>
           </div>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -167,8 +175,12 @@ export function AppShell({ children }: AppShellProps) {
               <DropdownMenuLabel>{nom}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
+                <Link to="/mon-profil">Mon profil</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/parametres">Paramètres</Link>
               </DropdownMenuItem>
+
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
