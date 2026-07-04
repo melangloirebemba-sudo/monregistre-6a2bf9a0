@@ -11,6 +11,7 @@ import {
   CalendarClock,
   Shield,
   LifeBuoy,
+  CalendarX,
 } from "lucide-react";
 import { currentUserRolesQO } from "@/lib/queries/admin";
 
