@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 import {
   classesQO,
   elevesQO,
@@ -269,11 +269,20 @@ function NoteDialog({
         ecole_id,
       };
       if (note) {
-        const { error } = await supabase.from("notes").update(payload).eq("id", note.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "notes",
+          op: "update",
+          payload,
+          match: { id: note.id },
+          label: `Modifier note ${form.libelle}`,
+        });
       } else {
-        const { error } = await supabase.from("notes").insert({ ...payload, user_id });
-        if (error) throw error;
+        await enqueueWrite({
+          table: "notes",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID(), user_id },
+          label: `Ajouter note ${form.libelle}`,
+        });
       }
     },
     onSuccess: () => {
@@ -359,8 +368,12 @@ function DeleteNoteDialog({ open, onOpenChange, note, onDone }: { open: boolean;
   const del = useMutation({
     mutationFn: async () => {
       if (!note) return;
-      const { error } = await supabase.from("notes").delete().eq("id", note.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "notes",
+        op: "delete",
+        match: { id: note.id },
+        label: "Supprimer note",
+      });
     },
     onSuccess: () => {
       toast.success("Note supprimée");
