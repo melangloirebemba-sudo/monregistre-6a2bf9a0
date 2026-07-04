@@ -10,9 +10,13 @@ import {
   CalendarDays,
   BookOpen,
   MapPin,
+  Bell,
+  CalendarX,
+  AlertTriangle,
 } from "lucide-react";
+import { useMemo } from "react";
 import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
-import { creneauxQO } from "@/lib/queries/data";
+import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO } from "@/lib/queries/data";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   head: () => ({
@@ -28,6 +32,72 @@ function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: counts } = useQuery(countsQueryOptions());
   const { data: creneaux = [] } = useQuery(creneauxQO());
+  const { data: classes = [] } = useQuery(classesQO());
+  const { data: notes = [] } = useQuery(notesQO());
+  const { data: absences = [] } = useQuery(absencesQO());
+  const { data: periodes = [] } = useQuery(periodesQO());
+
+  const reminders = useMemo(() => {
+    const list: Array<{ id: string; label: string; to: string; tone: "warn" | "info" }> = [];
+    const now = Date.now();
+    const DAY = 86400000;
+
+    // Aucune période définie
+    if (periodes.length === 0) {
+      list.push({
+        id: "no-periodes",
+        label: "Aucune période définie — configurez trimestres ou semestres.",
+        to: "/parametres",
+        tone: "info",
+      });
+    }
+
+    // Classes sans note depuis 14 jours (ou jamais)
+    const lastNoteByClasse = new Map<string, number>();
+    for (const n of notes) {
+      const cid = n.eleve?.classe_id;
+      if (!cid) continue;
+      const t = new Date(n.date).getTime();
+      const prev = lastNoteByClasse.get(cid) ?? 0;
+      if (t > prev) lastNoteByClasse.set(cid, t);
+    }
+    for (const c of classes) {
+      const last = lastNoteByClasse.get(c.id);
+      const days = last ? Math.floor((now - last) / DAY) : null;
+      if (last === undefined) {
+        list.push({
+          id: `nonotes-${c.id}`,
+          label: `${c.nom} — aucune note enregistrée.`,
+          to: "/notes",
+          tone: "warn",
+        });
+      } else if (days !== null && days >= 14) {
+        list.push({
+          id: `stale-${c.id}`,
+          label: `${c.nom} — pas de note depuis ${days} jours.`,
+          to: "/notes",
+          tone: "warn",
+        });
+      }
+    }
+
+    // Absences non justifiées des 7 derniers jours
+    const cutoff = now - 7 * DAY;
+    const recentUnj = absences.filter(
+      (a) => !a.justifiee && new Date(a.date).getTime() >= cutoff,
+    ).length;
+    if (recentUnj > 0) {
+      list.push({
+        id: "absences-unj",
+        label: `${recentUnj} absence(s) non justifiée(s) cette semaine.`,
+        to: "/absences",
+        tone: "warn",
+      });
+    }
+
+    return list.slice(0, 5);
+  }, [classes, notes, absences, periodes]);
+
 
   const nom = profil?.nom_affiche?.split(" ")[0] || "Enseignant";
   const annee = profil?.annee_active || "Aucune année active";
@@ -234,6 +304,44 @@ function AccueilPage() {
           </ul>
         )}
       </section>
+
+      {/* Rappels */}
+      {reminders.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-2 text-gold">
+            <Bell className="h-4 w-4" />
+            <span className="text-xs font-semibold uppercase tracking-widest">Rappels</span>
+          </div>
+          <ul className="space-y-2">
+            {reminders.map((r) => {
+              const Icon =
+                r.id.startsWith("absences") ? CalendarX : r.tone === "warn" ? AlertTriangle : Bell;
+              return (
+                <li key={r.id}>
+                  <Link
+                    to={r.to}
+                    className={`flex items-center gap-3 rounded-xl border p-2.5 transition-colors hover:bg-cream-deep/50 ${
+                      r.tone === "warn"
+                        ? "border-gold/30 bg-gold/5"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+                        r.tone === "warn" ? "bg-gold/20 text-gold-foreground" : "bg-teal/15 text-teal"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="flex-1 text-sm text-foreground">{r.label}</span>
+                    <span className="text-xs text-muted-foreground">→</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* Grille menu */}
       <section className="mt-6">

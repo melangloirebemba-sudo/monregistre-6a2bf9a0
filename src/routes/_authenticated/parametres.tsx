@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { PLAN_LABEL, upgradeWhatsAppHref } from "@/config/support";
+import { ThemeToggle } from "@/components/app/theme-toggle";
 
 export const Route = createFileRoute("/_authenticated/parametres")({
   head: () => ({ meta: [{ title: "Paramètres — MonRegistre" }] }),
@@ -187,6 +188,17 @@ function ParametresPage() {
           {save.isPending ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </form>
+
+      <section className="card-elevated mt-6 space-y-3 p-5">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Apparence</h2>
+          <p className="text-xs text-muted-foreground">
+            Choisissez un thème clair, sombre, ou suivez les préférences de votre appareil.
+          </p>
+        </div>
+        <ThemeToggle />
+      </section>
+
 
       <section className="card-elevated mt-6 space-y-4 p-5">
         <div>
