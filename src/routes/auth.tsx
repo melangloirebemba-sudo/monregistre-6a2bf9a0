@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { BookMarked } from "lucide-react";
+import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 
 const searchSchema = z.object({
   next: z.string().optional(),
@@ -202,12 +203,13 @@ function SignUpForm({ onDone }: { onDone: () => void }) {
           type="password"
           autoComplete="new-password"
           required
-          minLength={6}
+          minLength={PASSWORD_MIN_LENGTH}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <PasswordCriteria value={password} />
       </div>
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button type="submit" disabled={loading || !isPasswordValid(password)} className="w-full">
         {loading ? "Création…" : "Créer mon compte"}
       </Button>
       <p className="text-center text-xs text-muted-foreground">

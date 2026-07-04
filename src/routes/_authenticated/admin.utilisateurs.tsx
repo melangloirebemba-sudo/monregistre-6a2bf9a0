@@ -5,6 +5,7 @@ import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown } from "lucid
 import { toast } from "sonner";
 import { adminApi, type AdminUser, type PlanLimit } from "@/lib/admin-api";
 import { PLAN_LABELS, type AppPlan } from "@/lib/queries/admin";
+import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -246,7 +247,7 @@ function AdminContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="new-pwd">Nouveau mot de passe (min. 8 caractères)</Label>
+            <Label htmlFor="new-pwd">Nouveau mot de passe</Label>
             <Input
               id="new-pwd"
               type="text"
@@ -254,12 +255,14 @@ function AdminContent() {
               onChange={(e) => setNewPwd(e.target.value)}
               placeholder="Mot de passe temporaire"
               autoComplete="new-password"
+              minLength={PASSWORD_MIN_LENGTH}
             />
+            <PasswordCriteria value={newPwd} />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPwdTarget(null)}>Annuler</Button>
             <Button
-              disabled={newPwd.length < 8 || resetPwd.isPending}
+              disabled={!isPasswordValid(newPwd) || resetPwd.isPending}
               onClick={() => {
                 if (!pwdTarget) return;
                 resetPwd.mutate({ userId: pwdTarget.id, newPassword: newPwd });
