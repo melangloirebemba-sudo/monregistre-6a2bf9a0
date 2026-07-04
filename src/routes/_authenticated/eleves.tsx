@@ -7,6 +7,7 @@ import { enqueueWrite } from "@/lib/offline-queue";
 import { parseCsvFile, downloadCsv } from "@/lib/csv";
 import {
   classesQO,
+  ecolesQO,
   elevesQO,
   notesQO,
   requireUserId,
