@@ -7,6 +7,7 @@ import { enqueueWrite } from "@/lib/offline-queue";
 import { downloadCsv } from "@/lib/csv";
 import {
   classesQO,
+  ecolesQO,
   elevesQO,
   notesQO,
   periodesQO,
@@ -14,6 +15,7 @@ import {
   type Note,
 } from "@/lib/queries/data";
 import { profilQueryOptions } from "@/lib/queries/profil";
+
 import { noteColorClass, formatNote } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
