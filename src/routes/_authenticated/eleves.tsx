@@ -262,6 +262,14 @@ function EleveDialog({
     [classes, form.ecole_id],
   );
 
+  const selectedClasse = useMemo(
+    () => classes.find((c) => c.id === form.classe_id) ?? null,
+    [classes, form.classe_id],
+  );
+  const classeMismatch =
+    !!form.classe_id && !!form.ecole_id && !!selectedClasse && selectedClasse.ecole_id !== form.ecole_id;
+
+
   const save = useMutation({
     mutationFn: async () => {
       const user_id = await requireUserId();
