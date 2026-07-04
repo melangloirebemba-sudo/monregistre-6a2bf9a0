@@ -31,6 +31,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedParametresRappelsRouteImport } from './routes/_authenticated/parametres.rappels'
 import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
+import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
 import { Route as AuthenticatedAdminAnneesScolairesRouteImport } from './routes/_authenticated/admin.annees-scolaires'
 
 const AuthRoute = AuthRouteImport.update({
@@ -147,6 +148,12 @@ const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
   path: '/plans',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminParametresRoute =
+  AuthenticatedAdminParametresRouteImport.update({
+    id: '/parametres',
+    path: '/parametres',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAnneesScolairesRoute =
   AuthenticatedAdminAnneesScolairesRouteImport.update({
     id: '/annees-scolaires',
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/rapports': typeof AuthenticatedRapportsRoute
   '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
+  '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
@@ -196,6 +204,7 @@ export interface FileRoutesByTo {
   '/rapports': typeof AuthenticatedRapportsRoute
   '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
+  '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
@@ -222,6 +231,7 @@ export interface FileRoutesById {
   '/_authenticated/rapports': typeof AuthenticatedRapportsRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
+  '/_authenticated/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/_authenticated/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/rapports'
     | '/support'
     | '/admin/annees-scolaires'
+    | '/admin/parametres'
     | '/admin/plans'
     | '/admin/utilisateurs'
     | '/parametres/rappels'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/rapports'
     | '/support'
     | '/admin/annees-scolaires'
+    | '/admin/parametres'
     | '/admin/plans'
     | '/admin/utilisateurs'
     | '/parametres/rappels'
@@ -296,6 +308,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rapports'
     | '/_authenticated/support'
     | '/_authenticated/admin/annees-scolaires'
+    | '/_authenticated/admin/parametres'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/utilisateurs'
     | '/_authenticated/parametres/rappels'
@@ -464,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPlansRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/parametres': {
+      id: '/_authenticated/admin/parametres'
+      path: '/parametres'
+      fullPath: '/admin/parametres'
+      preLoaderRoute: typeof AuthenticatedAdminParametresRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/annees-scolaires': {
       id: '/_authenticated/admin/annees-scolaires'
       path: '/annees-scolaires'
@@ -476,6 +496,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnneesScolairesRoute: typeof AuthenticatedAdminAnneesScolairesRoute
+  AuthenticatedAdminParametresRoute: typeof AuthenticatedAdminParametresRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminUtilisateursRoute: typeof AuthenticatedAdminUtilisateursRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -484,6 +505,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAnneesScolairesRoute:
     AuthenticatedAdminAnneesScolairesRoute,
+  AuthenticatedAdminParametresRoute: AuthenticatedAdminParametresRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
   AuthenticatedAdminUtilisateursRoute: AuthenticatedAdminUtilisateursRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
