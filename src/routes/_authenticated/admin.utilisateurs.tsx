@@ -148,6 +148,13 @@ function AdminContent() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const sendResetEmail = useMutation({
+    mutationFn: (userId: string) =>
+      adminApi.sendPasswordResetEmail(userId, `${window.location.origin}/reset-password`),
+    onSuccess: (r) => toast.success(`Lien de réinitialisation envoyé à ${r.email}`),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const delAcc = useMutation({
     mutationFn: (userId: string) => adminApi.deleteUser(userId),
     onSuccess: () => { toast.success("Compte supprimé"); invalidate(); },
