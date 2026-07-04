@@ -11,6 +11,7 @@ export interface ClasseRapportContext {
   notes: Note[];
   enseignant?: string;
   telephone?: string;
+  anneeScolaire?: string;
   echelle?: number;
 }
 
@@ -43,9 +44,8 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
   doc.setFontSize(10);
   const line1 = [ctx.ecole?.nom, ctx.classe?.nom].filter(Boolean).join("  •  ");
   if (line1) doc.text(line1, pageW / 2, 20, { align: "center" });
-  const line2 = [ctx.periode?.label, ctx.periode?.annee_scolaire]
-    .filter(Boolean)
-    .join("  •  ");
+  const annee = ctx.periode?.annee_scolaire || ctx.anneeScolaire;
+  const line2 = [ctx.periode?.label, annee].filter(Boolean).join("  •  ");
   if (line2) doc.text(line2, pageW / 2, 26, { align: "center" });
 
   // Info block
@@ -62,7 +62,7 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
   };
 
   labelValue("École :", ctx.ecole?.nom, 15, y);
-  labelValue("Année scolaire :", ctx.periode?.annee_scolaire, pageW / 2 + 5, y);
+  labelValue("Année scolaire :", annee, pageW / 2 + 5, y);
 
   y += 6;
   labelValue("Classe :", ctx.classe?.nom, 15, y);
