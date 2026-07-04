@@ -274,14 +274,7 @@ function PasswordChangesLogCard() {
             </Select>
           </div>
         </div>
-        <div className="flex items-center justify-between pt-1 text-[11.5px] text-muted-foreground">
-          <span>
-            {data
-              ? `${filtered.length} résultat${filtered.length > 1 ? "s" : ""}${
-                  hasFilters ? ` / ${data.length}` : ""
-                }`
-              : ""}
-          </span>
+        <div className="flex items-center justify-end pt-1 text-[11.5px] text-muted-foreground">
           {hasFilters && (
             <button
               type="button"
