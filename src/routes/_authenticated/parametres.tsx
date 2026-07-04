@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles, ArrowUpRight, Crown, Zap, Mail, Clock, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Circle, Plus, Trash2, Check, X, Sparkles, ArrowUpRight, Crown, Zap, Mail, Clock, AlertTriangle, History } from "lucide-react";
 import {
   Dialog,
   DialogContent,
