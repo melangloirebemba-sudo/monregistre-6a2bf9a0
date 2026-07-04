@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { GraduationCap, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
