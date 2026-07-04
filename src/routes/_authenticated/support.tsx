@@ -110,6 +110,11 @@ function buildWhatsAppMessage(ecole: string, plan: string) {
 function SupportPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: caps } = useQuery(planCapabilitiesQO());
+  const { data: gratuitLimits } = useQuery(planLimitsQO("gratuit"));
+  const { data: liteLimits } = useQuery(planLimitsQO("lite"));
+  const { data: premiumLimits } = useQuery(planLimitsQO("premium"));
+  const faq = buildFaq(gratuitLimits ?? null, liteLimits ?? null, premiumLimits ?? null);
+
 
   const ecoleNom = profil?.etablissement?.trim() ?? "";
   const planLabel = caps ? PLAN_LABEL[caps.plan] : "Gratuit";
