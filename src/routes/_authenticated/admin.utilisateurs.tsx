@@ -146,6 +146,25 @@ function AdminContent() {
   const [newPwd, setNewPwd] = useState("");
   const [delTarget, setDelTarget] = useState<AdminUser | null>(null);
 
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const onRowKeyDown = (e: KeyboardEvent<HTMLTableRowElement>) => {
+    const key = e.key;
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(key)) return;
+    const rows = Array.from(
+      tbodyRef.current?.querySelectorAll<HTMLTableRowElement>('tr[tabindex="0"]') ?? [],
+    );
+    const current = e.currentTarget;
+    const idx = rows.indexOf(current);
+    if (idx === -1) return;
+    e.preventDefault();
+    let next = idx;
+    if (key === "ArrowDown") next = Math.min(rows.length - 1, idx + 1);
+    else if (key === "ArrowUp") next = Math.max(0, idx - 1);
+    else if (key === "Home") next = 0;
+    else if (key === "End") next = rows.length - 1;
+    rows[next]?.focus();
+  };
+
   return (
     <div className="space-y-5 px-4 py-5 sm:px-5 sm:py-5">
       <header>
