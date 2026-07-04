@@ -27,6 +27,7 @@ export const DEFAULT_REMINDER_PREFS: ReminderPrefs = {
   staleNotesDays: 14,
   absencesUnj: true,
   absencesWindowDays: 7,
+  notificationsEnabled: false,
 };
 
 const STORAGE_KEY = "monregistre.reminderPrefs";
