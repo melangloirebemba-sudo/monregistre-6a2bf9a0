@@ -32,6 +32,72 @@ function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: counts } = useQuery(countsQueryOptions());
   const { data: creneaux = [] } = useQuery(creneauxQO());
+  const { data: classes = [] } = useQuery(classesQO());
+  const { data: notes = [] } = useQuery(notesQO());
+  const { data: absences = [] } = useQuery(absencesQO());
+  const { data: periodes = [] } = useQuery(periodesQO());
+
+  const reminders = useMemo(() => {
+    const list: Array<{ id: string; label: string; to: string; tone: "warn" | "info" }> = [];
+    const now = Date.now();
+    const DAY = 86400000;
+
+    // Aucune période définie
+    if (periodes.length === 0) {
+      list.push({
+        id: "no-periodes",
+        label: "Aucune période définie — configurez trimestres ou semestres.",
+        to: "/parametres",
+        tone: "info",
+      });
+    }
+
+    // Classes sans note depuis 14 jours (ou jamais)
+    const lastNoteByClasse = new Map<string, number>();
+    for (const n of notes) {
+      const cid = n.eleve?.classe_id;
+      if (!cid) continue;
+      const t = new Date(n.date).getTime();
+      const prev = lastNoteByClasse.get(cid) ?? 0;
+      if (t > prev) lastNoteByClasse.set(cid, t);
+    }
+    for (const c of classes) {
+      const last = lastNoteByClasse.get(c.id);
+      const days = last ? Math.floor((now - last) / DAY) : null;
+      if (last === undefined) {
+        list.push({
+          id: `nonotes-${c.id}`,
+          label: `${c.nom} — aucune note enregistrée.`,
+          to: "/notes",
+          tone: "warn",
+        });
+      } else if (days !== null && days >= 14) {
+        list.push({
+          id: `stale-${c.id}`,
+          label: `${c.nom} — pas de note depuis ${days} jours.`,
+          to: "/notes",
+          tone: "warn",
+        });
+      }
+    }
+
+    // Absences non justifiées des 7 derniers jours
+    const cutoff = now - 7 * DAY;
+    const recentUnj = absences.filter(
+      (a) => !a.justifiee && new Date(a.date).getTime() >= cutoff,
+    ).length;
+    if (recentUnj > 0) {
+      list.push({
+        id: "absences-unj",
+        label: `${recentUnj} absence(s) non justifiée(s) cette semaine.`,
+        to: "/absences",
+        tone: "warn",
+      });
+    }
+
+    return list.slice(0, 5);
+  }, [classes, notes, absences, periodes]);
+
 
   const nom = profil?.nom_affiche?.split(" ")[0] || "Enseignant";
   const annee = profil?.annee_active || "Aucune année active";
