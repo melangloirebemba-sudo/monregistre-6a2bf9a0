@@ -19,6 +19,7 @@ import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
+import { useReminderNotifications } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   head: () => ({
