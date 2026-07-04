@@ -756,12 +756,12 @@ function HistoryDialog({ target, onClose }: { target: AdminUser | null; onClose:
 
   return (
     <Dialog open={enabled} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl sm:w-full">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <History className="h-5 w-5 text-teal" aria-hidden="true" /> Historique des activations
+            <History className="h-5 w-5 shrink-0 text-teal" aria-hidden="true" /> Historique des activations
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="break-words">
             Journal des activations de plan pour <strong>{target?.nom_affiche || target?.email}</strong>.
           </DialogDescription>
         </DialogHeader>
@@ -776,7 +776,7 @@ function HistoryDialog({ target, onClose }: { target: AdminUser | null; onClose:
               {activations.map((a: PlanActivation) => (
                 <li key={a.id} className="rounded-lg border border-border bg-background/60 p-3 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <Badge className="bg-teal/15 text-teal hover:bg-teal/20">
                         {PLAN_LABELS[a.plan]}
                       </Badge>
@@ -793,12 +793,12 @@ function HistoryDialog({ target, onClose }: { target: AdminUser | null; onClose:
                     <div>
                       Expire : <span className="text-foreground">{fmtDate(a.plan_expires_at)}</span>
                     </div>
-                    <div className="sm:col-span-2">
+                    <div className="min-w-0 sm:col-span-2">
                       Activé par :{" "}
-                      <span className="text-foreground">{a.activated_by_email ?? "—"}</span>
+                      <span className="text-foreground break-all">{a.activated_by_email ?? "—"}</span>
                     </div>
                     {a.note && (
-                      <div className="sm:col-span-2">Note : <span className="text-foreground">{a.note}</span></div>
+                      <div className="min-w-0 sm:col-span-2 break-words">Note : <span className="text-foreground">{a.note}</span></div>
                     )}
                   </div>
                 </li>
