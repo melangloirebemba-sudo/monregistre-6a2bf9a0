@@ -137,6 +137,7 @@ function RootComponent() {
 
   useEffect(() => {
     registerServiceWorker();
+    applyTheme(getStoredTheme());
   }, []);
 
   useEffect(() => {
