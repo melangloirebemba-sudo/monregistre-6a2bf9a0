@@ -73,61 +73,65 @@
 :root {
   --radius: 1rem;
 
+  /* Mode clair humanisé — papier crème, encre séchée, or patiné, sarcelle sourde.
+     Aucun blanc pur, saturations basses, bordures discrètes. */
+
   /* Crème */
-  --cream: oklch(0.965 0.014 85);          /* #f5f0e8 */
-  --cream-deep: oklch(0.925 0.024 82);     /* #ede7d9 */
-  --background: oklch(0.965 0.014 85);
-  --surface: oklch(0.985 0.008 85);
-  --foreground: oklch(0.22 0.04 265);      /* #1a1a2e */
+  --cream: oklch(0.955 0.018 82);          /* papier crème */
+  --cream-deep: oklch(0.915 0.026 80);     /* pli du papier */
+  --background: oklch(0.955 0.018 82);
+  --surface: oklch(0.975 0.012 82);        /* surface légèrement plus claire, jamais blanche */
+  --foreground: oklch(0.28 0.025 268);     /* encre marine séchée */
 
   /* Encre marine */
-  --ink: oklch(0.22 0.04 265);
-  --ink-soft: oklch(0.36 0.045 265);       /* #3d3d5c */
-  --ink-foreground: oklch(0.97 0.01 85);
+  --ink: oklch(0.24 0.025 268);
+  --ink-soft: oklch(0.4 0.03 268);
+  --ink-foreground: oklch(0.955 0.018 82);
 
-  --card: oklch(0.99 0.006 85);
-  --card-foreground: oklch(0.22 0.04 265);
-  --popover: oklch(0.99 0.006 85);
-  --popover-foreground: oklch(0.22 0.04 265);
+  --card: oklch(0.975 0.012 82);
+  --card-foreground: oklch(0.28 0.025 268);
+  --popover: oklch(0.975 0.012 82);
+  --popover-foreground: oklch(0.28 0.025 268);
 
-  --primary: oklch(0.22 0.04 265);
-  --primary-foreground: oklch(0.97 0.015 82);
+  --primary: oklch(0.28 0.025 268);
+  --primary-foreground: oklch(0.955 0.018 82);
 
-  --secondary: oklch(0.925 0.024 82);
-  --secondary-foreground: oklch(0.22 0.04 265);
+  --secondary: oklch(0.915 0.026 80);
+  --secondary-foreground: oklch(0.28 0.025 268);
 
-  --muted: oklch(0.94 0.016 82);
-  --muted-foreground: oklch(0.42 0.03 265);
+  --muted: oklch(0.93 0.018 80);
+  --muted-foreground: oklch(0.46 0.02 268);
 
-  --accent: oklch(0.72 0.13 78);           /* #c9a84c or */
-  --accent-foreground: oklch(0.22 0.04 265);
+  --accent: oklch(0.68 0.09 78);           /* or patiné */
+  --accent-foreground: oklch(0.24 0.025 268);
 
-  /* Or */
-  --gold: oklch(0.72 0.13 78);             /* #c9a84c */
-  --gold-soft: oklch(0.86 0.09 88);        /* #f0d080 */
-  --gold-foreground: oklch(0.22 0.04 265);
+  /* Or patiné */
+  --gold: oklch(0.68 0.09 78);
+  --gold-soft: oklch(0.82 0.07 84);
+  --gold-foreground: oklch(0.24 0.025 268);
 
-  /* Sarcelle */
-  --teal: oklch(0.52 0.09 195);            /* #1a7a6e */
-  --teal-soft: oklch(0.65 0.11 190);       /* #2aa898 */
-  --teal-foreground: oklch(0.98 0.01 85);
+  /* Sarcelle sourde */
+  --teal: oklch(0.48 0.07 195);
+  --teal-soft: oklch(0.62 0.08 190);
+  --teal-foreground: oklch(0.98 0.012 82);
 
-  --destructive: oklch(0.55 0.19 27);      /* #c0392b */
-  --destructive-foreground: oklch(0.98 0.01 85);
-  --success: oklch(0.62 0.16 148);         /* #27ae60 */
-  --success-foreground: oklch(0.98 0.01 85);
-  --warning: oklch(0.75 0.14 75);
-  --warning-foreground: oklch(0.22 0.04 265);
+  --destructive: oklch(0.52 0.15 27);
+  --destructive-foreground: oklch(0.98 0.012 82);
+  --success: oklch(0.58 0.13 148);
+  --success-foreground: oklch(0.98 0.012 82);
+  --warning: oklch(0.7 0.11 75);
+  --warning-foreground: oklch(0.24 0.025 268);
 
-  --border: oklch(0.88 0.02 82);
-  --input: oklch(0.92 0.015 82);
-  --ring: oklch(0.72 0.13 78 / 0.5);
+  /* Bordures discrètes — plus proches du fond, moins agressives */
+  --border: oklch(0.88 0.018 80 / 0.7);
+  --input: oklch(0.9 0.016 80);
+  --ring: oklch(0.68 0.09 78 / 0.45);
 
-  --chart-1: oklch(0.72 0.13 78);
-  --chart-2: oklch(0.52 0.09 195);
-  --chart-3: oklch(0.36 0.045 265);
-  --chart-4: oklch(0.62 0.16 148);
-  --chart-5: oklch(0.55 0.19 27);
+  --chart-1: oklch(0.68 0.09 78);
+  --chart-2: oklch(0.48 0.07 195);
+  --chart-3: oklch(0.4 0.03 268);
+  --chart-4: oklch(0.58 0.13 148);
+  --chart-5: oklch(0.52 0.15 27);
 }
 
 .dark {
