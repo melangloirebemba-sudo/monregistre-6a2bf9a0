@@ -19,7 +19,8 @@ import { profilQueryOptions } from "@/lib/queries/profil";
 
 import { noteColorClass, formatNote } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { DataPagination } from "@/components/ui/data-pagination";
+import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -84,23 +85,21 @@ function NotesPage() {
   const [open, setOpen] = useState(false);
   const [toDelete, setToDelete] = useState<NoteRow | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      notes
-        .filter((n) => {
-          if (ecoleFilter === "all") return true;
-          const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
-          return cls?.ecole_id === ecoleFilter;
-        })
-        .filter((n) => {
-          const nom = `${n.eleve?.prenom ?? ""} ${n.eleve?.nom ?? ""} ${n.libelle} ${n.matiere ?? ""}`.toLowerCase();
-          return nom.includes(q.toLowerCase());
-        }),
-    [notes, q, ecoleFilter, classeById],
-  );
-
-  const pg = usePagination(filtered.length, 20, [q, ecoleFilter, classeFilter, periodeFilter]);
-  const paged = pg.slice(filtered);
+  const pq = usePaginatedQuery({
+    data: notes,
+    search: q,
+    searchFields: (n) => [n.eleve?.prenom, n.eleve?.nom, n.libelle, n.matiere],
+    filters: [
+      (n) => {
+        if (ecoleFilter === "all") return true;
+        const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
+        return cls?.ecole_id === ecoleFilter;
+      },
+    ],
+    sortKey: `${ecoleFilter}|${classeFilter}|${periodeFilter}`,
+  });
+  const filtered = pq.filtered;
+  const paged = pq.items;
 
 
 
@@ -279,15 +278,15 @@ function NotesPage() {
             <div className="space-y-3">
               {listView}
               <DataPagination
-                page={pg.page}
-                totalPages={pg.totalPages}
-                pageSize={pg.pageSize}
-                totalCount={notes.length}
-                filteredCount={filtered.length}
-                start={pg.start}
-                end={pg.end}
-                onPageChange={pg.setPage}
-                onPageSizeChange={pg.setPageSize}
+                page={pq.page}
+                totalPages={pq.totalPages}
+                pageSize={pq.pageSize}
+                totalCount={pq.totalCount}
+                filteredCount={pq.filteredCount}
+                start={pq.start}
+                end={pq.end}
+                onPageChange={pq.setPage}
+                onPageSizeChange={pq.setPageSize}
                 itemLabel="notes"
               />
             </div>

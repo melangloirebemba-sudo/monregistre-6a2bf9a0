@@ -23,7 +23,8 @@ import { moyennePonderee, noteColorClass } from "@/lib/format";
 import { generateBulletinPDF } from "@/lib/pdf/bulletin";
 import { generateClasseRapportPDF } from "@/lib/pdf/classe-rapport";
 import { Button } from "@/components/ui/button";
-import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { DataPagination } from "@/components/ui/data-pagination";
+import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Label } from "@/components/ui/label";
 import {
@@ -426,13 +427,13 @@ function BulletinsList({
   isLoading: boolean;
   onExport: (id: string) => void;
 }) {
-  const pg = usePagination(sorted.length, 20);
-  const paged = pg.slice(sorted);
+  const pq = usePaginatedQuery({ data: sorted, sortKey: sorted.length });
+  const paged = pq.items;
 
   if (isLoading) {
     return <ListSkeleton rows={4} className="mt-1" />;
   }
-  if (sorted.length === 0) {
+  if (pq.isEmpty) {
     return (
       <NoResults
         title="Aucun élève noté"
@@ -468,14 +469,14 @@ function BulletinsList({
         ))}
       </ul>
       <DataPagination
-        page={pg.page}
-        totalPages={pg.totalPages}
-        pageSize={pg.pageSize}
-        totalCount={sorted.length}
-        start={pg.start}
-        end={pg.end}
-        onPageChange={pg.setPage}
-        onPageSizeChange={pg.setPageSize}
+        page={pq.page}
+        totalPages={pq.totalPages}
+        pageSize={pq.pageSize}
+        totalCount={pq.totalCount}
+        start={pq.start}
+        end={pq.end}
+        onPageChange={pq.setPage}
+        onPageSizeChange={pq.setPageSize}
         itemLabel="bulletins"
       />
     </div>

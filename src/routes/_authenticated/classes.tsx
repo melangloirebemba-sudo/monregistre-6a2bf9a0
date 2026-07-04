@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
 import { Button } from "@/components/ui/button";
-import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { DataPagination } from "@/components/ui/data-pagination";
+import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,16 +54,13 @@ function ClassesPage() {
   const [open, setOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Classe | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      classes.filter((c) =>
-        [c.nom, c.code, c.matiere].filter(Boolean).join(" ").toLowerCase().includes(q.toLowerCase()),
-      ),
-    [classes, q],
-  );
-
-  const pg = usePagination(filtered.length, 20, [q, ecoleFilter]);
-  const paged = pg.slice(filtered);
+  const pq = usePaginatedQuery({
+    data: classes,
+    search: q,
+    searchFields: (c) => [c.nom, c.code, c.matiere],
+    sortKey: ecoleFilter,
+  });
+  const paged = pq.items;
 
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
 
@@ -102,7 +100,7 @@ function ClassesPage() {
         </div>
       ) : isLoading ? (
         <ListSkeleton rows={4} />
-      ) : filtered.length === 0 ? (
+      ) : pq.isEmpty ? (
         classes.length === 0 ? (
           <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
             <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
@@ -183,15 +181,15 @@ function ClassesPage() {
             <div className="space-y-3">
               {listView}
               <DataPagination
-                page={pg.page}
-                totalPages={pg.totalPages}
-                pageSize={pg.pageSize}
-                totalCount={classes.length}
-                filteredCount={filtered.length}
-                start={pg.start}
-                end={pg.end}
-                onPageChange={pg.setPage}
-                onPageSizeChange={pg.setPageSize}
+                page={pq.page}
+                totalPages={pq.totalPages}
+                pageSize={pq.pageSize}
+                totalCount={pq.totalCount}
+                filteredCount={pq.filteredCount}
+                start={pq.start}
+                end={pq.end}
+                onPageChange={pq.setPage}
+                onPageSizeChange={pq.setPageSize}
                 itemLabel="classes"
               />
             </div>

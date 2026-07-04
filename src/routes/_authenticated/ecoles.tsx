@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2, Lock, Sparkles, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
@@ -8,7 +8,8 @@ import { ecolesQO, requireUserId, type Ecole } from "@/lib/queries/data";
 import { planCapabilitiesQO } from "@/lib/queries/profil";
 import { PLAN_LABEL, upgradeWhatsAppHref, type PlanKey } from "@/config/support";
 import { Button } from "@/components/ui/button";
-import { DataPagination, usePagination } from "@/components/ui/data-pagination";
+import { DataPagination } from "@/components/ui/data-pagination";
+import { usePaginatedQuery } from "@/hooks/use-paginated-query";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,16 +45,12 @@ function EcolesPage() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Ecole | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      ecoles.filter((e) =>
-        [e.nom, e.numero, e.adresse].filter(Boolean).join(" ").toLowerCase().includes(q.toLowerCase()),
-      ),
-    [ecoles, q],
-  );
-
-  const pg = usePagination(filtered.length, 20, [q]);
-  const paged = pg.slice(filtered);
+  const pq = usePaginatedQuery({
+    data: ecoles,
+    search: q,
+    searchFields: (e) => [e.nom, e.numero, e.adresse],
+  });
+  const paged = pq.items;
 
   const maxEcoles = caps?.max_ecoles ?? 0;
   const atLimit = !caps?.isAdmin && maxEcoles > 0 && ecoles.length >= maxEcoles;
@@ -116,7 +113,7 @@ function EcolesPage() {
 
       {isLoading ? (
         <ListSkeleton rows={4} />
-      ) : filtered.length === 0 ? (
+      ) : pq.isEmpty ? (
         ecoles.length === 0 ? (
           <EmptyState onAdd={handleAdd} locked={atLimit} />
         ) : (
@@ -177,15 +174,15 @@ function EcolesPage() {
             ))}
           </ul>
           <DataPagination
-            page={pg.page}
-            totalPages={pg.totalPages}
-            pageSize={pg.pageSize}
-            totalCount={ecoles.length}
-            filteredCount={filtered.length}
-            start={pg.start}
-            end={pg.end}
-            onPageChange={pg.setPage}
-            onPageSizeChange={pg.setPageSize}
+            page={pq.page}
+            totalPages={pq.totalPages}
+            pageSize={pq.pageSize}
+            totalCount={pq.totalCount}
+            filteredCount={pq.filteredCount}
+            start={pq.start}
+            end={pq.end}
+            onPageChange={pq.setPage}
+            onPageSizeChange={pq.setPageSize}
             itemLabel="écoles"
           />
         </div>
