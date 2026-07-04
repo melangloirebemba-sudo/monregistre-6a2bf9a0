@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { PLAN_LABEL, upgradeWhatsAppHref } from "@/config/support";
+import { ThemeToggle } from "@/components/app/theme-toggle";
 
 export const Route = createFileRoute("/_authenticated/parametres")({
   head: () => ({ meta: [{ title: "Paramètres — MonRegistre" }] }),
