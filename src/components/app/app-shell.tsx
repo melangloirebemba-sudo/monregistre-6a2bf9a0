@@ -13,10 +13,12 @@ import {
   BookOpen,
   Settings,
   BookMarked,
+  Shield,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { profilQueryOptions } from "@/lib/queries/profil";
+import { currentUserRolesQO } from "@/lib/queries/admin";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -59,6 +61,8 @@ function isActive(pathname: string, to: string) {
 export function AppShell({ children }: AppShellProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: roles } = useQuery(currentUserRolesQO());
+  const isAdmin = (roles ?? []).includes("admin");
   const navigate = useNavigate();
 
   const initiales = profil?.initiales?.slice(0, 2).toUpperCase() ?? "EM";

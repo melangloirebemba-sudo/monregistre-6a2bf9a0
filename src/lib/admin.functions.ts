@@ -5,10 +5,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 /**
  * Vérifie que l'appelant est admin. À utiliser en tête de handler.
  */
-async function assertAdmin(supabase: ReturnType<typeof Object>, userId: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const s = supabase as any;
-  const { data, error } = await s
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function assertAdmin(supabase: any, userId: string) {
+  const { data, error } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
