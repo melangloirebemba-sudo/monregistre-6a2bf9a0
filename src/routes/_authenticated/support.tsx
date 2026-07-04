@@ -218,7 +218,7 @@ function SupportPage() {
           Ce que vous pouvez faire avec le plan Gratuit et ce qui nécessite un plan supérieur.
         </p>
         <ul className="mt-3 space-y-2">
-          {FAQ_GRATUIT.map((item, i) => (
+          {faq.map((item, i) => (
             <FaqItem key={i} question={item.q} answer={item.a} />
           ))}
         </ul>
