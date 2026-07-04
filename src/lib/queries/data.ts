@@ -66,6 +66,20 @@ export interface Creneau {
   user_id: string;
 }
 
+export interface Sequence {
+  id: string;
+  titre: string;
+  description: string | null;
+  ordre: number;
+  semaine_prevue: number | null;
+  date_traitee: string | null;
+  statut: string; // 'a_venir' | 'en_cours' | 'terminee'
+  notes_libres: string | null;
+  classe_id: string;
+  periode_id: string | null;
+  user_id: string;
+}
+
 export const ecolesQO = () =>
   queryOptions({
     queryKey: ["ecoles"],
@@ -148,6 +162,22 @@ export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>;
+    },
+  });
+
+export const sequencesQO = (opts: { classeId?: string; periodeId?: string } = {}) =>
+  queryOptions({
+    queryKey: ["sequences", opts.classeId ?? "-", opts.periodeId ?? "-"],
+    queryFn: async (): Promise<Array<Sequence & { classe: { nom: string; code: string; ecole_id: string } | null; periode: { label: string } | null }>> => {
+      let q = supabase
+        .from("sequences_programme")
+        .select("*, classe:classes(nom, code, ecole_id), periode:periodes(label)")
+        .order("ordre");
+      if (opts.classeId) q = q.eq("classe_id", opts.classeId);
+      if (opts.periodeId) q = q.eq("periode_id", opts.periodeId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as Array<Sequence & { classe: { nom: string; code: string; ecole_id: string } | null; periode: { label: string } | null }>;
     },
   });
 
