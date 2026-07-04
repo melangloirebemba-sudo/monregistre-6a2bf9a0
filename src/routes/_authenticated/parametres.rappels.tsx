@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bell, ArrowLeft, RotateCcw } from "lucide-react";
+import { Bell, ArrowLeft, RotateCcw, BellRing, BellOff } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -10,6 +11,11 @@ import {
   setReminderPrefs,
   resetReminderPrefs,
 } from "@/lib/reminders-prefs";
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  type NotificationPermissionState,
+} from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/parametres/rappels")({
   head: () => ({
