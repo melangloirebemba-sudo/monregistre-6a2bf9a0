@@ -1,12 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2, Lock } from "lucide-react";
+import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2, Lock, Sparkles, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { ecolesQO, requireUserId, type Ecole } from "@/lib/queries/data";
 import { planCapabilitiesQO } from "@/lib/queries/profil";
-import { PLAN_LABEL } from "@/config/support";
+import { PLAN_LABEL, upgradeWhatsAppHref, type PlanKey } from "@/config/support";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ function EcolesPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Ecole | null>(null);
   const [open, setOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Ecole | null>(null);
 
   const filtered = useMemo(
@@ -51,13 +52,12 @@ function EcolesPage() {
 
   const maxEcoles = caps?.max_ecoles ?? 0;
   const atLimit = !caps?.isAdmin && maxEcoles > 0 && ecoles.length >= maxEcoles;
-  const planLabel = PLAN_LABEL[caps?.plan ?? "gratuit"];
+  const currentPlan: PlanKey = caps?.plan ?? "gratuit";
+  const planLabel = PLAN_LABEL[currentPlan];
 
   const handleAdd = () => {
     if (atLimit) {
-      toast.error(
-        `Plan ${planLabel} : limite de ${maxEcoles} école${maxEcoles > 1 ? "s" : ""} atteinte. Passez à un plan supérieur pour en ajouter davantage.`,
-      );
+      setUpgradeOpen(true);
       return;
     }
     setEditing(null);
@@ -96,20 +96,23 @@ function EcolesPage() {
             <p className="mt-0.5 text-ink/80">
               Le plan {planLabel} autorise {maxEcoles} école{maxEcoles > 1 ? "s" : ""}. Passez à un plan supérieur pour en ajouter davantage.
             </p>
-            <Link
-              to="/support"
-              className="mt-1 inline-block text-teal underline-offset-2 hover:underline"
+            <button
+              type="button"
+              onClick={() => setUpgradeOpen(true)}
+              className="mt-1 inline-flex items-center gap-1 text-teal underline-offset-2 hover:underline"
             >
-              Contacter le support
-            </Link>
+              <Sparkles className="h-3 w-3" aria-hidden="true" />
+              Mettre à niveau
+            </button>
           </div>
         </div>
       )}
 
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : filtered.length === 0 ? (
-        <EmptyState onAdd={handleAdd} disabled={atLimit} />
+        <EmptyState onAdd={handleAdd} locked={atLimit} />
       ) : (
         <ul className="space-y-3">
           {filtered.map((e) => (
@@ -165,7 +168,7 @@ function EcolesPage() {
         </ul>
       )}
 
-      <FloatingAdd onClick={handleAdd} disabled={atLimit} />
+      <FloatingAdd onClick={handleAdd} locked={atLimit} />
 
 
       <EcoleDialog
@@ -180,46 +183,64 @@ function EcolesPage() {
         ecole={toDelete}
         onDone={() => setToDelete(null)}
       />
+
+      <UpgradeDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        currentPlan={currentPlan}
+        ecoleNom={caps ? (ecoles[0]?.nom ?? "") : ""}
+        maxEcoles={maxEcoles}
+      />
     </div>
   );
 }
 
-function EmptyState({ onAdd, disabled }: { onAdd: () => void; disabled?: boolean }) {
+
+function EmptyState({ onAdd, locked }: { onAdd: () => void; locked?: boolean }) {
   return (
     <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
       <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-ink">
-        <SchoolIcon className="h-6 w-6" />
+        {locked ? <Lock className="h-6 w-6" /> : <SchoolIcon className="h-6 w-6" />}
       </span>
       <div>
         <div className="font-display text-lg font-semibold">Aucune école</div>
         <p className="mt-1 text-sm text-muted-foreground">
-          Commencez par ajouter l'école où vous enseignez.
+          {locked
+            ? "Ajout d'école bloqué : la limite de votre plan est atteinte."
+            : "Commencez par ajouter l'école où vous enseignez."}
         </p>
       </div>
-      <Button onClick={onAdd} disabled={disabled} className="mt-2">
-        <Plus className="mr-1 h-4 w-4" /> Ajouter une école
+      <Button onClick={onAdd} className="mt-2" variant={locked ? "outline" : "default"}>
+        {locked ? (
+          <>
+            <Sparkles className="mr-1 h-4 w-4" /> Débloquer avec un plan supérieur
+          </>
+        ) : (
+          <>
+            <Plus className="mr-1 h-4 w-4" /> Ajouter une école
+          </>
+        )}
       </Button>
     </div>
   );
 }
 
-function FloatingAdd({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+function FloatingAdd({ onClick, locked }: { onClick: () => void; locked?: boolean }) {
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
-      aria-label={disabled ? "Limite atteinte — plan actuel" : "Ajouter"}
-      aria-disabled={disabled}
-      className={`fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full shadow-[var(--shadow-hero)] transition-transform lg:bottom-8 ${
-        disabled
-          ? "cursor-not-allowed bg-muted text-muted-foreground opacity-70"
-          : "bg-teal text-teal-foreground hover:scale-105"
+      aria-label={locked ? "Limite atteinte — mettre à niveau" : "Ajouter"}
+      className={`fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full shadow-[var(--shadow-hero)] transition-transform hover:scale-105 lg:bottom-8 ${
+        locked
+          ? "bg-muted text-muted-foreground ring-2 ring-gold/50"
+          : "bg-teal text-teal-foreground"
       }`}
     >
-      {disabled ? <Lock className="h-5 w-5" /> : <Plus className="h-6 w-6" />}
+      {locked ? <Lock className="h-5 w-5" /> : <Plus className="h-6 w-6" />}
     </button>
   );
 }
+
 
 
 function EcoleDialog({
@@ -391,5 +412,116 @@ function DeleteDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+const NEXT_PLAN: Record<PlanKey, PlanKey | null> = {
+  gratuit: "lite",
+  lite: "premium",
+  premium: null,
+};
+
+const PLAN_HIGHLIGHTS: Record<PlanKey, string[]> = {
+  gratuit: [],
+  lite: [
+    "Plus d'écoles et de classes",
+    "Export PDF des bulletins",
+    "Rapports détaillés par classe",
+  ],
+  premium: [
+    "Quotas étendus (écoles, classes, élèves)",
+    "Toutes les fonctionnalités Lite",
+    "Suivi de progression avancé",
+  ],
+};
+
+function UpgradeDialog({
+  open,
+  onOpenChange,
+  currentPlan,
+  ecoleNom,
+  maxEcoles,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  currentPlan: PlanKey;
+  ecoleNom: string;
+  maxEcoles: number;
+}) {
+  const nextPlan = NEXT_PLAN[currentPlan];
+  const currentLabel = PLAN_LABEL[currentPlan];
+  const nextLabel = nextPlan ? PLAN_LABEL[nextPlan] : null;
+  const waHref = upgradeWhatsAppHref(ecoleNom, currentLabel);
+  const highlights = nextPlan ? PLAN_HIGHLIGHTS[nextPlan] : [];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[380px]">
+        <DialogHeader>
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gold/20 text-ink">
+            <Sparkles className="h-6 w-6" />
+          </div>
+          <DialogTitle className="text-center font-display">
+            {nextLabel
+              ? `Passez au plan ${nextLabel}`
+              : "Limite atteinte"}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 text-sm text-ink/80">
+          <p className="text-center">
+            Le plan <strong>{currentLabel}</strong> autorise{" "}
+            <strong>
+              {maxEcoles} école{maxEcoles > 1 ? "s" : ""}
+            </strong>
+            . Vous avez atteint cette limite.
+          </p>
+
+          {nextPlan && highlights.length > 0 && (
+            <div className="rounded-xl border border-teal/30 bg-teal/5 p-3">
+              <div className="mb-1.5 font-display text-sm font-semibold text-foreground">
+                Avec le plan {nextLabel}
+              </div>
+              <ul className="space-y-1.5 text-xs">
+                {highlights.map((h) => (
+                  <li key={h} className="flex items-start gap-2">
+                    <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-teal" aria-hidden="true" />
+                    <span>{h}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {!nextPlan && (
+            <p className="text-center text-xs text-muted-foreground">
+              Vous êtes déjà sur notre plan le plus complet. Contactez le support pour
+              étendre vos quotas.
+            </p>
+          )}
+        </div>
+
+        <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => onOpenChange(false)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
+          >
+            <MessageCircle className="h-4 w-4" aria-hidden="true" />
+            {nextLabel ? `Demander le plan ${nextLabel}` : "Contacter le support"}
+          </a>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="w-full"
+          >
+            Plus tard
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
