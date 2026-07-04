@@ -14,7 +14,7 @@ export interface Profil {
   email: string | null;
   matiere_principale: string | null;
   etablissement: string | null;
-  plan: "gratuit" | "lite" | "premium" | null;
+  plan?: "gratuit" | "lite" | "premium";
 }
 
 export function planCapabilitiesQO() {
