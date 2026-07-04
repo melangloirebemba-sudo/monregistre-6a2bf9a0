@@ -378,6 +378,19 @@ function AdminContent() {
                           <Button
                             size="sm"
                             variant="outline"
+                            aria-label={`Activer un plan pour ${displayName}`}
+                            onClick={() => {
+                              setActivateTarget(u);
+                              setActivatePlanChoice(u.plan === "premium" ? "premium" : "lite");
+                              setActivatePeriodeChoice(u.plan_periode ?? "mensuelle");
+                            }}
+                          >
+                            <Sparkles aria-hidden="true" className="mr-1 h-3.5 w-3.5" /> Activer
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
                             aria-label={`Réinitialiser le mot de passe de ${displayName}`}
                             onClick={() => { setPwdTarget(u); setNewPwd(""); }}
                           >
