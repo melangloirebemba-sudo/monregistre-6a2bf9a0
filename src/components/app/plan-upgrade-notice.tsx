@@ -37,7 +37,7 @@ export function PlanUpgradeNotice() {
     const key = "plan-upgrade-seen";
     let seen: { plan?: string; startedAt?: string } = {};
     try {
-      seen = JSON.parse(sessionStorage.getItem(key) || "{}");
+      seen = JSON.parse(localStorage.getItem(key) || "{}");
     } catch {
       seen = {};
     }
@@ -70,7 +70,7 @@ export function PlanUpgradeNotice() {
       },
     );
 
-    sessionStorage.setItem(
+    localStorage.setItem(
       key,
       JSON.stringify({ plan: caps.storedPlan, startedAt: caps.startedAt }),
     );
