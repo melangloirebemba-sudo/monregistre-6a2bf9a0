@@ -61,13 +61,13 @@ function AdminContent() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
 
   const changePlan = useMutation({
-    mutationFn: (v: { userId: string; plan: AppPlan }) => updatePlanFn({ data: v }),
+    mutationFn: (v: { userId: string; plan: AppPlan }) => adminApi.updatePlan(v.userId, v.plan),
     onSuccess: () => { toast.success("Plan mis à jour"); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const toggleSuspend = useMutation({
-    mutationFn: (v: { userId: string; suspendre: boolean }) => suspendFn({ data: v }),
+    mutationFn: (v: { userId: string; suspendre: boolean }) => adminApi.setSuspension(v.userId, v.suspendre),
     onSuccess: (_r, v) => {
       toast.success(v.suspendre ? "Compte suspendu" : "Compte réactivé");
       invalidate();
@@ -76,13 +76,13 @@ function AdminContent() {
   });
 
   const resetPwd = useMutation({
-    mutationFn: (v: { userId: string; newPassword: string }) => resetPwdFn({ data: v }),
+    mutationFn: (v: { userId: string; newPassword: string }) => adminApi.resetPassword(v.userId, v.newPassword),
     onSuccess: () => toast.success("Mot de passe réinitialisé"),
     onError: (e: Error) => toast.error(e.message),
   });
 
   const delAcc = useMutation({
-    mutationFn: (userId: string) => deleteFn({ data: { userId } }),
+    mutationFn: (userId: string) => adminApi.deleteUser(userId),
     onSuccess: () => { toast.success("Compte supprimé"); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });
