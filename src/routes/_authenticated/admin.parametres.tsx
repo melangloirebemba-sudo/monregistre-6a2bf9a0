@@ -508,17 +508,25 @@ function AdminAccountCard() {
     },
   });
 
+  const qc = useQueryClient();
   const updatePassword = useMutation({
     mutationFn: async () => {
       if (!validatePassword()) throw new Error("Corrigez les champs en rouge.");
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+      // Journalise en base (best-effort, ne bloque pas le succès UI).
+      try {
+        await adminApi.passwordChangesLog({ source: "self" });
+      } catch (logErr) {
+        console.warn("[admin] password change log failed", logErr);
+      }
     },
     onSuccess: () => {
       toast.success("Mot de passe administrateur mis à jour");
       setPassword("");
       setPasswordConfirm("");
       setPwdErrors({});
+      qc.invalidateQueries({ queryKey: ["admin-password-changes"] });
     },
     onError: (e: Error) => {
       const msg = humanizeAuthError(e.message);
