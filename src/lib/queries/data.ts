@@ -20,7 +20,9 @@ export interface Classe {
   ecole_id: string;
   user_id: string;
   chef_id: string | null;
+  annee_scolaire: string | null;
 }
+
 
 export interface Eleve {
   id: string;
