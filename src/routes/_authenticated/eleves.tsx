@@ -266,9 +266,11 @@ function EleveDialog({
     mutationFn: async () => {
       const user_id = await requireUserId();
       if (!form.nom.trim() || !form.prenom.trim()) throw new Error("Nom et prénom obligatoires");
+      if (!form.ecole_id) throw new Error("Sélectionnez une école");
       if (!form.classe_id) throw new Error("Sélectionnez une classe");
       const classe = classes.find((c) => c.id === form.classe_id);
       if (!classe) throw new Error("Classe invalide");
+      if (classe.ecole_id !== form.ecole_id) throw new Error("La classe ne correspond pas à l'école sélectionnée");
       const payload = {
         nom: form.nom.trim(),
         prenom: form.prenom.trim(),
