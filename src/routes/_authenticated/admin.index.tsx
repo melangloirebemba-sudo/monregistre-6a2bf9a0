@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import {
   Users,
   School,
@@ -13,13 +14,50 @@ import {
   Activity,
   Settings2,
   Receipt,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Bell,
+  Mail,
+  MessageCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { adminApi } from "@/lib/admin-api";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { supportConfig, whatsappLink } from "@/config/support";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({ meta: [{ title: "Tableau de bord — Console admin" }, { name: "robots", content: "noindex" }] }),
   component: AdminDashboard,
 });
+
+type PlanRow = {
+  user_id: string;
+  nom_affiche: string | null;
+  email: string | null;
+  telephone: string | null;
+  plan: "gratuit" | "lite" | "premium";
+  plan_periode: "mensuelle" | "trimestrielle" | "annuelle" | null;
+  plan_expires_at: string | null;
+};
+
+const SOON_DAYS = 7;
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function daysDiff(iso: string | null): number | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.round((t - Date.now()) / 86_400_000);
+}
 
 function AdminDashboard() {
   const { data, isLoading, error } = useQuery({
@@ -27,6 +65,46 @@ function AdminDashboard() {
     queryFn: () => adminApi.stats(),
     staleTime: 30_000,
   });
+
+  const { data: plans = [], isLoading: loadingPlans } = useQuery({
+    queryKey: ["admin", "plans-usage"],
+    staleTime: 60_000,
+    queryFn: async (): Promise<PlanRow[]> => {
+      const { data, error } = await supabase
+        .from("profils_enseignant")
+        .select("user_id, nom_affiche, email, telephone, plan, plan_periode, plan_expires_at")
+        .in("plan", ["lite", "premium"])
+        .limit(2000);
+      if (error) throw error;
+      return (data ?? []) as PlanRow[];
+    },
+  });
+
+  const { actifs, bientot, expires } = useMemo(() => {
+    const actifs: PlanRow[] = [];
+    const bientot: PlanRow[] = [];
+    const expires: PlanRow[] = [];
+    const now = Date.now();
+    const soon = now + SOON_DAYS * 86_400_000;
+    for (const p of plans) {
+      if (!p.plan_expires_at) {
+        actifs.push(p);
+        continue;
+      }
+      const t = new Date(p.plan_expires_at).getTime();
+      if (Number.isNaN(t)) continue;
+      if (t <= now) expires.push(p);
+      else if (t <= soon) bientot.push(p);
+      else actifs.push(p);
+    }
+    const byDate = (a: PlanRow, b: PlanRow) =>
+      new Date(a.plan_expires_at ?? 0).getTime() - new Date(b.plan_expires_at ?? 0).getTime();
+    bientot.sort(byDate);
+    expires.sort(byDate);
+    return { actifs, bientot, expires };
+  }, [plans]);
+
+
 
 
   return (
