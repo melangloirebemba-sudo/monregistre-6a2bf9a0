@@ -53,6 +53,7 @@ function AdminContent() {
 
 
   const [q, setQ] = useState("");
+  const [planFilter, setPlanFilter] = useState<"all" | AppPlan>("all");
   type SortKey = "nom" | "email" | "plan" | "statut" | "created";
   const [sortKey, setSortKey] = useState<SortKey>("nom");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
