@@ -681,6 +681,24 @@ function DeletionRequestsSection() {
                 {r.raison}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
+                {(() => {
+                  const wa = whatsappHrefFor(
+                    phones[r.user_id] ?? null,
+                    `Bonjour ${r.user_nom ?? ""}, nous avons bien reçu votre demande de suppression de compte sur MonRegistre. Pouvons-nous en discuter ?`,
+                  );
+                  return wa ? (
+                    <Button asChild size="sm" variant="outline">
+                      <a href={wa} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="mr-1.5 h-4 w-4 text-teal" />
+                        Contacter sur WhatsApp
+                      </a>
+                    </Button>
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground italic">
+                      Numéro WhatsApp non renseigné
+                    </span>
+                  );
+                })()}
                 <Button
                   size="sm"
                   variant="outline"
