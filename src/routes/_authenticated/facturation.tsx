@@ -108,7 +108,7 @@ function FacturationPage() {
           nom_affiche: profil?.nom_affiche ?? null,
           email: profil?.email ?? null,
         },
-      });
+      }, { pdfPath: r.pdf_path });
       downloadCachedRecu(r.id);
     } finally {
       setDownloadingId(null);
