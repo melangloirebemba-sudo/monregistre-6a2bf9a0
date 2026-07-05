@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Activity,
   Settings2,
+  Receipt,
 } from "lucide-react";
 import { adminApi } from "@/lib/admin-api";
 
@@ -103,6 +104,7 @@ function AdminDashboard() {
             </h2>
             <div className="grid gap-3 sm:grid-cols-2">
               <QuickLink to="/admin/utilisateurs" icon={Users} title="Gérer les utilisateurs" desc="Plans, suspension, mot de passe, suppression" />
+              <QuickLink to="/admin/facturation" icon={Receipt} title="Facturation & paiements" desc="Voir toutes les factures et paiements" />
               <QuickLink to="/admin/plans" icon={Crown} title="Plans & tarifs" desc="Consulter les limites de chaque plan" />
               <QuickLink to="/admin/parametres" icon={Settings2} title="Paramètres" desc="Thème, support, e-mail et mot de passe admin" />
             </div>
