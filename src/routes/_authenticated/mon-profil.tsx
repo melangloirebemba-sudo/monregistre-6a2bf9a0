@@ -161,6 +161,77 @@ function MonProfilPage() {
           {save.isPending ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </form>
+
+      <ChangePasswordCard />
     </div>
+  );
+}
+
+function ChangePasswordCard() {
+  const [pwd, setPwd] = useState("");
+  const [pwd2, setPwd2] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!isPasswordValid(pwd)) {
+      toast.error(`Mot de passe trop court (${PASSWORD_MIN_LENGTH} caractères min.)`);
+      return;
+    }
+    if (pwd !== pwd2) {
+      toast.error("Les mots de passe ne correspondent pas");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: pwd });
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setPwd("");
+    setPwd2("");
+    toast.success("Mot de passe mis à jour");
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="card-elevated space-y-4 p-5 mt-4">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <KeyRound className="h-4 w-4" />
+        Changer mon mot de passe
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="new-pwd">Nouveau mot de passe</Label>
+        <Input
+          id="new-pwd"
+          type="password"
+          autoComplete="new-password"
+          minLength={PASSWORD_MIN_LENGTH}
+          value={pwd}
+          onChange={(e) => setPwd(e.target.value)}
+          required
+        />
+        <PasswordCriteria value={pwd} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="new-pwd2">Confirmer le nouveau mot de passe</Label>
+        <Input
+          id="new-pwd2"
+          type="password"
+          autoComplete="new-password"
+          minLength={PASSWORD_MIN_LENGTH}
+          value={pwd2}
+          onChange={(e) => setPwd2(e.target.value)}
+          required
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={loading || !isPasswordValid(pwd) || pwd !== pwd2}
+        className="w-full"
+      >
+        {loading ? "Enregistrement…" : "Mettre à jour le mot de passe"}
+      </Button>
+    </form>
   );
 }
