@@ -5,6 +5,7 @@ import {
   Users,
   Crown,
   CalendarClock,
+  Receipt,
   Shield,
   LogOut,
   MoreHorizontal,
