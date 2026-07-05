@@ -71,12 +71,20 @@ function RecuDetailsPage() {
     },
   });
 
-  const [downloading, setDownloading] = useState(false);
+  type PdfStatus =
+    | { state: "idle" }
+    | { state: "loading" }
+    | { state: "success"; at: number }
+    | { state: "error"; message: string; attempt: number };
+  const [pdfStatus, setPdfStatus] = useState<PdfStatus>({ state: "idle" });
+  const attempt = pdfStatus.state === "error" ? pdfStatus.attempt : 0;
 
   async function handleDownload() {
-    if (!paiement || downloading) return;
-    setDownloading(true);
+    if (!paiement) return;
+    if (pdfStatus.state === "loading") return;
+    setPdfStatus({ state: "loading" });
     try {
+      // Yield a frame so the spinner is visible before jsPDF blocks the main thread.
       await new Promise((res) => setTimeout(res, 30));
       generateRecuPaiementPDF({
         numero_recu: paiement.numero_recu,
@@ -93,8 +101,16 @@ function RecuDetailsPage() {
           email: profil?.email ?? null,
         },
       });
-    } finally {
-      setDownloading(false);
+      setPdfStatus({ state: "success", at: Date.now() });
+      toast.success("Reçu PDF téléchargé", {
+        description: `N° ${paiement.numero_recu}`,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Impossible de générer le PDF.";
+      console.error("[recu-pdf] generation failed", err);
+      setPdfStatus({ state: "error", message, attempt: attempt + 1 });
+      toast.error("Échec de la génération du PDF", { description: message });
     }
   }
 
