@@ -174,6 +174,8 @@ function AdminContent() {
   const [activateTarget, setActivateTarget] = useState<AdminUser | null>(null);
   const [activatePlanChoice, setActivatePlanChoice] = useState<"lite" | "premium">("lite");
   const [activatePeriodeChoice, setActivatePeriodeChoice] = useState<PlanPeriode>("mensuelle");
+  const [activateTrial, setActivateTrial] = useState(false);
+  const [activateTrialDays, setActivateTrialDays] = useState("14");
   const [historyTarget, setHistoryTarget] = useState<AdminUser | null>(null);
 
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
