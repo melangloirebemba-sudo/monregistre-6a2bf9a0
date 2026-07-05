@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Download, Loader2, Receipt, CalendarClock, Wallet, CreditCard, FileText } from "lucide-react";
+import { toast } from "sonner";
+import { ArrowLeft, Download, Loader2, Receipt, CalendarClock, Wallet, CreditCard, FileText, RotateCw, CheckCircle2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { requireUserId } from "@/lib/queries/data";
 import { profilQueryOptions } from "@/lib/queries/profil";
@@ -70,12 +71,20 @@ function RecuDetailsPage() {
     },
   });
 
-  const [downloading, setDownloading] = useState(false);
+  type PdfStatus =
+    | { state: "idle" }
+    | { state: "loading" }
+    | { state: "success"; at: number }
+    | { state: "error"; message: string; attempt: number };
+  const [pdfStatus, setPdfStatus] = useState<PdfStatus>({ state: "idle" });
+  const attempt = pdfStatus.state === "error" ? pdfStatus.attempt : 0;
 
   async function handleDownload() {
-    if (!paiement || downloading) return;
-    setDownloading(true);
+    if (!paiement) return;
+    if (pdfStatus.state === "loading") return;
+    setPdfStatus({ state: "loading" });
     try {
+      // Yield a frame so the spinner is visible before jsPDF blocks the main thread.
       await new Promise((res) => setTimeout(res, 30));
       generateRecuPaiementPDF({
         numero_recu: paiement.numero_recu,
@@ -92,8 +101,16 @@ function RecuDetailsPage() {
           email: profil?.email ?? null,
         },
       });
-    } finally {
-      setDownloading(false);
+      setPdfStatus({ state: "success", at: Date.now() });
+      toast.success("Reçu PDF téléchargé", {
+        description: `N° ${paiement.numero_recu}`,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Impossible de générer le PDF.";
+      console.error("[recu-pdf] generation failed", err);
+      setPdfStatus({ state: "error", message, attempt: attempt + 1 });
+      toast.error("Échec de la génération du PDF", { description: message });
     }
   }
 
@@ -169,17 +186,51 @@ function RecuDetailsPage() {
             )}
           </div>
 
+          {pdfStatus.state === "error" && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">Le PDF n'a pas pu être généré</div>
+                <p className="mt-0.5 text-xs opacity-90">
+                  {pdfStatus.message}
+                  {pdfStatus.attempt > 1 ? ` (tentative ${pdfStatus.attempt})` : ""}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {pdfStatus.state === "success" && (
+            <div className="flex items-center gap-2 rounded-xl border border-teal/30 bg-teal/10 p-3 text-sm text-teal">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>Reçu téléchargé. Vérifiez votre dossier de téléchargements.</span>
+            </div>
+          )}
+
           <div className="sticky bottom-3 z-10">
             <Button
               onClick={handleDownload}
-              disabled={downloading}
+              disabled={pdfStatus.state === "loading"}
               size="lg"
               className="w-full gap-2 shadow-lg"
+              aria-live="polite"
             >
-              {downloading ? (
+              {pdfStatus.state === "loading" ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Génération du PDF…
+                </>
+              ) : pdfStatus.state === "error" ? (
+                <>
+                  <RotateCw className="h-4 w-4" />
+                  Réessayer le téléchargement
+                </>
+              ) : pdfStatus.state === "success" ? (
+                <>
+                  <Download className="h-4 w-4" />
+                  Télécharger à nouveau
                 </>
               ) : (
                 <>
