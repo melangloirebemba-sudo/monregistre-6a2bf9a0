@@ -143,37 +143,36 @@ Deno.serve(async (req) => {
           .single();
         if (logErr) console.error("[admin-api] plan_activations insert failed", logErr.message);
 
-        // Reçu de paiement : gratuit pour un essai, sinon prix courant ou override
-        let montant = 0;
-        if (isTrial) {
-          montant = 0;
-        } else if (typeof montantOverride === "number" && montantOverride >= 0) {
-          montant = Math.floor(montantOverride);
-        } else {
-          const { data: priceRow } = await admin
-            .from("plan_prices")
-            .select("montant")
-            .eq("plan", plan)
-            .eq("periode", periode)
-            .maybeSingle();
-          montant = priceRow?.montant ?? 0;
+        // Reçu de paiement : uniquement pour un plan payé (pas de facture pour un essai gratuit).
+        if (!isTrial) {
+          let montant = 0;
+          if (typeof montantOverride === "number" && montantOverride >= 0) {
+            montant = Math.floor(montantOverride);
+          } else {
+            const { data: priceRow } = await admin
+              .from("plan_prices")
+              .select("montant")
+              .eq("plan", plan)
+              .eq("periode", periode)
+              .maybeSingle();
+            montant = priceRow?.montant ?? 0;
+          }
+          const { error: payErr } = await admin.from("paiements").insert({
+            user_id: userId,
+            plan_activation_id: activationRow?.id ?? null,
+            plan,
+            periode,
+            montant,
+            devise: "XAF",
+            paye_le: now.toISOString(),
+            plan_expires_at: expiresAt.toISOString(),
+            moyen_paiement: typeof moyen_paiement === "string" && moyen_paiement.trim() ? moyen_paiement.trim() : "manuel",
+            note: finalNote,
+            created_by: uid,
+          });
+          if (payErr) console.error("[admin-api] paiements insert failed", payErr.message);
         }
-        const { error: payErr } = await admin.from("paiements").insert({
-          user_id: userId,
-          plan_activation_id: activationRow?.id ?? null,
-          plan,
-          periode,
-          montant,
-          devise: "XAF",
-          paye_le: now.toISOString(),
-          plan_expires_at: expiresAt.toISOString(),
-          moyen_paiement: isTrial
-            ? "essai"
-            : (typeof moyen_paiement === "string" && moyen_paiement.trim() ? moyen_paiement.trim() : "manuel"),
-          note: finalNote,
-          created_by: uid,
-        });
-        if (payErr) console.error("[admin-api] paiements insert failed", payErr.message);
+
 
         return json({ ok: true, plan_expires_at: expiresAt.toISOString() });
       }

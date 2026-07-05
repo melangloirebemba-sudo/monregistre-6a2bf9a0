@@ -29,6 +29,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { OfflineIndicator } from "@/components/app/offline-indicator";
+import { NotificationsBell } from "@/components/app/notifications-bell";
 import { toast } from "sonner";
 
 interface AppShellProps {
@@ -128,7 +129,8 @@ export function AppShell({ children }: AppShellProps) {
             </Link>
           )}
         </nav>
-        <div className="border-t border-white/10 p-3">
+        <div className="border-t border-white/10 p-3 space-y-1">
+          <NotificationsBell variant="sidebar" />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground">
@@ -163,6 +165,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </aside>
 
+
       {/* Zone principale */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* Top bar mobile/tablet */}
@@ -183,7 +186,9 @@ export function AppShell({ children }: AppShellProps) {
             </div>
           </div>
 
-          <DropdownMenu>
+          <div className="flex items-center gap-1">
+            <NotificationsBell variant="topbar" />
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 aria-label="Menu du profil"
@@ -209,7 +214,9 @@ export function AppShell({ children }: AppShellProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </header>
+
 
         {/* Contenu */}
         <main className="flex-1 pb-24 lg:pb-10">

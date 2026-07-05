@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { NotificationsBell } from "@/components/app/notifications-bell";
 import { toast } from "sonner";
 
 interface AdminShellProps {
@@ -141,7 +142,9 @@ export function AdminShell({ children }: AdminShellProps) {
             </div>
           </div>
 
-          <DropdownMenu>
+          <div className="flex items-center gap-1">
+            <NotificationsBell variant="topbar" />
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
@@ -160,7 +163,9 @@ export function AdminShell({ children }: AdminShellProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </header>
+
 
         {/* Contenu */}
         <main className="flex-1 pb-24 lg:pb-10">
