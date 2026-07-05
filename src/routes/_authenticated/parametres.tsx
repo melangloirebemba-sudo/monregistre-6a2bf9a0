@@ -285,6 +285,8 @@ function ParametresPage() {
           </Button>
         </div>
       </section>
+
+      <DeleteAccountSection />
     </div>
   );
 }
