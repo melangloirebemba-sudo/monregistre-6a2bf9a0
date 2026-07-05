@@ -672,4 +672,151 @@ function PlanActivationsHistory() {
   );
 }
 
+function DeleteAccountSection() {
+  const { data: profil } = useQuery(profilQueryOptions());
+  const { data: caps } = useQuery(planCapabilitiesQO());
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [raison, setRaison] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  if (caps?.isAdmin) return null;
+
+  const submit = async () => {
+    const reason = raison.trim();
+    if (reason.length < 10) {
+      toast.error("Merci d'indiquer une raison (10 caractères minimum).");
+      return;
+    }
+    if (!confirm) {
+      toast.error("Veuillez cocher la case de confirmation.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const uid = await requireUserId();
+      const { data: userRes } = await supabase.auth.getUser();
+      const email = userRes.user?.email ?? null;
+
+      const { error: insErr } = await supabase
+        .from("account_deletion_requests")
+        .insert({
+          user_id: uid,
+          user_email: email,
+          user_nom: profil?.nom_affiche ?? null,
+          raison: reason,
+        });
+      if (insErr) throw insErr;
+
+      const { error: updErr } = await supabase
+        .from("profils_enseignant")
+        .update({ statut: "suspendu" })
+        .eq("user_id", uid);
+      if (updErr) throw updErr;
+
+      toast.success("Compte suspendu. Un administrateur a été notifié.");
+      await supabase.auth.signOut();
+      navigate({ to: "/auth" });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="mt-8 rounded-lg border border-destructive/40 bg-destructive/5 p-5">
+      <div className="flex items-start gap-3">
+        <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-lg font-semibold text-destructive">Zone sensible</h2>
+          <p className="mt-1 text-xs text-ink/80">
+            La suspension désactive l'accès à votre compte. Un administrateur peut le
+            réactiver sur demande — vos données ne sont pas supprimées immédiatement.
+          </p>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="mt-3"
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Supprimer mon compte
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+                  Suppression de compte
+                </DialogTitle>
+                <DialogDescription>
+                  Votre compte sera immédiatement suspendu et vous serez déconnecté.
+                  Un administrateur sera notifié et pourra le réactiver en cas
+                  d'erreur. Vos données restent conservées pendant la période
+                  d'examen.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="del-raison">
+                    Pourquoi souhaitez-vous supprimer votre compte ?
+                  </Label>
+                  <Textarea
+                    id="del-raison"
+                    value={raison}
+                    onChange={(e) => setRaison(e.target.value)}
+                    placeholder="Expliquez brièvement la raison (obligatoire, min. 10 caractères)"
+                    rows={4}
+                    maxLength={1000}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {raison.trim().length}/1000 — ce message sera transmis à l'administrateur.
+                  </p>
+                </div>
+                <label className="flex items-start gap-2 text-xs text-ink/80">
+                  <input
+                    type="checkbox"
+                    checked={confirm}
+                    onChange={(e) => setConfirm(e.target.checked)}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  <span>
+                    Je comprends que mon compte sera immédiatement suspendu et
+                    que je devrai contacter un administrateur pour le réactiver.
+                  </span>
+                </label>
+              </div>
+
+              <DialogFooter className="gap-2 sm:justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={submitting}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={submit}
+                  disabled={submitting || raison.trim().length < 10 || !confirm}
+                >
+                  {submitting ? "Envoi…" : "Confirmer la suppression"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 
