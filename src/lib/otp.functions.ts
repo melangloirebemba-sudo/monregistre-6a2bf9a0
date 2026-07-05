@@ -15,6 +15,8 @@ const MAX_ATTEMPTS = 5;
 const COOLDOWN_SECONDS = 60;
 const MAX_SENDS_PER_HOUR = 5;
 
+type Purpose = "password_reset" | "phone_verification" | "phone_change";
+
 // ---------- Shared helpers (loaded lazily to keep client bundle clean) ----------
 
 async function getAdmin() {
