@@ -143,11 +143,17 @@ function SignInForm({ onDone }: { onDone: () => void }) {
 function SignUpForm({ onDone }: { onDone: () => void }) {
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
+  const [telephone, setTelephone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const tel = telephone.trim();
+    if (tel && !/^\+?[0-9\s().-]{6,20}$/.test(tel)) {
+      toast.error("Numéro WhatsApp invalide");
+      return;
+    }
     setLoading(true);
     const emailRedirectTo =
       typeof window !== "undefined" ? window.location.origin : undefined;
@@ -156,7 +162,7 @@ function SignUpForm({ onDone }: { onDone: () => void }) {
       password,
       options: {
         emailRedirectTo,
-        data: { nom_affiche: nom },
+        data: { nom_affiche: nom, telephone: tel || null },
       },
     });
     setLoading(false);
@@ -194,6 +200,18 @@ function SignUpForm({ onDone }: { onDone: () => void }) {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="su-tel">Numéro WhatsApp</Label>
+        <Input
+          id="su-tel"
+          type="tel"
+          autoComplete="tel"
+          required
+          value={telephone}
+          onChange={(e) => setTelephone(e.target.value)}
+          placeholder="+242 06 000 00 00"
         />
       </div>
       <div className="space-y-2">
