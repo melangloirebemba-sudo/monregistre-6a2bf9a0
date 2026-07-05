@@ -122,6 +122,20 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
   }, [items, enabled, prefs.categories, navigate]);
 
   // Chips visibles : seulement les catégories activées dans les préférences.
+  const activeCats = (Object.keys(prefs.categories) as NotifCategory[]).filter(
+    (c) => prefs.categories[c],
+  );
+
+  const filtered = filter === "all" ? items : items.filter((n) => n.category === filter);
+  const filteredUnread = filtered.filter((n) => !n.read).length;
+
+  const buttonBase =
+    variant === "sidebar"
+      ? "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground w-full"
+      : "relative shrink-0 rounded-full p-2 text-ink-foreground/70 hover:bg-white/5 hover:text-ink-foreground";
+
+  const chipBase =
+    "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
