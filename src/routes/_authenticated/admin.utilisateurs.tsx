@@ -129,11 +129,11 @@ function AdminContent() {
   });
 
   const activatePlan = useMutation({
-    mutationFn: (v: { userId: string; plan: "lite" | "premium"; periode: PlanPeriode }) =>
-      adminApi.activatePlan(v.userId, v.plan, v.periode),
+    mutationFn: (v: { userId: string; plan: "lite" | "premium"; periode: PlanPeriode; trial: boolean; trialDays: number }) =>
+      adminApi.activatePlan(v.userId, v.plan, v.periode, v.trial ? { trial: true, trialDays: v.trialDays } : undefined),
     onSuccess: (r, v) => {
       const d = new Date(r.plan_expires_at).toLocaleDateString("fr-FR");
-      toast.success(`Plan activé — expire le ${d}`);
+      toast.success(v.trial ? `Essai activé — expire le ${d}` : `Plan activé — expire le ${d}`);
       invalidate();
       qc.invalidateQueries({ queryKey: ["admin-activations", v.userId] });
     },
