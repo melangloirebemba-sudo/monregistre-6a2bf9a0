@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DataPagination } from "@/components/ui/data-pagination";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
-import { generateRecuPaiementPDF, formatMontantXAF } from "@/lib/pdf/recu-paiement";
+import { formatMontantXAF } from "@/lib/pdf/recu-paiement";
+import { ensureRecuPDF, downloadCachedRecu } from "@/lib/pdf/recu-cache";
 
 export const Route = createFileRoute("/_authenticated/facturation")({
   head: () => ({ meta: [{ title: "Facturation & paiements — MonRegistre" }] }),
