@@ -714,6 +714,7 @@ export type Database = {
           matiere_principale: string | null
           nom_affiche: string
           nom_famille: string | null
+          notifications_prefs: Json
           plan: Database["public"]["Enums"]["app_plan"]
           plan_expires_at: string | null
           plan_periode: Database["public"]["Enums"]["plan_periode"] | null
@@ -735,6 +736,7 @@ export type Database = {
           matiere_principale?: string | null
           nom_affiche?: string
           nom_famille?: string | null
+          notifications_prefs?: Json
           plan?: Database["public"]["Enums"]["app_plan"]
           plan_expires_at?: string | null
           plan_periode?: Database["public"]["Enums"]["plan_periode"] | null
@@ -756,6 +758,7 @@ export type Database = {
           matiere_principale?: string | null
           nom_affiche?: string
           nom_famille?: string | null
+          notifications_prefs?: Json
           plan?: Database["public"]["Enums"]["app_plan"]
           plan_expires_at?: string | null
           plan_periode?: Database["public"]["Enums"]["plan_periode"] | null
