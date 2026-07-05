@@ -83,10 +83,10 @@ function RecuPdfPage() {
   // Generate on mount and auto-trigger the browser download once ready.
   useEffect(() => {
     if (!pdfCtx) return;
-    ensureRecuPDF(id, pdfCtx).catch(() => {
+    ensureRecuPDF(id, pdfCtx, { pdfPath: paiement?.pdf_path ?? null }).catch(() => {
       /* status flows through the store */
     });
-  }, [id, pdfCtx]);
+  }, [id, pdfCtx, paiement?.pdf_path]);
 
   useEffect(() => {
     if (entry.status === "ready" && !autoDownloaded.current) {
@@ -101,7 +101,7 @@ function RecuPdfPage() {
     } else if (pdfCtx) {
       invalidateRecu(id);
       autoDownloaded.current = false;
-      ensureRecuPDF(id, pdfCtx).catch(() => {});
+      ensureRecuPDF(id, pdfCtx, { pdfPath: paiement?.pdf_path ?? null }).catch(() => {});
     }
   }
 
