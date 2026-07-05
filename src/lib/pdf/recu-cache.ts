@@ -3,6 +3,15 @@ import {
   buildRecuPaiementPDFBlob,
   type RecuPaiementContext,
 } from "./recu-paiement";
+import { supabase } from "@/integrations/supabase/client";
+
+const BUCKET = "recus";
+
+export interface EnsureOptions {
+  /** Existing storage path in the `recus` bucket, if any. */
+  pdfPath?: string | null;
+}
+
 
 export type RecuPdfStatus =
   | "idle"
