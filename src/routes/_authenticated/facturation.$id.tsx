@@ -186,17 +186,51 @@ function RecuDetailsPage() {
             )}
           </div>
 
+          {pdfStatus.state === "error" && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="font-medium">Le PDF n'a pas pu être généré</div>
+                <p className="mt-0.5 text-xs opacity-90">
+                  {pdfStatus.message}
+                  {pdfStatus.attempt > 1 ? ` (tentative ${pdfStatus.attempt})` : ""}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {pdfStatus.state === "success" && (
+            <div className="flex items-center gap-2 rounded-xl border border-teal/30 bg-teal/10 p-3 text-sm text-teal">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>Reçu téléchargé. Vérifiez votre dossier de téléchargements.</span>
+            </div>
+          )}
+
           <div className="sticky bottom-3 z-10">
             <Button
               onClick={handleDownload}
-              disabled={downloading}
+              disabled={pdfStatus.state === "loading"}
               size="lg"
               className="w-full gap-2 shadow-lg"
+              aria-live="polite"
             >
-              {downloading ? (
+              {pdfStatus.state === "loading" ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Génération du PDF…
+                </>
+              ) : pdfStatus.state === "error" ? (
+                <>
+                  <RotateCw className="h-4 w-4" />
+                  Réessayer le téléchargement
+                </>
+              ) : pdfStatus.state === "success" ? (
+                <>
+                  <Download className="h-4 w-4" />
+                  Télécharger à nouveau
                 </>
               ) : (
                 <>
