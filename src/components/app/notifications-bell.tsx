@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, CheckCheck, Settings2, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
