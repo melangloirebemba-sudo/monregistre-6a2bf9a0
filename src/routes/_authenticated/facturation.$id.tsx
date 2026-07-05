@@ -45,6 +45,7 @@ type Paiement = {
   plan_expires_at: string | null;
   moyen_paiement: string;
   note: string | null;
+  pdf_path: string | null;
 };
 
 const PLAN_LABEL: Record<Paiement["plan"], string> = {
@@ -82,7 +83,7 @@ function RecuDetailsPage() {
       const uid = await requireUserId();
       const { data, error } = await supabase
         .from("paiements")
-        .select("id, plan, periode, montant, devise, numero_recu, paye_le, plan_expires_at, moyen_paiement, note")
+        .select("id, plan, periode, montant, devise, numero_recu, paye_le, plan_expires_at, moyen_paiement, note, pdf_path")
         .eq("user_id", uid)
         .eq("id", id)
         .maybeSingle();
@@ -116,10 +117,10 @@ function RecuDetailsPage() {
   useEffect(() => {
     if (!pdfCtx) return;
     if (pdfEntry.status === "ready" || pdfEntry.status === "generating" || pdfEntry.status === "pending") return;
-    ensureRecuPDF(id, pdfCtx).catch(() => {
+    ensureRecuPDF(id, pdfCtx, { pdfPath: paiement?.pdf_path ?? null }).catch(() => {
       /* status is written to the store; UI reacts via useRecuEntry */
     });
-  }, [id, pdfCtx, pdfEntry.status]);
+  }, [id, pdfCtx, pdfEntry.status, paiement?.pdf_path]);
 
   async function handleDownload() {
     if (!pdfCtx) return;
@@ -129,7 +130,7 @@ function RecuDetailsPage() {
       return;
     }
     try {
-      await ensureRecuPDF(id, pdfCtx);
+      await ensureRecuPDF(id, pdfCtx, { pdfPath: paiement?.pdf_path ?? null });
       if (downloadCachedRecu(id)) {
         toast.success("Reçu téléchargé", { description: `N° ${pdfCtx.numero_recu}` });
       }

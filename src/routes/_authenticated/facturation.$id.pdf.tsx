@@ -35,6 +35,7 @@ type Paiement = {
   plan_expires_at: string | null;
   moyen_paiement: string;
   note: string | null;
+  pdf_path: string | null;
 };
 
 function RecuPdfPage() {
@@ -48,7 +49,7 @@ function RecuPdfPage() {
       const uid = await requireUserId();
       const { data, error } = await supabase
         .from("paiements")
-        .select("id, plan, periode, montant, devise, numero_recu, paye_le, plan_expires_at, moyen_paiement, note")
+        .select("id, plan, periode, montant, devise, numero_recu, paye_le, plan_expires_at, moyen_paiement, note, pdf_path")
         .eq("user_id", uid)
         .eq("id", id)
         .maybeSingle();
@@ -82,10 +83,10 @@ function RecuPdfPage() {
   // Generate on mount and auto-trigger the browser download once ready.
   useEffect(() => {
     if (!pdfCtx) return;
-    ensureRecuPDF(id, pdfCtx).catch(() => {
+    ensureRecuPDF(id, pdfCtx, { pdfPath: paiement?.pdf_path ?? null }).catch(() => {
       /* status flows through the store */
     });
-  }, [id, pdfCtx]);
+  }, [id, pdfCtx, paiement?.pdf_path]);
 
   useEffect(() => {
     if (entry.status === "ready" && !autoDownloaded.current) {
@@ -100,7 +101,7 @@ function RecuPdfPage() {
     } else if (pdfCtx) {
       invalidateRecu(id);
       autoDownloaded.current = false;
-      ensureRecuPDF(id, pdfCtx).catch(() => {});
+      ensureRecuPDF(id, pdfCtx, { pdfPath: paiement?.pdf_path ?? null }).catch(() => {});
     }
   }
 

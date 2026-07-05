@@ -453,6 +453,7 @@ export type Database = {
           note: string | null
           numero_recu: string | null
           paye_le: string
+          pdf_path: string | null
           periode: Database["public"]["Enums"]["plan_periode"]
           plan: Database["public"]["Enums"]["app_plan"]
           plan_activation_id: string | null
@@ -469,6 +470,7 @@ export type Database = {
           note?: string | null
           numero_recu?: string | null
           paye_le?: string
+          pdf_path?: string | null
           periode: Database["public"]["Enums"]["plan_periode"]
           plan: Database["public"]["Enums"]["app_plan"]
           plan_activation_id?: string | null
@@ -485,6 +487,7 @@ export type Database = {
           note?: string | null
           numero_recu?: string | null
           paye_le?: string
+          pdf_path?: string | null
           periode?: Database["public"]["Enums"]["plan_periode"]
           plan?: Database["public"]["Enums"]["app_plan"]
           plan_activation_id?: string | null

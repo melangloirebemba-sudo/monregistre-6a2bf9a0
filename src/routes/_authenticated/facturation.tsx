@@ -30,6 +30,7 @@ type PaiementRow = {
   plan_expires_at: string | null;
   moyen_paiement: string;
   note: string | null;
+  pdf_path: string | null;
 };
 
 const PLAN_LABEL: Record<PaiementRow["plan"], string> = {
@@ -64,7 +65,7 @@ function FacturationPage() {
       const uid = await requireUserId();
       const { data, error } = await supabase
         .from("paiements")
-        .select("id, plan, periode, montant, devise, numero_recu, paye_le, plan_expires_at, moyen_paiement, note")
+        .select("id, plan, periode, montant, devise, numero_recu, paye_le, plan_expires_at, moyen_paiement, note, pdf_path")
         .eq("user_id", uid)
         .order("paye_le", { ascending: false })
         .limit(500);
@@ -107,7 +108,7 @@ function FacturationPage() {
           nom_affiche: profil?.nom_affiche ?? null,
           email: profil?.email ?? null,
         },
-      });
+      }, { pdfPath: r.pdf_path });
       downloadCachedRecu(r.id);
     } finally {
       setDownloadingId(null);
