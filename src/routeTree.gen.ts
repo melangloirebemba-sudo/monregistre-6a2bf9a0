@@ -31,6 +31,7 @@ import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAbsencesRouteImport } from './routes/_authenticated/absences'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedParametresRappelsRouteImport } from './routes/_authenticated/parametres.rappels'
+import { Route as AuthenticatedParametresNotificationsRouteImport } from './routes/_authenticated/parametres.notifications'
 import { Route as AuthenticatedFacturationIdRouteImport } from './routes/_authenticated/facturation.$id'
 import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
@@ -153,6 +154,12 @@ const AuthenticatedParametresRappelsRoute =
     path: '/rappels',
     getParentRoute: () => AuthenticatedParametresRoute,
   } as any)
+const AuthenticatedParametresNotificationsRoute =
+  AuthenticatedParametresNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedParametresRoute,
+  } as any)
 const AuthenticatedFacturationIdRoute =
   AuthenticatedFacturationIdRouteImport.update({
     id: '/$id',
@@ -221,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
+  '/parametres/notifications': typeof AuthenticatedParametresNotificationsRoute
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
@@ -250,6 +258,7 @@ export interface FileRoutesByTo {
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
+  '/parametres/notifications': typeof AuthenticatedParametresNotificationsRoute
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
@@ -282,6 +291,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/_authenticated/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
+  '/_authenticated/parametres/notifications': typeof AuthenticatedParametresNotificationsRoute
   '/_authenticated/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/admin/plans'
     | '/admin/utilisateurs'
     | '/facturation/$id'
+    | '/parametres/notifications'
     | '/parametres/rappels'
     | '/admin/'
     | '/facturation/$id/pdf'
@@ -343,6 +354,7 @@ export interface FileRouteTypes {
     | '/admin/plans'
     | '/admin/utilisateurs'
     | '/facturation/$id'
+    | '/parametres/notifications'
     | '/parametres/rappels'
     | '/admin'
     | '/facturation/$id/pdf'
@@ -374,6 +386,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/utilisateurs'
     | '/_authenticated/facturation/$id'
+    | '/_authenticated/parametres/notifications'
     | '/_authenticated/parametres/rappels'
     | '/_authenticated/admin/'
     | '/_authenticated/facturation/$id/pdf'
@@ -542,6 +555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParametresRappelsRouteImport
       parentRoute: typeof AuthenticatedParametresRoute
     }
+    '/_authenticated/parametres/notifications': {
+      id: '/_authenticated/parametres/notifications'
+      path: '/notifications'
+      fullPath: '/parametres/notifications'
+      preLoaderRoute: typeof AuthenticatedParametresNotificationsRouteImport
+      parentRoute: typeof AuthenticatedParametresRoute
+    }
     '/_authenticated/facturation/$id': {
       id: '/_authenticated/facturation/$id'
       path: '/$id'
@@ -646,11 +666,14 @@ const AuthenticatedFacturationRouteWithChildren =
   )
 
 interface AuthenticatedParametresRouteChildren {
+  AuthenticatedParametresNotificationsRoute: typeof AuthenticatedParametresNotificationsRoute
   AuthenticatedParametresRappelsRoute: typeof AuthenticatedParametresRappelsRoute
 }
 
 const AuthenticatedParametresRouteChildren: AuthenticatedParametresRouteChildren =
   {
+    AuthenticatedParametresNotificationsRoute:
+      AuthenticatedParametresNotificationsRoute,
     AuthenticatedParametresRappelsRoute: AuthenticatedParametresRappelsRoute,
   }
 
