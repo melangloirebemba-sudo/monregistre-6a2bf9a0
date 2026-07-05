@@ -193,54 +193,73 @@ function FacturationPage() {
 
       ) : (
         <ul className="space-y-2">
-          {pq.items.map((r) => (
-            <li key={r.id} className="card-elevated p-4">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${PLAN_BADGE[r.plan]}`}
-                    >
-                      {PLAN_LABEL[r.plan]}
-                    </span>
-                    {r.periode && (
-                      <span className="text-xs text-ink/80">{PERIODE_LABEL[r.periode]}</span>
-                    )}
-                    <span className="font-mono text-[10px] text-muted-foreground">
-                      {r.numero_recu}
-                    </span>
-                  </div>
-                  <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                    <dt className="text-muted-foreground">Payé le</dt>
-                    <dd className="text-right font-medium">{fmtDate(r.paye_le)}</dd>
-                    <dt className="text-muted-foreground">Expire le</dt>
-                    <dd className="text-right font-medium">{fmtDate(r.plan_expires_at)}</dd>
-                    <dt className="text-muted-foreground">Moyen</dt>
-                    <dd className="text-right font-medium capitalize">{r.moyen_paiement}</dd>
-                  </dl>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <div className="font-display text-base font-semibold text-teal">
-                    {formatMontantXAF(r.montant, r.devise)}
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDownload(r)}
-                    className="gap-1"
+          {pq.items.map((r) => {
+            const isDownloading = downloadingId === r.id;
+            return (
+              <li key={r.id} className="card-elevated p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <Link
+                    to="/facturation/$id"
+                    params={{ id: r.id }}
+                    className="group min-w-0 flex-1 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-teal"
                   >
-                    <Download className="h-3.5 w-3.5" />
-                    Reçu PDF
-                  </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${PLAN_BADGE[r.plan]}`}
+                      >
+                        {PLAN_LABEL[r.plan]}
+                      </span>
+                      {r.periode && (
+                        <span className="text-xs text-ink/80">{PERIODE_LABEL[r.periode]}</span>
+                      )}
+                      <span className="font-mono text-[10px] text-muted-foreground">
+                        {r.numero_recu}
+                      </span>
+                      <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-teal" />
+                    </div>
+                    <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <dt className="text-muted-foreground">Payé le</dt>
+                      <dd className="text-right font-medium">{fmtDate(r.paye_le)}</dd>
+                      <dt className="text-muted-foreground">Expire le</dt>
+                      <dd className="text-right font-medium">{fmtDate(r.plan_expires_at)}</dd>
+                      <dt className="text-muted-foreground">Moyen</dt>
+                      <dd className="text-right font-medium capitalize">{r.moyen_paiement}</dd>
+                    </dl>
+                  </Link>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="font-display text-base font-semibold text-teal">
+                      {formatMontantXAF(r.montant, r.devise)}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownload(r)}
+                      disabled={isDownloading}
+                      aria-label={`Télécharger le reçu ${r.numero_recu}`}
+                      className="gap-1"
+                    >
+                      {isDownloading ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Génération…
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-3.5 w-3.5" />
+                          Reçu PDF
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              {r.note && (
-                <p className="mt-2 border-t border-border/60 pt-2 text-xs italic text-muted-foreground">
-                  {r.note}
-                </p>
-              )}
-            </li>
-          ))}
+                {r.note && (
+                  <p className="mt-2 border-t border-border/60 pt-2 text-xs italic text-muted-foreground">
+                    {r.note}
+                  </p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
