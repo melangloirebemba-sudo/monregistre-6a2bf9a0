@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Activity,
   Settings2,
+  Receipt,
 } from "lucide-react";
 import { adminApi } from "@/lib/admin-api";
 
