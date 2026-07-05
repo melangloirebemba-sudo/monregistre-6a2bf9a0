@@ -225,6 +225,20 @@ function ParametresPage() {
         <span className="text-sm text-muted-foreground">→</span>
       </Link>
 
+      <Link
+        to="/parametres/notifications"
+        className="card-elevated mt-3 flex items-center justify-between gap-3 p-5 transition-colors hover:bg-cream-deep/50"
+      >
+        <div className="min-w-0">
+          <h2 className="font-display text-lg font-semibold">Notifications</h2>
+          <p className="text-xs text-muted-foreground">
+            Choisissez les types de notifications et la fréquence des rappels.
+          </p>
+        </div>
+        <span className="text-sm text-muted-foreground">→</span>
+      </Link>
+
+
 
 
 
