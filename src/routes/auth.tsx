@@ -162,7 +162,7 @@ function SignUpForm({ onDone }: { onDone: () => void }) {
       password,
       options: {
         emailRedirectTo,
-        data: { nom_affiche: nom },
+        data: { nom_affiche: nom, telephone: tel || null },
       },
     });
     setLoading(false);
