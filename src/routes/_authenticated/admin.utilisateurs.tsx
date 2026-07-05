@@ -599,13 +599,44 @@ function AdminContent() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="rounded-lg border border-border bg-background/60 p-3 space-y-2">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={activateTrial}
+                  onCheckedChange={(v) => setActivateTrial(v === true)}
+                  id="activate-trial"
+                />
+                <span className="font-medium">Période d'essai (gratuite)</span>
+              </label>
+              {activateTrial && (
+                <div className="pl-6 space-y-1.5">
+                  <Label htmlFor="activate-trial-days" className="text-xs text-muted-foreground">
+                    Durée d'essai (jours)
+                  </Label>
+                  <Input
+                    id="activate-trial-days"
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={activateTrialDays}
+                    onChange={(e) => setActivateTrialDays(e.target.value)}
+                    className="max-w-[140px]"
+                  />
+                </div>
+              )}
+            </div>
+
             <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-ink/80">
               {(() => {
-                const days = activatePeriodeChoice === "mensuelle" ? 30 : activatePeriodeChoice === "trimestrielle" ? 90 : 300;
+                const days = activateTrial
+                  ? Math.max(1, Math.floor(Number(activateTrialDays) || 0))
+                  : (activatePeriodeChoice === "mensuelle" ? 30 : activatePeriodeChoice === "trimestrielle" ? 90 : 300);
                 const exp = new Date(Date.now() + days * 86_400_000).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
                 return (
                   <>
-                    Récapitulatif : plan <strong>{PLAN_LABELS[activatePlanChoice]}</strong> pour <strong>{days} jours</strong> — expire le <strong>{exp}</strong>.
+                    Récapitulatif : {activateTrial ? <><strong>essai gratuit</strong> du plan </> : "plan "}
+                    <strong>{PLAN_LABELS[activatePlanChoice]}</strong> pour <strong>{days} jours</strong> — expire le <strong>{exp}</strong>.
                   </>
                 );
               })()}
@@ -614,16 +645,23 @@ function AdminContent() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setActivateTarget(null)}>Annuler</Button>
             <Button
-              disabled={activatePlan.isPending}
+              disabled={activatePlan.isPending || (activateTrial && !(Number(activateTrialDays) >= 1 && Number(activateTrialDays) <= 365))}
               onClick={() => {
                 if (!activateTarget) return;
+                const trialDays = Math.floor(Number(activateTrialDays) || 0);
                 activatePlan.mutate(
-                  { userId: activateTarget.id, plan: activatePlanChoice, periode: activatePeriodeChoice },
+                  {
+                    userId: activateTarget.id,
+                    plan: activatePlanChoice,
+                    periode: activatePeriodeChoice,
+                    trial: activateTrial,
+                    trialDays,
+                  },
                   { onSuccess: () => setActivateTarget(null) },
                 );
               }}
             >
-              {activatePlan.isPending ? "Activation…" : "Confirmer l'activation"}
+              {activatePlan.isPending ? "Activation…" : activateTrial ? "Démarrer l'essai" : "Confirmer l'activation"}
             </Button>
           </DialogFooter>
         </DialogContent>
