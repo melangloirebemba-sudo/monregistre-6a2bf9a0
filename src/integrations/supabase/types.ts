@@ -484,6 +484,30 @@ export type Database = {
           },
         ]
       }
+      notification_reads: {
+        Row: {
+          created_at: string
+          id: string
+          notification_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       paiements: {
         Row: {
           created_at: string
