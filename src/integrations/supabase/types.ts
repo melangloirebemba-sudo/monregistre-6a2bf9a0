@@ -55,6 +55,48 @@ export type Database = {
           },
         ]
       }
+      account_deletion_requests: {
+        Row: {
+          created_at: string
+          id: string
+          note_admin: string | null
+          raison: string
+          statut: string
+          traite_le: string | null
+          traite_par: string | null
+          updated_at: string
+          user_email: string | null
+          user_id: string
+          user_nom: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note_admin?: string | null
+          raison: string
+          statut?: string
+          traite_le?: string | null
+          traite_par?: string | null
+          updated_at?: string
+          user_email?: string | null
+          user_id: string
+          user_nom?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note_admin?: string | null
+          raison?: string
+          statut?: string
+          traite_le?: string | null
+          traite_par?: string | null
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string
+          user_nom?: string | null
+        }
+        Relationships: []
+      }
       admin_password_changes: {
         Row: {
           changed_by: string | null
