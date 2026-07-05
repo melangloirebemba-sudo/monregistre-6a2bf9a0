@@ -214,7 +214,9 @@ export function AppShell({ children }: AppShellProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </header>
+
 
         {/* Contenu */}
         <main className="flex-1 pb-24 lg:pb-10">
