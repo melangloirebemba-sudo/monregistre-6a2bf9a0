@@ -86,22 +86,32 @@ function FacturationPage() {
 
   const totalPaye = paiements.reduce((s, r) => s + (r.montant || 0), 0);
 
-  function handleDownload(r: PaiementRow) {
-    generateRecuPaiementPDF({
-      numero_recu: r.numero_recu,
-      paye_le: r.paye_le,
-      plan: r.plan,
-      periode: r.periode,
-      montant: r.montant,
-      devise: r.devise,
-      moyen_paiement: r.moyen_paiement,
-      plan_expires_at: r.plan_expires_at,
-      note: r.note,
-      utilisateur: {
-        nom_affiche: profil?.nom_affiche ?? null,
-        email: profil?.email ?? null,
-      },
-    });
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  async function handleDownload(r: PaiementRow) {
+    if (downloadingId) return;
+    setDownloadingId(r.id);
+    try {
+      // Yield a frame so the loader is visible before jsPDF blocks the main thread.
+      await new Promise((res) => setTimeout(res, 30));
+      generateRecuPaiementPDF({
+        numero_recu: r.numero_recu,
+        paye_le: r.paye_le,
+        plan: r.plan,
+        periode: r.periode,
+        montant: r.montant,
+        devise: r.devise,
+        moyen_paiement: r.moyen_paiement,
+        plan_expires_at: r.plan_expires_at,
+        note: r.note,
+        utilisateur: {
+          nom_affiche: profil?.nom_affiche ?? null,
+          email: profil?.email ?? null,
+        },
+      });
+    } finally {
+      setDownloadingId(null);
+    }
   }
 
   const hasQuery = q.trim().length > 0 || planFilter !== "all";
