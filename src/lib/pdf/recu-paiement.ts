@@ -40,7 +40,7 @@ export function formatMontantXAF(montant: number, devise = "XAF"): string {
   return `${groupé} ${suffix}`;
 }
 
-export function generateRecuPaiementPDF(ctx: RecuPaiementContext) {
+function buildDoc(ctx: RecuPaiementContext): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a5", orientation: "portrait" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -141,5 +141,23 @@ export function generateRecuPaiementPDF(ctx: RecuPaiementContext) {
     { align: "center" },
   );
 
-  doc.save(`Recu_${ctx.numero_recu}.pdf`);
+  return doc;
 }
+
+export function recuFilename(ctx: RecuPaiementContext): string {
+  return `Recu_${ctx.numero_recu}.pdf`;
+}
+
+export function buildRecuPaiementPDFBlob(
+  ctx: RecuPaiementContext,
+): { blob: Blob; filename: string } {
+  const doc = buildDoc(ctx);
+  const blob = doc.output("blob") as Blob;
+  return { blob, filename: recuFilename(ctx) };
+}
+
+export function generateRecuPaiementPDF(ctx: RecuPaiementContext) {
+  const doc = buildDoc(ctx);
+  doc.save(recuFilename(ctx));
+}
+
