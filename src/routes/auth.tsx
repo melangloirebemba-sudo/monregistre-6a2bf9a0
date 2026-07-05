@@ -203,6 +203,17 @@ function SignUpForm({ onDone }: { onDone: () => void }) {
         />
       </div>
       <div className="space-y-2">
+        <Label htmlFor="su-tel">Numéro WhatsApp</Label>
+        <Input
+          id="su-tel"
+          type="tel"
+          autoComplete="tel"
+          required
+          value={telephone}
+          onChange={(e) => setTelephone(e.target.value)}
+          placeholder="+242 06 000 00 00"
+        />
+      <div className="space-y-2">
         <Label htmlFor="su-password">Mot de passe</Label>
         <Input
           id="su-password"
