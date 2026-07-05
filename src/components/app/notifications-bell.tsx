@@ -1,4 +1,5 @@
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck, Settings2, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   Popover,
   PopoverContent,
@@ -24,7 +25,7 @@ function formatDate(iso: string) {
 }
 
 export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps) {
-  const { entries, unreadCount, markRead, markAllRead } = useChangelog();
+  const { entries, unreadCount, markRead, markAllRead, enabled } = useChangelog();
 
   const buttonBase =
     variant === "sidebar"
@@ -37,7 +38,7 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
         <button aria-label="Notifications" className={buttonBase}>
           <Bell className={variant === "sidebar" ? "h-4 w-4 shrink-0" : "h-5 w-5"} />
           {variant === "sidebar" && <span className="truncate">Notifications</span>}
-          {unreadCount > 0 && (
+          {enabled && unreadCount > 0 && (
             <span
               className={cn(
                 "absolute grid min-w-[18px] h-[18px] place-items-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground",
@@ -51,39 +52,46 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[calc(100vw-2rem)] max-w-sm p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <div>
+          <div className="min-w-0">
             <div className="text-sm font-semibold">Nouveautés</div>
             <div className="text-xs text-muted-foreground">
-              {unreadCount > 0
-                ? `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}`
-                : "Tout est à jour"}
+              {!enabled
+                ? "Notifications désactivées"
+                : unreadCount > 0
+                  ? `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}`
+                  : "Tout est à jour"}
             </div>
           </div>
-          {unreadCount > 0 && (
-            <button
-              onClick={markAllRead}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-teal hover:bg-teal/10"
+          <div className="flex items-center gap-1">
+            {enabled && unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-teal hover:bg-teal/10"
+              >
+                <CheckCheck className="h-3.5 w-3.5" />
+                Tout lire
+              </button>
+            )}
+            <Link
+              to="/parametres/notifications"
+              aria-label="Réglages des notifications"
+              className="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
-              <CheckCheck className="h-3.5 w-3.5" />
-              Tout lire
-            </button>
-          )}
+              <Settings2 className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
         <ul className="max-h-80 divide-y overflow-y-auto">
           {entries.length === 0 && (
             <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-              Aucune notification
+              {enabled
+                ? "Aucune notification"
+                : "Réactivez les notifications dans les réglages."}
             </li>
           )}
-          {entries.map((e) => (
-            <li key={e.id}>
-              <button
-                onClick={() => markRead(e.id)}
-                className={cn(
-                  "flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50",
-                  !e.read && "bg-teal/5",
-                )}
-              >
+          {entries.map((e) => {
+            const content = (
+              <>
                 <span
                   className={cn(
                     "mt-1.5 h-2 w-2 shrink-0 rounded-full",
@@ -102,9 +110,29 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
                     {e.description}
                   </span>
                 </span>
-              </button>
-            </li>
-          ))}
+                {e.href && (
+                  <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                )}
+              </>
+            );
+            const rowClass = cn(
+              "flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50",
+              !e.read && "bg-teal/5",
+            );
+            return (
+              <li key={e.id}>
+                {e.href ? (
+                  <Link to={e.href} onClick={() => markRead(e.id)} className={rowClass}>
+                    {content}
+                  </Link>
+                ) : (
+                  <button onClick={() => markRead(e.id)} className={rowClass}>
+                    {content}
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </PopoverContent>
     </Popover>
