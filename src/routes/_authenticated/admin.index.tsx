@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   Users,
   School,
@@ -22,6 +23,8 @@ import {
   MessageCircle,
   ChevronDown,
   ChevronUp,
+  UserX,
+  CheckCheck,
 } from "lucide-react";
 import { adminApi } from "@/lib/admin-api";
 import { supabase } from "@/integrations/supabase/client";
@@ -167,6 +170,9 @@ function AdminDashboard() {
             expires={expires}
             loading={loadingPlans}
           />
+
+          <DeletionRequestsSection />
+
 
 
 
@@ -542,4 +548,186 @@ function PlanList({
     </div>
   );
 }
+
+type DeletionRequest = {
+  id: string;
+  user_id: string;
+  user_email: string | null;
+  user_nom: string | null;
+  raison: string;
+  statut: string;
+  created_at: string;
+  traite_le: string | null;
+  note_admin: string | null;
+};
+
+function DeletionRequestsSection() {
+  const qc = useQueryClient();
+  const [showTraitees, setShowTraitees] = useState(false);
+
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["admin", "deletion-requests"],
+    staleTime: 30_000,
+    queryFn: async (): Promise<DeletionRequest[]> => {
+      const { data, error } = await supabase
+        .from("account_deletion_requests")
+        .select("id, user_id, user_email, user_nom, raison, statut, created_at, traite_le, note_admin")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as DeletionRequest[];
+    },
+  });
+
+  const pending = data.filter((r) => r.statut === "en_attente");
+  const traitees = data.filter((r) => r.statut !== "en_attente");
+
+  const reactivate = useMutation({
+    mutationFn: async (req: DeletionRequest) => {
+      await adminApi.setSuspension(req.user_id, false);
+      const { error } = await supabase
+        .from("account_deletion_requests")
+        .update({
+          statut: "reactive",
+          traite_le: new Date().toISOString(),
+          note_admin: "Compte réactivé par l'administrateur.",
+        })
+        .eq("id", req.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Compte réactivé.");
+      qc.invalidateQueries({ queryKey: ["admin", "deletion-requests"] });
+      qc.invalidateQueries({ queryKey: ["admin-stats"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const markTreated = useMutation({
+    mutationFn: async (req: DeletionRequest) => {
+      const { error } = await supabase
+        .from("account_deletion_requests")
+        .update({
+          statut: "traitee",
+          traite_le: new Date().toISOString(),
+        })
+        .eq("id", req.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Demande marquée comme traitée.");
+      qc.invalidateQueries({ queryKey: ["admin", "deletion-requests"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (isLoading && data.length === 0) return null;
+  if (data.length === 0) return null;
+
+  return (
+    <section>
+      <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <UserX className="h-3.5 w-3.5 text-destructive" />
+        Demandes de suppression de compte
+        {pending.length > 0 && (
+          <span className="rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold text-destructive-foreground">
+            {pending.length}
+          </span>
+        )}
+      </h2>
+
+      {pending.length === 0 ? (
+        <div className="card-elevated p-4 text-sm text-muted-foreground">
+          Aucune demande en attente.
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {pending.map((r) => (
+            <li
+              key={r.id}
+              className="card-elevated border-destructive/30 bg-destructive/5 p-4"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium text-foreground">
+                    {r.user_nom ?? "—"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {r.user_email ?? "—"} · {fmtDate(r.created_at)}
+                  </div>
+                </div>
+                <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive">
+                  En attente
+                </span>
+              </div>
+              <div className="mt-3 rounded-md border border-border bg-background/60 p-3 text-sm text-ink/90 whitespace-pre-wrap">
+                {r.raison}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => reactivate.mutate(r)}
+                  disabled={reactivate.isPending}
+                >
+                  <CheckCircle2 className="mr-1.5 h-4 w-4 text-teal" />
+                  Réactiver le compte
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => markTreated.mutate(r)}
+                  disabled={markTreated.isPending}
+                >
+                  <CheckCheck className="mr-1.5 h-4 w-4" />
+                  Marquer comme traitée
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {traitees.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowTraitees((v) => !v)}
+          className="mt-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          {showTraitees ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          {showTraitees ? "Masquer" : "Afficher"} l'historique ({traitees.length})
+        </button>
+      )}
+
+      {showTraitees && traitees.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {traitees.map((r) => (
+            <li key={r.id} className="rounded-lg border border-border bg-background/60 p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium text-foreground">{r.user_nom ?? "—"}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {r.user_email ?? "—"} · demandé le {fmtDate(r.created_at)}
+                    {r.traite_le && ` · traité le ${fmtDate(r.traite_le)}`}
+                  </div>
+                </div>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                    r.statut === "reactive"
+                      ? "bg-teal/15 text-teal"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {r.statut === "reactive" ? "Réactivé" : "Traité"}
+                </span>
+              </div>
+              <div className="mt-1.5 text-ink/80 whitespace-pre-wrap">{r.raison}</div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 
