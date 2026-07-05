@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Receipt, Download, ArrowLeft, Wallet, CalendarClock } from "lucide-react";
+import { Receipt, Download, ArrowLeft, Wallet, CalendarClock, Loader2, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { requireUserId } from "@/lib/queries/data";
 import { profilQueryOptions } from "@/lib/queries/profil";
