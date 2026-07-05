@@ -1,25 +1,59 @@
-// Liste des modifications / notes de version affichées dans la cloche de l'AppBar.
-// L'état lu/non-lu est persisté en base (table `notification_reads`) pour être
-// synchronisé entre appareils, avec :
-//  - fallback localStorage hors-ligne
-//  - abonnement Realtime pour propager immédiatement les changements
-//  - filtrage par catégorie selon les préférences locales
+// Centre de notifications :
+//  - Source STATIQUE : CHANGELOG (nouveautés produit), état lu/non-lu en base
+//    via `notification_reads`.
+//  - Source DYNAMIQUE : table `user_notifications` (événements ciblés par
+//    utilisateur : demandes de suppression, réactivations, etc.), état lu
+//    stocké directement dans `read_at`.
+//
+// Synchronisation temps réel entre appareils via Supabase Realtime.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNotificationsPrefs, type NotifCategory } from "@/lib/notifications-prefs";
+import {
+  useNotificationsPrefs,
+  type NotifCategory,
+} from "@/lib/notifications-prefs";
 
-export interface ChangelogEntry {
+export interface NotificationItem {
   id: string;
+  source: "static" | "dynamic";
   date: string; // ISO
   title: string;
   description: string;
   category: NotifCategory;
-  /** Route TanStack vers laquelle ouvrir la fonctionnalité concernée. */
+  href?: string;
+  read: boolean;
+}
+
+// -------- Source statique ---------------------------------------------------
+
+interface StaticEntry {
+  id: string;
+  date: string;
+  title: string;
+  description: string;
+  category: NotifCategory;
   href?: string;
 }
 
-export const CHANGELOG: ChangelogEntry[] = [
+export const CHANGELOG: StaticEntry[] = [
+  {
+    id: "2026-07-05-suspension-notifs",
+    date: "2026-07-05",
+    title: "Suspensions notifiées automatiquement",
+    description:
+      "Toute demande de suspension d'un compte apparaît dans les notifications de l'utilisateur et des administrateurs.",
+    category: "account",
+    href: "/parametres",
+  },
+  {
+    id: "2026-07-05-notifs-filter",
+    date: "2026-07-05",
+    title: "Filtre par catégorie",
+    description: "Filtrez la liste des notifications directement depuis la cloche.",
+    category: "feature",
+    href: "/parametres/notifications",
+  },
   {
     id: "2026-07-05-notifs-settings",
     date: "2026-07-05",
@@ -38,13 +72,6 @@ export const CHANGELOG: ChangelogEntry[] = [
     category: "feature",
   },
   {
-    id: "2026-07-05-notifs",
-    date: "2026-07-05",
-    title: "Centre de notifications",
-    description: "Une cloche affiche la liste des nouveautés de l'application.",
-    category: "feature",
-  },
-  {
     id: "2026-07-05-trial-no-invoice",
     date: "2026-07-05",
     title: "Essai sans facture",
@@ -54,30 +81,12 @@ export const CHANGELOG: ChangelogEntry[] = [
     href: "/admin/facturation",
   },
   {
-    id: "2026-07-05-whatsapp",
-    date: "2026-07-05",
-    title: "WhatsApp — demande de suppression",
-    description:
-      "L'administrateur peut contacter l'utilisateur sur WhatsApp depuis les demandes.",
-    category: "account",
-    href: "/admin",
-  },
-  {
     id: "2026-07-05-change-password",
     date: "2026-07-05",
     title: "Changer son mot de passe",
     description: "Modifiez votre mot de passe directement depuis « Mon profil ».",
     category: "account",
     href: "/mon-profil",
-  },
-  {
-    id: "2026-07-05-delete-account",
-    date: "2026-07-05",
-    title: "Demande de suppression de compte",
-    description:
-      "Depuis les paramètres, demandez la suspension de votre compte (réactivable par l'admin).",
-    category: "account",
-    href: "/parametres",
   },
 ];
 
@@ -101,11 +110,17 @@ function writeLocal(ids: string[]) {
   }
 }
 
-export function useChangelog() {
+function normalizeCategory(v: string | null | undefined): NotifCategory {
+  if (v === "feature" || v === "fix" || v === "account" || v === "billing") return v;
+  return "feature";
+}
+
+export function useNotificationCenter() {
   const qc = useQueryClient();
   const prefs = useNotificationsPrefs();
 
-  const { data: dbIds } = useQuery({
+  // ---- Statique : ids lus (par utilisateur) --------------------------------
+  const { data: readIds } = useQuery({
     queryKey: ["notification-reads"],
     staleTime: 60_000,
     queryFn: async (): Promise<string[]> => {
@@ -123,44 +138,76 @@ export function useChangelog() {
     },
   });
 
-  // Realtime — un canal par session, invalide la query dès qu'une ligne
-  // change côté serveur (par exemple depuis un autre appareil).
+  // ---- Dynamique : lignes user_notifications -------------------------------
+  const { data: dynamic = [] } = useQuery({
+    queryKey: ["user-notifications"],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!userRes.user) return [];
+      const { data, error } = await supabase
+        .from("user_notifications")
+        .select("id, title, body, category, href, read_at, created_at")
+        .eq("user_id", userRes.user.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) return [];
+      return data ?? [];
+    },
+  });
+
+  // ---- Realtime : invalide les deux queries à chaque changement ------------
   useEffect(() => {
     let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let ch1: ReturnType<typeof supabase.channel> | null = null;
+    let ch2: ReturnType<typeof supabase.channel> | null = null;
 
     (async () => {
       const { data: userRes } = await supabase.auth.getUser();
       if (cancelled || !userRes.user) return;
-      channel = supabase
-        .channel(`notification_reads:${userRes.user.id}`)
+      const uid = userRes.user.id;
+      ch1 = supabase
+        .channel(`notification_reads:${uid}`)
         .on(
           "postgres_changes",
           {
             event: "*",
             schema: "public",
             table: "notification_reads",
-            filter: `user_id=eq.${userRes.user.id}`,
+            filter: `user_id=eq.${uid}`,
           },
-          () => {
-            qc.invalidateQueries({ queryKey: ["notification-reads"] });
+          () => qc.invalidateQueries({ queryKey: ["notification-reads"] }),
+        )
+        .subscribe();
+      ch2 = supabase
+        .channel(`user_notifications:${uid}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "user_notifications",
+            filter: `user_id=eq.${uid}`,
           },
+          () => qc.invalidateQueries({ queryKey: ["user-notifications"] }),
         )
         .subscribe();
     })();
 
     return () => {
       cancelled = true;
-      if (channel) supabase.removeChannel(channel);
+      if (ch1) supabase.removeChannel(ch1);
+      if (ch2) supabase.removeChannel(ch2);
     };
   }, [qc]);
 
+  // Optimistic pour la partie statique
   const [optimistic, setOptimistic] = useState<Set<string>>(() => new Set(readLocal()));
   useEffect(() => {
-    if (dbIds) setOptimistic(new Set(dbIds));
-  }, [dbIds]);
+    if (readIds) setOptimistic(new Set(readIds));
+  }, [readIds]);
 
-  const markMutation = useMutation({
+  const upsertStaticRead = useMutation({
     mutationFn: async (ids: string[]) => {
       const { data: userRes } = await supabase.auth.getUser();
       if (!userRes.user) return;
@@ -173,45 +220,96 @@ export function useChangelog() {
         .upsert(rows, { onConflict: "user_id,notification_id" });
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["notification-reads"] });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notification-reads"] }),
   });
 
-  const markRead = useCallback(
-    (id: string) => {
-      setOptimistic((prev) => {
-        if (prev.has(id)) return prev;
-        const next = new Set(prev);
-        next.add(id);
-        writeLocal(Array.from(next));
-        return next;
-      });
-      markMutation.mutate([id]);
+  const markDynamicRead = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length === 0) return;
+      const { error } = await supabase
+        .from("user_notifications")
+        .update({ read_at: new Date().toISOString() })
+        .in("id", ids)
+        .is("read_at", null);
+      if (error) throw error;
     },
-    [markMutation],
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["user-notifications"] }),
+  });
+
+  // Fusion + filtrage par préférences
+  const allItems = useMemo<NotificationItem[]>(() => {
+    const staticItems: NotificationItem[] = CHANGELOG.map((e) => ({
+      id: e.id,
+      source: "static" as const,
+      date: e.date,
+      title: e.title,
+      description: e.description,
+      category: e.category,
+      href: e.href,
+      read: optimistic.has(e.id),
+    }));
+    const dynItems: NotificationItem[] = dynamic.map((r) => ({
+      id: r.id,
+      source: "dynamic" as const,
+      date: r.created_at,
+      title: r.title,
+      description: r.body ?? "",
+      category: normalizeCategory(r.category),
+      href: r.href ?? undefined,
+      read: r.read_at != null,
+    }));
+    const merged = [...dynItems, ...staticItems].sort((a, b) =>
+      a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
+    );
+    if (!prefs.enabled) return [];
+    return merged.filter((n) => prefs.categories[n.category]);
+  }, [dynamic, optimistic, prefs]);
+
+  const markRead = useCallback(
+    (item: NotificationItem) => {
+      if (item.read) return;
+      if (item.source === "static") {
+        setOptimistic((prev) => {
+          if (prev.has(item.id)) return prev;
+          const next = new Set(prev);
+          next.add(item.id);
+          writeLocal(Array.from(next));
+          return next;
+        });
+        upsertStaticRead.mutate([item.id]);
+      } else {
+        markDynamicRead.mutate([item.id]);
+      }
+    },
+    [upsertStaticRead, markDynamicRead],
   );
 
-  // Filtre par catégorie activée + désactivation globale
-  const visible = useMemo(() => {
-    if (!prefs.enabled) return [] as ChangelogEntry[];
-    return CHANGELOG.filter((e) => prefs.categories[e.category]);
-  }, [prefs]);
+  const markAllRead = useCallback(
+    (filter?: NotifCategory) => {
+      const target = filter ? allItems.filter((i) => i.category === filter) : allItems;
+      const staticIds = target.filter((i) => i.source === "static" && !i.read).map((i) => i.id);
+      const dynIds = target.filter((i) => i.source === "dynamic" && !i.read).map((i) => i.id);
+      if (staticIds.length > 0) {
+        setOptimistic((prev) => {
+          const next = new Set(prev);
+          for (const id of staticIds) next.add(id);
+          writeLocal(Array.from(next));
+          return next;
+        });
+        upsertStaticRead.mutate(staticIds);
+      }
+      if (dynIds.length > 0) markDynamicRead.mutate(dynIds);
+    },
+    [allItems, upsertStaticRead, markDynamicRead],
+  );
 
-  const markAllRead = useCallback(() => {
-    const all = visible.map((e) => e.id);
-    if (all.length === 0) return;
-    setOptimistic((prev) => {
-      const next = new Set(prev);
-      for (const id of all) next.add(id);
-      writeLocal(Array.from(next));
-      return next;
-    });
-    markMutation.mutate(all);
-  }, [markMutation, visible]);
+  const unreadCount = allItems.filter((n) => !n.read).length;
 
-  const entries = visible.map((e) => ({ ...e, read: optimistic.has(e.id) }));
-  const unreadCount = entries.filter((e) => !e.read).length;
-
-  return { entries, unreadCount, markRead, markAllRead, enabled: prefs.enabled };
+  return {
+    items: allItems,
+    unreadCount,
+    markRead,
+    markAllRead,
+    enabled: prefs.enabled,
+  };
 }
