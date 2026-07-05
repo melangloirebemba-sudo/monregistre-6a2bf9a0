@@ -29,7 +29,7 @@ async function getServerHelpers() {
   return mod;
 }
 
-async function checkAndLogSendAttempt(phone: string, purpose: string) {
+async function checkAndLogSendAttempt(phone: string, purpose: Purpose) {
   const admin = await getAdmin();
   const nowIso = new Date().toISOString();
   const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -69,7 +69,7 @@ async function checkAndLogSendAttempt(phone: string, purpose: string) {
 
 async function insertOtp(params: {
   phone: string;
-  purpose: string;
+  purpose: Purpose;
   userId: string | null;
   metadata?: Record<string, unknown>;
 }) {
@@ -91,7 +91,7 @@ async function insertOtp(params: {
     code_hash: hashOtpCode(code),
     max_attempts: MAX_ATTEMPTS,
     expires_at: expiresAt,
-    metadata: params.metadata ?? {},
+    metadata: (params.metadata ?? {}) as never,
   });
   if (error) throw new Error(error.message);
   return code;
@@ -99,7 +99,7 @@ async function insertOtp(params: {
 
 async function verifyOtp(params: {
   phone: string;
-  purpose: string;
+  purpose: Purpose;
   code: string;
 }): Promise<{ userId: string | null; metadata: Record<string, unknown> }> {
   const { hashOtpCode } = await getServerHelpers();
