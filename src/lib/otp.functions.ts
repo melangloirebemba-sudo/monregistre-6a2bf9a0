@@ -215,12 +215,15 @@ export const resetPasswordWithOtp = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
 
-    // Audit
-    await admin.from("admin_password_changes").insert({
-      user_id: userId,
-      changed_by: userId,
-      source: "otp-reset",
-    }).select();
+    // Audit (best-effort — do not fail the reset if audit insert errors)
+    await admin
+      .from("admin_password_changes")
+      .insert({
+        user_id: userId,
+        changed_by: userId,
+        source: "reset",
+      })
+      .then(() => undefined, () => undefined);
 
     return { ok: true as const };
   });
