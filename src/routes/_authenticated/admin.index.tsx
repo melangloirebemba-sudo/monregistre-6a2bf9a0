@@ -579,6 +579,23 @@ function DeletionRequestsSection() {
     },
   });
 
+  const userIds = data.map((r) => r.user_id);
+  const { data: phones = {} } = useQuery({
+    queryKey: ["admin", "deletion-phones", userIds.sort().join(",")],
+    enabled: userIds.length > 0,
+    staleTime: 60_000,
+    queryFn: async (): Promise<Record<string, string | null>> => {
+      const { data, error } = await supabase
+        .from("profils_enseignant")
+        .select("user_id, telephone")
+        .in("user_id", userIds);
+      if (error) throw error;
+      const map: Record<string, string | null> = {};
+      for (const row of data ?? []) map[row.user_id] = row.telephone;
+      return map;
+    },
+  });
+
   const pending = data.filter((r) => r.statut === "en_attente");
   const traitees = data.filter((r) => r.statut !== "en_attente");
 
