@@ -160,6 +160,16 @@ function AdminDashboard() {
             </div>
           </section>
 
+          {/* État des abonnements — actifs / à renouveler / expirés */}
+          <PlansStatusSection
+            actifs={actifs}
+            bientot={bientot}
+            expires={expires}
+            loading={loadingPlans}
+          />
+
+
+
           {/* Données globales (agrégées, aucune donnée nominative) */}
           <section>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
