@@ -35,6 +35,7 @@ type Paiement = {
   plan_expires_at: string | null;
   moyen_paiement: string;
   note: string | null;
+  pdf_path: string | null;
 };
 
 function RecuPdfPage() {
