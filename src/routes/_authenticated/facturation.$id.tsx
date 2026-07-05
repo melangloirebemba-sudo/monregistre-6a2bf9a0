@@ -1,13 +1,33 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Loader2, Receipt, CalendarClock, Wallet, CreditCard, FileText, RotateCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Receipt,
+  CalendarClock,
+  Wallet,
+  CreditCard,
+  FileText,
+  RotateCw,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  ExternalLink,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { requireUserId } from "@/lib/queries/data";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { Button } from "@/components/ui/button";
-import { generateRecuPaiementPDF, formatMontantXAF } from "@/lib/pdf/recu-paiement";
+import { formatMontantXAF, type RecuPaiementContext } from "@/lib/pdf/recu-paiement";
+import {
+  downloadCachedRecu,
+  ensureRecuPDF,
+  invalidateRecu,
+  useRecuEntry,
+} from "@/lib/pdf/recu-cache";
 
 export const Route = createFileRoute("/_authenticated/facturation/$id")({
   head: () => ({ meta: [{ title: "Détails du reçu — MonRegistre" }] }),
