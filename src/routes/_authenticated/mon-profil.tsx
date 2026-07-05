@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { UserCircle2 } from "lucide-react";
+import { UserCircle2, KeyRound } from "lucide-react";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { requireUserId } from "@/lib/queries/data";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/mon-profil")({
