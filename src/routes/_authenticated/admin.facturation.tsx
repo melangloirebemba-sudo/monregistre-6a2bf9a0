@@ -300,5 +300,3 @@ function Kpi({
   );
 }
 
-// Silence unused import in some tree-shakers
-void TrendingUp;
