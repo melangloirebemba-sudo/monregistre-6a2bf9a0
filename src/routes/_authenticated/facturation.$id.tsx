@@ -117,10 +117,10 @@ function RecuDetailsPage() {
   useEffect(() => {
     if (!pdfCtx) return;
     if (pdfEntry.status === "ready" || pdfEntry.status === "generating" || pdfEntry.status === "pending") return;
-    ensureRecuPDF(id, pdfCtx).catch(() => {
+    ensureRecuPDF(id, pdfCtx, { pdfPath: paiement?.pdf_path ?? null }).catch(() => {
       /* status is written to the store; UI reacts via useRecuEntry */
     });
-  }, [id, pdfCtx, pdfEntry.status]);
+  }, [id, pdfCtx, pdfEntry.status, paiement?.pdf_path]);
 
   async function handleDownload() {
     if (!pdfCtx) return;
@@ -130,7 +130,7 @@ function RecuDetailsPage() {
       return;
     }
     try {
-      await ensureRecuPDF(id, pdfCtx);
+      await ensureRecuPDF(id, pdfCtx, { pdfPath: paiement?.pdf_path ?? null });
       if (downloadCachedRecu(id)) {
         toast.success("Reçu téléchargé", { description: `N° ${pdfCtx.numero_recu}` });
       }
