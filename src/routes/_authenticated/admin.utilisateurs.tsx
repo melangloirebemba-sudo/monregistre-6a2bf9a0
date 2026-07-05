@@ -280,7 +280,7 @@ function AdminContent() {
           <div className="p-4">
             <NoResults
               query={q}
-              onReset={q ? () => setQ("") : undefined}
+              onReset={q || planFilter !== "all" ? () => { setQ(""); setPlanFilter("all"); } : undefined}
               resetLabel="Effacer la recherche"
               title={users.length === 0 ? "Aucun utilisateur" : "Aucun résultat"}
               description={
