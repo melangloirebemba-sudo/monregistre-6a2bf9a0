@@ -12,6 +12,7 @@ import { DataPagination, usePagination } from "@/components/ui/data-pagination";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -128,11 +129,11 @@ function AdminContent() {
   });
 
   const activatePlan = useMutation({
-    mutationFn: (v: { userId: string; plan: "lite" | "premium"; periode: PlanPeriode }) =>
-      adminApi.activatePlan(v.userId, v.plan, v.periode),
+    mutationFn: (v: { userId: string; plan: "lite" | "premium"; periode: PlanPeriode; trial: boolean; trialDays: number }) =>
+      adminApi.activatePlan(v.userId, v.plan, v.periode, v.trial ? { trial: true, trialDays: v.trialDays } : undefined),
     onSuccess: (r, v) => {
       const d = new Date(r.plan_expires_at).toLocaleDateString("fr-FR");
-      toast.success(`Plan activé — expire le ${d}`);
+      toast.success(v.trial ? `Essai activé — expire le ${d}` : `Plan activé — expire le ${d}`);
       invalidate();
       qc.invalidateQueries({ queryKey: ["admin-activations", v.userId] });
     },
@@ -173,6 +174,8 @@ function AdminContent() {
   const [activateTarget, setActivateTarget] = useState<AdminUser | null>(null);
   const [activatePlanChoice, setActivatePlanChoice] = useState<"lite" | "premium">("lite");
   const [activatePeriodeChoice, setActivatePeriodeChoice] = useState<PlanPeriode>("mensuelle");
+  const [activateTrial, setActivateTrial] = useState(false);
+  const [activateTrialDays, setActivateTrialDays] = useState("14");
   const [historyTarget, setHistoryTarget] = useState<AdminUser | null>(null);
 
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
@@ -596,13 +599,44 @@ function AdminContent() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="rounded-lg border border-border bg-background/60 p-3 space-y-2">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={activateTrial}
+                  onCheckedChange={(v) => setActivateTrial(v === true)}
+                  id="activate-trial"
+                />
+                <span className="font-medium">Période d'essai (gratuite)</span>
+              </label>
+              {activateTrial && (
+                <div className="pl-6 space-y-1.5">
+                  <Label htmlFor="activate-trial-days" className="text-xs text-muted-foreground">
+                    Durée d'essai (jours)
+                  </Label>
+                  <Input
+                    id="activate-trial-days"
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={activateTrialDays}
+                    onChange={(e) => setActivateTrialDays(e.target.value)}
+                    className="max-w-[140px]"
+                  />
+                </div>
+              )}
+            </div>
+
             <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-ink/80">
               {(() => {
-                const days = activatePeriodeChoice === "mensuelle" ? 30 : activatePeriodeChoice === "trimestrielle" ? 90 : 300;
+                const days = activateTrial
+                  ? Math.max(1, Math.floor(Number(activateTrialDays) || 0))
+                  : (activatePeriodeChoice === "mensuelle" ? 30 : activatePeriodeChoice === "trimestrielle" ? 90 : 300);
                 const exp = new Date(Date.now() + days * 86_400_000).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
                 return (
                   <>
-                    Récapitulatif : plan <strong>{PLAN_LABELS[activatePlanChoice]}</strong> pour <strong>{days} jours</strong> — expire le <strong>{exp}</strong>.
+                    Récapitulatif : {activateTrial ? <><strong>essai gratuit</strong> du plan </> : "plan "}
+                    <strong>{PLAN_LABELS[activatePlanChoice]}</strong> pour <strong>{days} jours</strong> — expire le <strong>{exp}</strong>.
                   </>
                 );
               })()}
@@ -611,16 +645,23 @@ function AdminContent() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setActivateTarget(null)}>Annuler</Button>
             <Button
-              disabled={activatePlan.isPending}
+              disabled={activatePlan.isPending || (activateTrial && !(Number(activateTrialDays) >= 1 && Number(activateTrialDays) <= 365))}
               onClick={() => {
                 if (!activateTarget) return;
+                const trialDays = Math.floor(Number(activateTrialDays) || 0);
                 activatePlan.mutate(
-                  { userId: activateTarget.id, plan: activatePlanChoice, periode: activatePeriodeChoice },
+                  {
+                    userId: activateTarget.id,
+                    plan: activatePlanChoice,
+                    periode: activatePeriodeChoice,
+                    trial: activateTrial,
+                    trialDays,
+                  },
                   { onSuccess: () => setActivateTarget(null) },
                 );
               }}
             >
-              {activatePlan.isPending ? "Activation…" : "Confirmer l'activation"}
+              {activatePlan.isPending ? "Activation…" : activateTrial ? "Démarrer l'essai" : "Confirmer l'activation"}
             </Button>
           </DialogFooter>
         </DialogContent>

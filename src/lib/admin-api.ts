@@ -66,8 +66,18 @@ export const adminApi = {
   listUsers: () => callAdminApi<{ users: AdminUser[] }>("listUsers").then((r) => r.users),
   updatePlan: (userId: string, plan: "gratuit" | "lite" | "premium") =>
     callAdminApi<{ ok: true }>("updatePlan", { userId, plan }),
-  activatePlan: (userId: string, plan: "lite" | "premium", periode: PlanPeriode, note?: string) =>
-    callAdminApi<{ ok: true; plan_expires_at: string }>("activatePlan", { userId, plan, periode, note }),
+  activatePlan: (
+    userId: string,
+    plan: "lite" | "premium",
+    periode: PlanPeriode,
+    opts?: { note?: string; trial?: boolean; trialDays?: number },
+  ) =>
+    callAdminApi<{ ok: true; plan_expires_at: string }>("activatePlan", {
+      userId, plan, periode,
+      note: opts?.note,
+      trial: opts?.trial ?? false,
+      trialDays: opts?.trialDays,
+    }),
   activationsList: (userId: string) =>
     callAdminApi<{ activations: PlanActivation[] }>("activations.list", { userId }).then((r) => r.activations),
   setSuspension: (userId: string, suspendre: boolean) =>

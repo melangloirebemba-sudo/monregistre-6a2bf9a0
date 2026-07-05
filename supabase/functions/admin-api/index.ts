@@ -97,12 +97,21 @@ Deno.serve(async (req) => {
       }
 
       case "activatePlan": {
-        const { userId, plan, periode, note, montant: montantOverride, moyen_paiement } = payload;
+        const { userId, plan, periode, note, montant: montantOverride, moyen_paiement, trial, trialDays } = payload;
         if (!userId || !["lite", "premium"].includes(plan))
           return json({ error: "Plan invalide (lite ou premium)" }, 400);
         if (!["mensuelle", "trimestrielle", "annuelle"].includes(periode))
           return json({ error: "Période invalide" }, 400);
-        const days = periode === "mensuelle" ? 30 : periode === "trimestrielle" ? 90 : 300;
+        const isTrial = trial === true;
+        let days: number;
+        if (isTrial) {
+          const n = Math.floor(Number(trialDays));
+          if (!Number.isFinite(n) || n < 1 || n > 365)
+            return json({ error: "Durée d'essai invalide (1 à 365 jours)" }, 400);
+          days = n;
+        } else {
+          days = periode === "mensuelle" ? 30 : periode === "trimestrielle" ? 90 : 300;
+        }
         const now = new Date();
         const expiresAt = new Date(now.getTime() + days * 86_400_000);
         const { error } = await admin.from("profils_enseignant").update({
@@ -113,6 +122,10 @@ Deno.serve(async (req) => {
           statut: "actif",
         }).eq("user_id", userId);
         if (error) throw error;
+        const trialNote = isTrial ? `Période d'essai (${days} j)` : null;
+        const finalNote = [trialNote, typeof note === "string" && note.trim() ? note.trim() : null]
+          .filter(Boolean)
+          .join(" — ") || null;
         // Journal d'historique
         const { data: activationRow, error: logErr } = await admin
           .from("plan_activations")
@@ -124,15 +137,17 @@ Deno.serve(async (req) => {
             plan_expires_at: expiresAt.toISOString(),
             activated_by: uid,
             activated_by_email: userRes.user.email ?? null,
-            note: typeof note === "string" && note.trim() ? note.trim() : null,
+            note: finalNote,
           })
           .select("id")
           .single();
         if (logErr) console.error("[admin-api] plan_activations insert failed", logErr.message);
 
-        // Reçu de paiement : récupère le prix courant si aucun override
+        // Reçu de paiement : gratuit pour un essai, sinon prix courant ou override
         let montant = 0;
-        if (typeof montantOverride === "number" && montantOverride >= 0) {
+        if (isTrial) {
+          montant = 0;
+        } else if (typeof montantOverride === "number" && montantOverride >= 0) {
           montant = Math.floor(montantOverride);
         } else {
           const { data: priceRow } = await admin
@@ -152,8 +167,10 @@ Deno.serve(async (req) => {
           devise: "XAF",
           paye_le: now.toISOString(),
           plan_expires_at: expiresAt.toISOString(),
-          moyen_paiement: typeof moyen_paiement === "string" && moyen_paiement.trim() ? moyen_paiement.trim() : "manuel",
-          note: typeof note === "string" && note.trim() ? note.trim() : null,
+          moyen_paiement: isTrial
+            ? "essai"
+            : (typeof moyen_paiement === "string" && moyen_paiement.trim() ? moyen_paiement.trim() : "manuel"),
+          note: finalNote,
           created_by: uid,
         });
         if (payErr) console.error("[admin-api] paiements insert failed", payErr.message);
