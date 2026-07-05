@@ -171,6 +171,9 @@ function AdminDashboard() {
             loading={loadingPlans}
           />
 
+          <DeletionRequestsSection />
+
+
 
 
           {/* Données globales (agrégées, aucune donnée nominative) */}
