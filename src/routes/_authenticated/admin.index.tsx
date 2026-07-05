@@ -23,6 +23,8 @@ import {
   MessageCircle,
   ChevronDown,
   ChevronUp,
+  UserX,
+  CheckCheck,
 } from "lucide-react";
 import { adminApi } from "@/lib/admin-api";
 import { supabase } from "@/integrations/supabase/client";
