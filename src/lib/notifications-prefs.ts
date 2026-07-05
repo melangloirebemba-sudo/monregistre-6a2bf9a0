@@ -150,6 +150,7 @@ export function useNotificationsPrefs(): NotificationsPrefs {
   // pour restaurer les préférences après un rechargement / sur un autre appareil.
   useEffect(() => {
     let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     const hydrate = async () => {
       const remote = await fetchRemotePrefs();
       if (cancelled || !remote) return;
@@ -160,7 +161,37 @@ export function useNotificationsPrefs(): NotificationsPrefs {
         emitChange();
       }
     };
+    const setupRealtime = async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      if (cancelled || !userRes.user) return;
+      const uid = userRes.user.id;
+      channel = supabase
+        .channel(`prefs:${uid}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "profils_enseignant",
+            filter: `user_id=eq.${uid}`,
+          },
+          (payload) => {
+            const next = (payload.new as { notifications_prefs?: unknown } | null)
+              ?.notifications_prefs;
+            if (!next) return;
+            const coerced = coerce(next);
+            const local = readCache();
+            if (JSON.stringify(local) !== JSON.stringify(coerced)) {
+              writeCache(coerced);
+              setPrefs(coerced);
+              emitChange();
+            }
+          },
+        )
+        .subscribe();
+    };
     void hydrate();
+    void setupRealtime();
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
         void hydrate();
@@ -169,6 +200,7 @@ export function useNotificationsPrefs(): NotificationsPrefs {
     return () => {
       cancelled = true;
       sub.subscription.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
     };
   }, []);
 
