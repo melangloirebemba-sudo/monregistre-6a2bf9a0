@@ -186,7 +186,9 @@ export function AppShell({ children }: AppShellProps) {
             </div>
           </div>
 
-          <DropdownMenu>
+          <div className="flex items-center gap-1">
+            <NotificationsBell variant="topbar" />
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 aria-label="Menu du profil"
