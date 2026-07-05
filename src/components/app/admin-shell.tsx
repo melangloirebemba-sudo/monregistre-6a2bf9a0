@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { NotificationsBell } from "@/components/app/notifications-bell";
 import { toast } from "sonner";
 
 interface AdminShellProps {
