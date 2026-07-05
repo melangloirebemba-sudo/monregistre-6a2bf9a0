@@ -93,9 +93,7 @@ function FacturationPage() {
     if (downloadingId) return;
     setDownloadingId(r.id);
     try {
-      // Yield a frame so the loader is visible before jsPDF blocks the main thread.
-      await new Promise((res) => setTimeout(res, 30));
-      generateRecuPaiementPDF({
+      await ensureRecuPDF(r.id, {
         numero_recu: r.numero_recu,
         paye_le: r.paye_le,
         plan: r.plan,
@@ -110,10 +108,12 @@ function FacturationPage() {
           email: profil?.email ?? null,
         },
       });
+      downloadCachedRecu(r.id);
     } finally {
       setDownloadingId(null);
     }
   }
+
 
   const hasQuery = q.trim().length > 0 || planFilter !== "all";
 
