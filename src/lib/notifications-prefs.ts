@@ -24,16 +24,20 @@ export const REMINDER_FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
   weekly: "Une fois par semaine",
 };
 
+export type DefaultFilter = "all" | NotifCategory;
+
 export interface NotificationsPrefs {
   enabled: boolean;
   categories: Record<NotifCategory, boolean>;
   reminderFrequency: ReminderFrequency;
+  defaultFilter: DefaultFilter;
 }
 
 export const DEFAULT_NOTIFICATIONS_PREFS: NotificationsPrefs = {
   enabled: true,
   categories: { feature: true, fix: true, account: true, billing: true },
   reminderFrequency: "daily",
+  defaultFilter: "all",
 };
 
 const STORAGE_KEY = "monregistre.notificationsPrefs";
