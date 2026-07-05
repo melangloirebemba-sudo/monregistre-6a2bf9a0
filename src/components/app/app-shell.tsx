@@ -29,6 +29,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { OfflineIndicator } from "@/components/app/offline-indicator";
+import { NotificationsBell } from "@/components/app/notifications-bell";
 import { toast } from "sonner";
 
 interface AppShellProps {
