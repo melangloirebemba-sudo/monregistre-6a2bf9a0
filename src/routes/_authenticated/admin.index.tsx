@@ -325,7 +325,7 @@ function buildReminderMessage(p: PlanRow, tone: "renouvellement" | "expire"): st
       `Bonjour ${nom},`,
       "",
       `Votre abonnement MonRegistre (plan ${planLabel}) a expiré le ${dateStr}.`,
-      "Pour continuer à profiter de toutes les fonctionnalités, merci de procéder au renouvellement.`,`,
+      "Pour continuer à profiter de toutes les fonctionnalités, merci de procéder au renouvellement.",
       "",
       "L'équipe MonRegistre.",
     ].join("\n");
