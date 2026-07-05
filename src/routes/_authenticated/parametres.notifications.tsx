@@ -150,8 +150,7 @@ function NotificationsPrefsPage() {
           </Select>
         </div>
       </section>
-
-
+      <section
         className={`mt-4 rounded-2xl border border-border bg-card p-5 shadow-soft ${!prefs.enabled ? "opacity-60" : ""}`}
       >
         <h2 className="text-sm font-semibold text-foreground">Fréquence des rappels</h2>
