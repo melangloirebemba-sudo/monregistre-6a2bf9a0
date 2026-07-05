@@ -53,6 +53,7 @@ function AdminContent() {
 
 
   const [q, setQ] = useState("");
+  const [planFilter, setPlanFilter] = useState<"all" | AppPlan>("all");
   type SortKey = "nom" | "email" | "plan" | "statut" | "created";
   const [sortKey, setSortKey] = useState<SortKey>("nom");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -78,13 +79,17 @@ function AdminContent() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    const base = !term
-      ? users
-      : users.filter(
-          (u) =>
-            u.email.toLowerCase().includes(term) ||
-            (u.nom_affiche ?? "").toLowerCase().includes(term),
-        );
+    let base = users;
+    if (planFilter !== "all") {
+      base = base.filter((u) => u.plan === planFilter);
+    }
+    if (term) {
+      base = base.filter(
+        (u) =>
+          u.email.toLowerCase().includes(term) ||
+          (u.nom_affiche ?? "").toLowerCase().includes(term),
+      );
+    }
     const collator = new Intl.Collator("fr", { sensitivity: "base" });
     const cmp = (a: AdminUser, b: AdminUser) => {
       switch (sortKey) {
@@ -103,9 +108,9 @@ function AdminContent() {
     };
     const sorted = [...base].sort(cmp);
     return sortDir === "asc" ? sorted : sorted.reverse();
-  }, [users, q, sortKey, sortDir]);
+  }, [users, q, planFilter, sortKey, sortDir]);
 
-  const pg = usePagination(filtered.length, 20, [q, sortKey, sortDir]);
+  const pg = usePagination(filtered.length, 20, [q, planFilter, sortKey, sortDir]);
   const paged = pg.slice(filtered);
 
 
@@ -220,23 +225,45 @@ function AdminContent() {
         <Stat label="Suspendus" value={stats.suspendus} tone={stats.suspendus > 0 ? "warn" : undefined} />
       </div>
 
-      {/* Recherche */}
+      {/* Recherche & filtres */}
       <div className="card-elevated p-4">
-        <div className="relative">
-          <Label htmlFor="admin-users-search" className="sr-only">
-            Rechercher un utilisateur
-          </Label>
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="admin-users-search"
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher par email ou nom…"
-            className="pl-9"
-          />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1">
+            <Label htmlFor="admin-users-search" className="sr-only">
+              Rechercher un utilisateur
+            </Label>
+            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="admin-users-search"
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Rechercher par email ou nom…"
+              className="pl-9"
+            />
+          </div>
+          <div className="sm:w-52">
+            <Label htmlFor="admin-users-plan-filter" className="sr-only">
+              Filtrer par plan
+            </Label>
+            <Select
+              value={planFilter}
+              onValueChange={(v) => setPlanFilter(v as typeof planFilter)}
+            >
+              <SelectTrigger id="admin-users-plan-filter" aria-label="Filtrer par plan">
+                <SelectValue placeholder="Tous les plans" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les plans</SelectItem>
+                <SelectItem value="gratuit">{PLAN_LABELS.gratuit}</SelectItem>
+                <SelectItem value="lite">{PLAN_LABELS.lite}</SelectItem>
+                <SelectItem value="premium">{PLAN_LABELS.premium}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
+
 
       {/* Annonce de tri (lecteurs d'écran) */}
       <p className="sr-only" role="status" aria-live="polite">{sortMsg}</p>
@@ -253,7 +280,7 @@ function AdminContent() {
           <div className="p-4">
             <NoResults
               query={q}
-              onReset={q ? () => setQ("") : undefined}
+              onReset={q || planFilter !== "all" ? () => { setQ(""); setPlanFilter("all"); } : undefined}
               resetLabel="Effacer la recherche"
               title={users.length === 0 ? "Aucun utilisateur" : "Aucun résultat"}
               description={
