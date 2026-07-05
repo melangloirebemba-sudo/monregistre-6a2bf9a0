@@ -87,10 +87,11 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
     };
   }, [open]);
 
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Toast pour toute nouvelle notification (activée par les préférences) qui
-  // arrive alors qu'aucune cloche n'est ouverte.
+  // arrive alors qu'aucune cloche n'est ouverte. Les rafales Realtime sont
+  // coalescées dans une fenêtre courte pour éviter les doublons.
   useEffect(() => {
     if (!enabled) return;
     if (!toastInit) {
@@ -99,32 +100,44 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
       toastInit = true;
       return;
     }
-    const fresh = items.filter((it) => {
+    let queued = false;
+    for (const it of items) {
       const key = `${it.source}:${it.id}`;
-      if (seenIds.has(key)) return false;
+      if (seenIds.has(key)) continue;
       seenIds.add(key);
-      return !it.read && prefs.categories[it.category];
-    });
-    if (fresh.length === 0 || bellOpenCount > 0) return;
-    // Une seule instance de la cloche déclenche le toast (l'autre passera
-    // par `seenIds` et n'affichera rien).
-    const first = fresh[0];
-    if (fresh.length === 1) {
-      toast(first.title, {
-        description: first.description || undefined,
-        action: first.href
-          ? {
-              label: "Ouvrir",
-              onClick: () => navigate({ to: first.href! }),
-            }
-          : undefined,
-      });
-    } else {
-      toast(`${fresh.length} nouvelles notifications`, {
-        description: first.title,
-      });
+      if (it.read || !prefs.categories[it.category]) continue;
+      pending.set(key, it);
+      queued = true;
     }
-  }, [items, enabled, prefs.categories, navigate]);
+    if (!queued) return;
+
+    if (flushTimer) return; // un flush est déjà programmé
+    flushTimer = setTimeout(() => {
+      flushTimer = null;
+      const batch = Array.from(pending.values());
+      pending.clear();
+      if (batch.length === 0 || bellOpenCount > 0) return;
+      const first = batch[0];
+      if (batch.length === 1) {
+        toast(first.title, {
+          id: `notif:${first.source}:${first.id}`,
+          description: first.description || undefined,
+          action: first.href
+            ? {
+                label: "Ouvrir",
+                onClick: () => router.navigate({ href: first.href! }),
+              }
+            : undefined,
+        });
+      } else {
+        toast(`${batch.length} nouvelles notifications`, {
+          id: `notif:bulk:${batch.map((b) => `${b.source}:${b.id}`).sort().join(",")}`,
+          description: first.title,
+        });
+      }
+    }, 250);
+  }, [items, enabled, prefs.categories, router]);
+
 
   // Chips visibles : seulement les catégories activées dans les préférences.
   const activeCats = (Object.keys(prefs.categories) as NotifCategory[]).filter(
