@@ -142,7 +142,9 @@ export function AdminShell({ children }: AdminShellProps) {
             </div>
           </div>
 
-          <DropdownMenu>
+          <div className="flex items-center gap-1">
+            <NotificationsBell variant="topbar" />
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
