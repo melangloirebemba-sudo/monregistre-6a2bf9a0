@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, CheckCheck, Settings2, ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -36,7 +36,23 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
   const { items, unreadCount, markRead, markAllRead, enabled } =
     useNotificationCenter();
   const prefs = useNotificationsPrefs();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(prefs.defaultFilter);
+
+  // Si la catégorie par défaut change (via réglages ou realtime) et qu'elle
+  // est encore activée, on aligne le filtre affiché.
+  useEffect(() => {
+    if (prefs.defaultFilter === "all" || prefs.categories[prefs.defaultFilter]) {
+      setFilter(prefs.defaultFilter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs.defaultFilter]);
+
+  // Si la catégorie active a été désactivée entre-temps, retomber sur « Toutes ».
+  useEffect(() => {
+    if (filter !== "all" && !prefs.categories[filter]) {
+      setFilter("all");
+    }
+  }, [prefs.categories, filter]);
 
   // Chips affichées : seulement les catégories activées dans les préférences.
   const activeCats = (Object.keys(prefs.categories) as NotifCategory[]).filter(

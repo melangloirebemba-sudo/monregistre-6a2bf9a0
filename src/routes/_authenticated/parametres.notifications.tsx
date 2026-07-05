@@ -19,6 +19,7 @@ import {
   DEFAULT_NOTIFICATIONS_PREFS,
   type NotifCategory,
   type ReminderFrequency,
+  type DefaultFilter,
 } from "@/lib/notifications-prefs";
 
 export const Route = createFileRoute("/_authenticated/parametres/notifications")({
@@ -120,6 +121,35 @@ function NotificationsPrefsPage() {
         </div>
       </section>
 
+      <section
+        className={`mt-4 rounded-2xl border border-border bg-card p-5 shadow-soft ${!prefs.enabled ? "opacity-60" : ""}`}
+      >
+        <h2 className="text-sm font-semibold text-foreground">Filtre par défaut dans la cloche</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Catégorie sélectionnée à l'ouverture de la cloche.
+        </p>
+        <div className="mt-4">
+          <Select
+            value={prefs.defaultFilter}
+            disabled={!prefs.enabled}
+            onValueChange={(v) =>
+              setNotificationsPrefs({ defaultFilter: v as DefaultFilter })
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes les catégories</SelectItem>
+              {CATEGORY_ORDER.filter((c) => prefs.categories[c]).map((c) => (
+                <SelectItem key={c} value={c}>
+                  {NOTIF_CATEGORY_LABELS[c]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </section>
       <section
         className={`mt-4 rounded-2xl border border-border bg-card p-5 shadow-soft ${!prefs.enabled ? "opacity-60" : ""}`}
       >
