@@ -213,6 +213,7 @@ function SignUpForm({ onDone }: { onDone: () => void }) {
           onChange={(e) => setTelephone(e.target.value)}
           placeholder="+242 06 000 00 00"
         />
+      </div>
       <div className="space-y-2">
         <Label htmlFor="su-password">Mot de passe</Label>
         <Input
