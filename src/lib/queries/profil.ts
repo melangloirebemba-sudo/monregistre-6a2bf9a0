@@ -14,6 +14,8 @@ export interface Profil {
   prenom: string | null;
   nom_famille: string | null;
   telephone: string | null;
+  telephone_verifie: boolean;
+  telephone_verifie_le: string | null;
   email: string | null;
   matiere_principale: string | null;
   etablissement: string | null;

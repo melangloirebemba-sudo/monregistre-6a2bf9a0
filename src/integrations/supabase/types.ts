@@ -508,6 +508,78 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          max_attempts: number
+          metadata: Json
+          phone: string
+          purpose: Database["public"]["Enums"]["otp_purpose"]
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          max_attempts?: number
+          metadata?: Json
+          phone: string
+          purpose: Database["public"]["Enums"]["otp_purpose"]
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          max_attempts?: number
+          metadata?: Json
+          phone?: string
+          purpose?: Database["public"]["Enums"]["otp_purpose"]
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      otp_send_log: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          ip: string | null
+          phone: string
+          purpose: Database["public"]["Enums"]["otp_purpose"]
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          ip?: string | null
+          phone: string
+          purpose: Database["public"]["Enums"]["otp_purpose"]
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          ip?: string | null
+          phone?: string
+          purpose?: Database["public"]["Enums"]["otp_purpose"]
+          status?: string
+        }
+        Relationships: []
+      }
       paiements: {
         Row: {
           created_at: string
@@ -722,6 +794,8 @@ export type Database = {
           prenom: string | null
           statut: Database["public"]["Enums"]["user_statut"]
           telephone: string | null
+          telephone_verifie: boolean
+          telephone_verifie_le: string | null
           updated_at: string
           user_id: string
         }
@@ -744,6 +818,8 @@ export type Database = {
           prenom?: string | null
           statut?: Database["public"]["Enums"]["user_statut"]
           telephone?: string | null
+          telephone_verifie?: boolean
+          telephone_verifie_le?: string | null
           updated_at?: string
           user_id: string
         }
@@ -766,6 +842,8 @@ export type Database = {
           prenom?: string | null
           statut?: Database["public"]["Enums"]["user_statut"]
           telephone?: string | null
+          telephone_verifie?: boolean
+          telephone_verifie_le?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -921,6 +999,7 @@ export type Database = {
     Enums: {
       app_plan: "gratuit" | "lite" | "premium"
       app_role: "admin" | "user"
+      otp_purpose: "password_reset" | "phone_verification" | "phone_change"
       plan_periode: "mensuelle" | "trimestrielle" | "annuelle"
       user_statut: "actif" | "suspendu"
     }
@@ -1052,6 +1131,7 @@ export const Constants = {
     Enums: {
       app_plan: ["gratuit", "lite", "premium"],
       app_role: ["admin", "user"],
+      otp_purpose: ["password_reset", "phone_verification", "phone_change"],
       plan_periode: ["mensuelle", "trimestrielle", "annuelle"],
       user_statut: ["actif", "suspendu"],
     },

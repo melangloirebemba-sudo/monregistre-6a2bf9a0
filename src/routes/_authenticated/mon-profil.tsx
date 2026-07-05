@@ -1,13 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { UserCircle2, KeyRound } from "lucide-react";
+import { UserCircle2, KeyRound, ShieldCheck, ShieldAlert, MessageSquare } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { requireUserId } from "@/lib/queries/data";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  requestPhoneVerificationOtp,
+  confirmPhoneVerification,
+  requestPhoneChangeOtp,
+  confirmPhoneChange,
+} from "@/lib/otp.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OtpCodeInput } from "@/components/app/otp-code-input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 import { toast } from "sonner";
 
@@ -28,6 +44,10 @@ function MonProfilPage() {
   const [etablissement, setEtablissement] = useState("");
   const [initiales, setInitiales] = useState("");
 
+  // Phone verification / change dialogs
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  const [changeOpen, setChangeOpen] = useState(false);
+
   useEffect(() => {
     if (!profil) return;
     setPrenom(profil.prenom ?? "");
@@ -39,6 +59,10 @@ function MonProfilPage() {
     setInitiales(profil.initiales ?? "");
   }, [profil]);
 
+  const currentPhone = profil?.telephone ?? "";
+  const isVerified = !!profil?.telephone_verifie;
+  const phoneChanged = telephone.trim() !== (currentPhone ?? "").trim();
+
   const save = useMutation({
     mutationFn: async () => {
       const uid = await requireUserId();
@@ -47,10 +71,10 @@ function MonProfilPage() {
         initiales.trim().slice(0, 2).toUpperCase() ||
         `${prenom.trim().charAt(0)}${nomFamille.trim().charAt(0)}`.toUpperCase() ||
         "EM";
+      // Do NOT include telephone in this patch — phone changes go through OTP flow.
       const patch = {
         prenom: prenom.trim() || null,
         nom_famille: nomFamille.trim() || null,
-        telephone: telephone.trim() || null,
         email: email.trim() || null,
         matiere_principale: matiere.trim() || null,
         etablissement: etablissement.trim() || null,
@@ -99,11 +123,44 @@ function MonProfilPage() {
             {matiere || "Enseignant"}
             {etablissement ? ` • ${etablissement}` : ""}
           </div>
-          {telephone && (
-            <div className="text-xs text-muted-foreground">{telephone}</div>
+          {currentPhone && (
+            <div className="mt-1 flex items-center gap-1.5 text-xs">
+              <span className="text-muted-foreground">{currentPhone}</span>
+              {isVerified ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-medium text-teal">
+                  <ShieldCheck className="h-3 w-3" /> Vérifié
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                  <ShieldAlert className="h-3 w-3" /> Non vérifié
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
+
+      {!isVerified && currentPhone && (
+        <div className="card-elevated mb-4 flex items-start gap-3 border-amber-500/30 bg-amber-500/5 p-4">
+          <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-foreground">Vérifiez votre numéro</div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Recevez un code SMS à 6 chiffres pour confirmer votre numéro et sécuriser les
+              réinitialisations de mot de passe.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => setVerifyOpen(true)}
+            >
+              Recevoir le code SMS
+            </Button>
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
@@ -128,7 +185,29 @@ function MonProfilPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="tel">Numéro de téléphone</Label>
-            <Input id="tel" type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} placeholder="+229 ..." />
+            <div className="flex gap-2">
+              <Input
+                id="tel"
+                type="tel"
+                value={telephone}
+                onChange={(e) => setTelephone(e.target.value)}
+                placeholder="+242 06 000 00 00"
+              />
+              {phoneChanged && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setChangeOpen(true)}
+                >
+                  Vérifier par SMS
+                </Button>
+              )}
+            </div>
+            {phoneChanged && (
+              <p className="text-[11px] text-muted-foreground">
+                Le nouveau numéro sera enregistré après réception du code SMS.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="mail">Email</Label>
@@ -163,7 +242,227 @@ function MonProfilPage() {
       </form>
 
       <ChangePasswordCard />
+
+      <VerifyPhoneDialog open={verifyOpen} onOpenChange={setVerifyOpen} />
+      <ChangePhoneDialog
+        open={changeOpen}
+        onOpenChange={setChangeOpen}
+        newPhone={telephone.trim()}
+        onSuccess={() => qc.invalidateQueries({ queryKey: ["profil"] })}
+      />
     </div>
+  );
+}
+
+function VerifyPhoneDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const req = useServerFn(requestPhoneVerificationOtp);
+  const confirm = useServerFn(confirmPhoneVerification);
+  const [step, setStep] = useState<"idle" | "sent">("idle");
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (!open) {
+      setStep("idle");
+      setCode("");
+      setCooldown(0);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
+
+  async function send() {
+    setLoading(true);
+    try {
+      await req();
+      toast.success("Code envoyé par SMS");
+      setStep("sent");
+      setCooldown(60);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submit() {
+    if (code.length !== 6) return toast.error("Code à 6 chiffres requis");
+    setLoading(true);
+    try {
+      await confirm({ data: { code } });
+      toast.success("Numéro vérifié");
+      qc.invalidateQueries({ queryKey: ["profil"] });
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Code invalide");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Vérifier mon numéro</DialogTitle>
+          <DialogDescription>
+            Nous envoyons un code à 6 chiffres au numéro enregistré dans votre profil.
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === "idle" ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Cliquez ci-dessous pour recevoir le code par SMS. La demande peut être renouvelée
+              après 60 secondes.
+            </p>
+            <Button onClick={send} disabled={loading} className="w-full">
+              {loading ? "Envoi…" : "Envoyer le code SMS"}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <OtpCodeInput value={code} onChange={setCode} />
+            <div className="flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={send}
+                disabled={cooldown > 0 || loading}
+                className="text-teal disabled:cursor-not-allowed disabled:text-muted-foreground"
+              >
+                {cooldown > 0 ? `Renvoyer (${cooldown}s)` : "Renvoyer le code"}
+              </button>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                Annuler
+              </Button>
+              <Button onClick={submit} disabled={loading || code.length !== 6}>
+                {loading ? "Vérification…" : "Confirmer"}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ChangePhoneDialog({
+  open,
+  onOpenChange,
+  newPhone,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  newPhone: string;
+  onSuccess: () => void;
+}) {
+  const req = useServerFn(requestPhoneChangeOtp);
+  const confirm = useServerFn(confirmPhoneChange);
+  const [step, setStep] = useState<"idle" | "sent">("idle");
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (!open) {
+      setStep("idle");
+      setCode("");
+      setCooldown(0);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
+
+  async function send() {
+    setLoading(true);
+    try {
+      await req({ data: { newPhone } });
+      toast.success("Code envoyé au nouveau numéro");
+      setStep("sent");
+      setCooldown(60);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submit() {
+    if (code.length !== 6) return toast.error("Code à 6 chiffres requis");
+    setLoading(true);
+    try {
+      await confirm({ data: { newPhone, code } });
+      toast.success("Numéro mis à jour et vérifié");
+      onSuccess();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Code invalide");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Vérifier le nouveau numéro</DialogTitle>
+          <DialogDescription>
+            Un code sera envoyé à <span className="font-medium">{newPhone}</span>. Le numéro
+            ne sera enregistré qu'après confirmation.
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === "idle" ? (
+          <div className="space-y-3">
+            <Button onClick={send} disabled={loading} className="w-full">
+              {loading ? "Envoi…" : "Envoyer le code SMS"}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <OtpCodeInput value={code} onChange={setCode} />
+            <div className="flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={send}
+                disabled={cooldown > 0 || loading}
+                className="text-teal disabled:cursor-not-allowed disabled:text-muted-foreground"
+              >
+                {cooldown > 0 ? `Renvoyer (${cooldown}s)` : "Renvoyer le code"}
+              </button>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                Annuler
+              </Button>
+              <Button onClick={submit} disabled={loading || code.length !== 6}>
+                {loading ? "Vérification…" : "Confirmer et enregistrer"}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
