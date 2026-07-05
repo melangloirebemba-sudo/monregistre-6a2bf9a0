@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import {
   Users,
   School,
@@ -13,13 +14,50 @@ import {
   Activity,
   Settings2,
   Receipt,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Bell,
+  Mail,
+  MessageCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { adminApi } from "@/lib/admin-api";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { supportConfig } from "@/config/support";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({ meta: [{ title: "Tableau de bord — Console admin" }, { name: "robots", content: "noindex" }] }),
   component: AdminDashboard,
 });
+
+type PlanRow = {
+  user_id: string;
+  nom_affiche: string | null;
+  email: string | null;
+  telephone: string | null;
+  plan: "gratuit" | "lite" | "premium";
+  plan_periode: "mensuelle" | "trimestrielle" | "annuelle" | null;
+  plan_expires_at: string | null;
+};
+
+const SOON_DAYS = 7;
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function daysDiff(iso: string | null): number | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.round((t - Date.now()) / 86_400_000);
+}
 
 function AdminDashboard() {
   const { data, isLoading, error } = useQuery({
@@ -27,6 +65,46 @@ function AdminDashboard() {
     queryFn: () => adminApi.stats(),
     staleTime: 30_000,
   });
+
+  const { data: plans = [], isLoading: loadingPlans } = useQuery({
+    queryKey: ["admin", "plans-usage"],
+    staleTime: 60_000,
+    queryFn: async (): Promise<PlanRow[]> => {
+      const { data, error } = await supabase
+        .from("profils_enseignant")
+        .select("user_id, nom_affiche, email, telephone, plan, plan_periode, plan_expires_at")
+        .in("plan", ["lite", "premium"])
+        .limit(2000);
+      if (error) throw error;
+      return (data ?? []) as PlanRow[];
+    },
+  });
+
+  const { actifs, bientot, expires } = useMemo(() => {
+    const actifs: PlanRow[] = [];
+    const bientot: PlanRow[] = [];
+    const expires: PlanRow[] = [];
+    const now = Date.now();
+    const soon = now + SOON_DAYS * 86_400_000;
+    for (const p of plans) {
+      if (!p.plan_expires_at) {
+        actifs.push(p);
+        continue;
+      }
+      const t = new Date(p.plan_expires_at).getTime();
+      if (Number.isNaN(t)) continue;
+      if (t <= now) expires.push(p);
+      else if (t <= soon) bientot.push(p);
+      else actifs.push(p);
+    }
+    const byDate = (a: PlanRow, b: PlanRow) =>
+      new Date(a.plan_expires_at ?? 0).getTime() - new Date(b.plan_expires_at ?? 0).getTime();
+    bientot.sort(byDate);
+    expires.sort(byDate);
+    return { actifs, bientot, expires };
+  }, [plans]);
+
+
 
 
   return (
@@ -81,6 +159,16 @@ function AdminDashboard() {
               <PlanCard name="Premium" count={data.planPremium} total={data.totalUsers} accent="teal" />
             </div>
           </section>
+
+          {/* État des abonnements — actifs / à renouveler / expirés */}
+          <PlansStatusSection
+            actifs={actifs}
+            bientot={bientot}
+            expires={expires}
+            loading={loadingPlans}
+          />
+
+
 
           {/* Données globales (agrégées, aucune donnée nominative) */}
           <section>
@@ -221,3 +309,237 @@ function QuickLink({
     </Link>
   );
 }
+
+const PLAN_LABEL_UI: Record<PlanRow["plan"], string> = {
+  gratuit: "Gratuit",
+  lite: "Lite",
+  premium: "Premium",
+};
+
+function buildReminderMessage(p: PlanRow, tone: "renouvellement" | "expire"): string {
+  const nom = p.nom_affiche || "cher enseignant";
+  const planLabel = PLAN_LABEL_UI[p.plan];
+  const dateStr = fmtDate(p.plan_expires_at);
+  if (tone === "expire") {
+    return [
+      `Bonjour ${nom},`,
+      "",
+      `Votre abonnement MonRegistre (plan ${planLabel}) a expiré le ${dateStr}.`,
+      "Pour continuer à profiter de toutes les fonctionnalités, merci de procéder au renouvellement.",
+      "",
+      "L'équipe MonRegistre.",
+    ].join("\n");
+  }
+  return [
+    `Bonjour ${nom},`,
+    "",
+    `Votre abonnement MonRegistre (plan ${planLabel}) arrive à échéance le ${dateStr}.`,
+    "Pensez à le renouveler pour éviter toute interruption de service.",
+    "",
+    "L'équipe MonRegistre.",
+  ].join("\n");
+}
+
+function whatsappHrefFor(phone: string | null, message: string): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/[^0-9]/g, "");
+  if (digits.length < 6) return null;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+
+function mailtoHrefFor(email: string | null, message: string, subject: string): string | null {
+  if (!email) return null;
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+}
+
+function PlansStatusSection({
+  actifs,
+  bientot,
+  expires,
+  loading,
+}: {
+  actifs: PlanRow[];
+  bientot: PlanRow[];
+  expires: PlanRow[];
+  loading: boolean;
+}) {
+  return (
+    <section>
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        État des abonnements
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Kpi icon={CheckCircle2} label="En cours" value={actifs.length} tone="teal" />
+        <Kpi
+          icon={Clock}
+          label={`Bientôt (< ${SOON_DAYS} j)`}
+          value={bientot.length}
+          tone={bientot.length > 0 ? "gold" : undefined}
+        />
+        <Kpi
+          icon={AlertTriangle}
+          label="Expirés"
+          value={expires.length}
+          tone={expires.length > 0 ? "warn" : undefined}
+        />
+      </div>
+
+      {loading ? (
+        <div className="card-elevated mt-3 p-4 text-sm text-muted-foreground">
+          Chargement des abonnements…
+        </div>
+      ) : (
+        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+          <PlanList
+            title={`À renouveler bientôt (< ${SOON_DAYS} jours)`}
+            icon={Clock}
+            tone="gold"
+            emptyLabel="Aucun abonnement n'expire dans les 7 prochains jours."
+            items={bientot}
+            reminderTone="renouvellement"
+          />
+          <PlanList
+            title="Abonnements expirés"
+            icon={AlertTriangle}
+            tone="warn"
+            emptyLabel="Aucun abonnement expiré."
+            items={expires}
+            reminderTone="expire"
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PlanList({
+  title,
+  icon: Icon,
+  tone,
+  emptyLabel,
+  items,
+  reminderTone,
+}: {
+  title: string;
+  icon: typeof Bell;
+  tone: "gold" | "warn";
+  emptyLabel: string;
+  items: PlanRow[];
+  reminderTone: "renouvellement" | "expire";
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? items : items.slice(0, 5);
+  const chip =
+    tone === "warn"
+      ? "bg-destructive/10 text-destructive"
+      : "bg-gold/20 text-ink";
+  return (
+    <div className="card-elevated p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <span className={`grid h-8 w-8 place-items-center rounded-lg ${chip}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+        <h3 className="flex-1 font-display text-sm font-semibold text-foreground">
+          {title}
+        </h3>
+        <span className="text-xs font-semibold text-muted-foreground">{items.length}</span>
+      </div>
+      {items.length === 0 ? (
+        <p className="text-xs text-muted-foreground">{emptyLabel}</p>
+      ) : (
+        <ul className="space-y-2">
+          {visible.map((p) => {
+            const diff = daysDiff(p.plan_expires_at);
+            const message = buildReminderMessage(p, reminderTone);
+            const subject =
+              reminderTone === "expire"
+                ? "Renouvellement de votre abonnement MonRegistre"
+                : "Rappel : votre abonnement MonRegistre expire bientôt";
+            const wa = whatsappHrefFor(p.telephone, message);
+            const mail = mailtoHrefFor(p.email, message, subject);
+            const supportWa = `https://wa.me/${supportConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
+            return (
+              <li
+                key={p.user_id}
+                className="flex flex-wrap items-start justify-between gap-2 rounded-lg border border-border/60 p-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="truncate text-sm font-semibold text-foreground">
+                      {p.nom_affiche || "—"}
+                    </span>
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {PLAN_LABEL_UI[p.plan]}
+                    </span>
+                  </div>
+                  {p.email && (
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {p.email}
+                    </div>
+                  )}
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    {reminderTone === "expire" ? "Expiré le " : "Expire le "}
+                    <span className="font-medium text-foreground">{fmtDate(p.plan_expires_at)}</span>
+                    {diff !== null && (
+                      <span className={tone === "warn" ? "ml-1 text-destructive" : "ml-1 text-ink"}>
+                        ({diff >= 0 ? `dans ${diff} j` : `il y a ${Math.abs(diff)} j`})
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1 px-2"
+                    aria-label={`Rappeler par WhatsApp ${p.nom_affiche ?? ""}`}
+                    title={wa ? "Envoyer par WhatsApp" : "Envoyer via le support (numéro non renseigné)"}
+                  >
+                    <a href={wa ?? supportWa} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">WhatsApp</span>
+                    </a>
+                  </Button>
+                  {mail && (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1 px-2"
+                      aria-label={`Rappeler par e-mail ${p.nom_affiche ?? ""}`}
+                      title="Envoyer par e-mail"
+                    >
+                      <a href={mail}>
+                        <Mail className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">E-mail</span>
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {items.length > 5 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-teal hover:underline"
+        >
+          {expanded ? (
+            <>
+              <ChevronUp className="h-3.5 w-3.5" /> Réduire
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-3.5 w-3.5" /> Voir les {items.length - 5} autres
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
