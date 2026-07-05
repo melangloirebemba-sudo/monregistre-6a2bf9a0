@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, Settings2, ChevronRight } from "lucide-react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   Popover,
@@ -15,15 +15,20 @@ import {
 } from "@/lib/notifications-prefs";
 import { cn } from "@/lib/utils";
 
-// État partagé entre toutes les instances de la cloche (topbar + sidebar) :
+// État partagé entre toutes les instances de la cloche (topbar + sidebar) et
+// entre rafales Realtime :
 // - `bellOpenCount` : nombre de popovers ouvertes (0 = toutes fermées).
-// - `seenIds` : ids déjà vus, pour n'annoncer qu'une seule fois chaque
-//   nouvelle notification via toast.
+// - `seenIds` : ids déjà annoncés (ou pré-existants) — un item ne toast qu'une
+//   seule fois par session, même si Realtime rejoue l'événement.
 // - `toastInit` : au tout premier rendu on ne toast rien (les notifications
-//   pré-existantes ne sont pas des « nouveautés »).
+//   déjà présentes ne sont pas des « nouveautés »).
+// - `pending` / `flushTimer` : coalescing des rafales Realtime en un unique
+//   toast (fenêtre courte de 250 ms).
 let bellOpenCount = 0;
 const seenIds = new Set<string>();
 let toastInit = false;
+const pending = new Map<string, NotificationItem>();
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
 interface NotificationsBellProps {
   variant?: "topbar" | "sidebar";
