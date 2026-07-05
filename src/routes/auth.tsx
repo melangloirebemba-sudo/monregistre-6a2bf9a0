@@ -143,11 +143,17 @@ function SignInForm({ onDone }: { onDone: () => void }) {
 function SignUpForm({ onDone }: { onDone: () => void }) {
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
+  const [telephone, setTelephone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const tel = telephone.trim();
+    if (tel && !/^\+?[0-9\s().-]{6,20}$/.test(tel)) {
+      toast.error("Numéro WhatsApp invalide");
+      return;
+    }
     setLoading(true);
     const emailRedirectTo =
       typeof window !== "undefined" ? window.location.origin : undefined;
