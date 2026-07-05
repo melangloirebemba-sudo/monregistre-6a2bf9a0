@@ -31,6 +31,7 @@ import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAbsencesRouteImport } from './routes/_authenticated/absences'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedParametresRappelsRouteImport } from './routes/_authenticated/parametres.rappels'
+import { Route as AuthenticatedFacturationIdRouteImport } from './routes/_authenticated/facturation.$id'
 import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
@@ -150,6 +151,12 @@ const AuthenticatedParametresRappelsRoute =
     path: '/rappels',
     getParentRoute: () => AuthenticatedParametresRoute,
   } as any)
+const AuthenticatedFacturationIdRoute =
+  AuthenticatedFacturationIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedFacturationRoute,
+  } as any)
 const AuthenticatedAdminUtilisateursRoute =
   AuthenticatedAdminUtilisateursRouteImport.update({
     id: '/utilisateurs',
@@ -186,7 +193,7 @@ export interface FileRoutesByFullPath {
   '/ecoles': typeof AuthenticatedEcolesRoute
   '/eleves': typeof AuthenticatedElevesRoute
   '/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
-  '/facturation': typeof AuthenticatedFacturationRoute
+  '/facturation': typeof AuthenticatedFacturationRouteWithChildren
   '/mon-profil': typeof AuthenticatedMonProfilRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/parametres': typeof AuthenticatedParametresRouteWithChildren
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
+  '/facturation/$id': typeof AuthenticatedFacturationIdRoute
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -212,7 +220,7 @@ export interface FileRoutesByTo {
   '/ecoles': typeof AuthenticatedEcolesRoute
   '/eleves': typeof AuthenticatedElevesRoute
   '/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
-  '/facturation': typeof AuthenticatedFacturationRoute
+  '/facturation': typeof AuthenticatedFacturationRouteWithChildren
   '/mon-profil': typeof AuthenticatedMonProfilRoute
   '/notes': typeof AuthenticatedNotesRoute
   '/parametres': typeof AuthenticatedParametresRouteWithChildren
@@ -224,6 +232,7 @@ export interface FileRoutesByTo {
   '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
+  '/facturation/$id': typeof AuthenticatedFacturationIdRoute
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -241,7 +250,7 @@ export interface FileRoutesById {
   '/_authenticated/ecoles': typeof AuthenticatedEcolesRoute
   '/_authenticated/eleves': typeof AuthenticatedElevesRoute
   '/_authenticated/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
-  '/_authenticated/facturation': typeof AuthenticatedFacturationRoute
+  '/_authenticated/facturation': typeof AuthenticatedFacturationRouteWithChildren
   '/_authenticated/mon-profil': typeof AuthenticatedMonProfilRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/parametres': typeof AuthenticatedParametresRouteWithChildren
@@ -253,6 +262,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
+  '/_authenticated/facturation/$id': typeof AuthenticatedFacturationIdRoute
   '/_authenticated/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/admin/parametres'
     | '/admin/plans'
     | '/admin/utilisateurs'
+    | '/facturation/$id'
     | '/parametres/rappels'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/admin/parametres'
     | '/admin/plans'
     | '/admin/utilisateurs'
+    | '/facturation/$id'
     | '/parametres/rappels'
     | '/admin'
   id:
@@ -336,6 +348,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/parametres'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/utilisateurs'
+    | '/_authenticated/facturation/$id'
     | '/_authenticated/parametres/rappels'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -503,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParametresRappelsRouteImport
       parentRoute: typeof AuthenticatedParametresRoute
     }
+    '/_authenticated/facturation/$id': {
+      id: '/_authenticated/facturation/$id'
+      path: '/$id'
+      fullPath: '/facturation/$id'
+      preLoaderRoute: typeof AuthenticatedFacturationIdRouteImport
+      parentRoute: typeof AuthenticatedFacturationRoute
+    }
     '/_authenticated/admin/utilisateurs': {
       id: '/_authenticated/admin/utilisateurs'
       path: '/utilisateurs'
@@ -554,6 +574,20 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
 const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
+interface AuthenticatedFacturationRouteChildren {
+  AuthenticatedFacturationIdRoute: typeof AuthenticatedFacturationIdRoute
+}
+
+const AuthenticatedFacturationRouteChildren: AuthenticatedFacturationRouteChildren =
+  {
+    AuthenticatedFacturationIdRoute: AuthenticatedFacturationIdRoute,
+  }
+
+const AuthenticatedFacturationRouteWithChildren =
+  AuthenticatedFacturationRoute._addFileChildren(
+    AuthenticatedFacturationRouteChildren,
+  )
+
 interface AuthenticatedParametresRouteChildren {
   AuthenticatedParametresRappelsRoute: typeof AuthenticatedParametresRappelsRoute
 }
@@ -577,7 +611,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEcolesRoute: typeof AuthenticatedEcolesRoute
   AuthenticatedElevesRoute: typeof AuthenticatedElevesRoute
   AuthenticatedEmploiDuTempsRoute: typeof AuthenticatedEmploiDuTempsRoute
-  AuthenticatedFacturationRoute: typeof AuthenticatedFacturationRoute
+  AuthenticatedFacturationRoute: typeof AuthenticatedFacturationRouteWithChildren
   AuthenticatedMonProfilRoute: typeof AuthenticatedMonProfilRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedParametresRoute: typeof AuthenticatedParametresRouteWithChildren
@@ -596,7 +630,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEcolesRoute: AuthenticatedEcolesRoute,
   AuthenticatedElevesRoute: AuthenticatedElevesRoute,
   AuthenticatedEmploiDuTempsRoute: AuthenticatedEmploiDuTempsRoute,
-  AuthenticatedFacturationRoute: AuthenticatedFacturationRoute,
+  AuthenticatedFacturationRoute: AuthenticatedFacturationRouteWithChildren,
   AuthenticatedMonProfilRoute: AuthenticatedMonProfilRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedParametresRoute: AuthenticatedParametresRouteWithChildren,
