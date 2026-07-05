@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DataPagination } from "@/components/ui/data-pagination";
 import { ListSkeleton, NoResults } from "@/components/ui/list-states";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
-import { generateRecuPaiementPDF, formatMontantXAF } from "@/lib/pdf/recu-paiement";
+import { formatMontantXAF } from "@/lib/pdf/recu-paiement";
+import { ensureRecuPDF, downloadCachedRecu } from "@/lib/pdf/recu-cache";
 
 export const Route = createFileRoute("/_authenticated/facturation")({
   head: () => ({ meta: [{ title: "Facturation & paiements — MonRegistre" }] }),
@@ -92,9 +93,7 @@ function FacturationPage() {
     if (downloadingId) return;
     setDownloadingId(r.id);
     try {
-      // Yield a frame so the loader is visible before jsPDF blocks the main thread.
-      await new Promise((res) => setTimeout(res, 30));
-      generateRecuPaiementPDF({
+      await ensureRecuPDF(r.id, {
         numero_recu: r.numero_recu,
         paye_le: r.paye_le,
         plan: r.plan,
@@ -109,10 +108,12 @@ function FacturationPage() {
           email: profil?.email ?? null,
         },
       });
+      downloadCachedRecu(r.id);
     } finally {
       setDownloadingId(null);
     }
   }
+
 
   const hasQuery = q.trim().length > 0 || planFilter !== "all";
 

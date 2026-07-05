@@ -1,13 +1,33 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Loader2, Receipt, CalendarClock, Wallet, CreditCard, FileText, RotateCw, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Receipt,
+  CalendarClock,
+  Wallet,
+  CreditCard,
+  FileText,
+  RotateCw,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  ExternalLink,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { requireUserId } from "@/lib/queries/data";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { Button } from "@/components/ui/button";
-import { generateRecuPaiementPDF, formatMontantXAF } from "@/lib/pdf/recu-paiement";
+import { formatMontantXAF, type RecuPaiementContext } from "@/lib/pdf/recu-paiement";
+import {
+  downloadCachedRecu,
+  ensureRecuPDF,
+  invalidateRecu,
+  useRecuEntry,
+} from "@/lib/pdf/recu-cache";
 
 export const Route = createFileRoute("/_authenticated/facturation/$id")({
   head: () => ({ meta: [{ title: "Détails du reçu — MonRegistre" }] }),
@@ -71,48 +91,60 @@ function RecuDetailsPage() {
     },
   });
 
-  type PdfStatus =
-    | { state: "idle" }
-    | { state: "loading" }
-    | { state: "success"; at: number }
-    | { state: "error"; message: string; attempt: number };
-  const [pdfStatus, setPdfStatus] = useState<PdfStatus>({ state: "idle" });
-  const attempt = pdfStatus.state === "error" ? pdfStatus.attempt : 0;
+  const pdfCtx: RecuPaiementContext | null = useMemo(() => {
+    if (!paiement) return null;
+    return {
+      numero_recu: paiement.numero_recu,
+      paye_le: paiement.paye_le,
+      plan: paiement.plan,
+      periode: paiement.periode,
+      montant: paiement.montant,
+      devise: paiement.devise,
+      moyen_paiement: paiement.moyen_paiement,
+      plan_expires_at: paiement.plan_expires_at,
+      note: paiement.note,
+      utilisateur: {
+        nom_affiche: profil?.nom_affiche ?? null,
+        email: profil?.email ?? null,
+      },
+    };
+  }, [paiement, profil?.nom_affiche, profil?.email]);
+
+  const pdfEntry = useRecuEntry(id);
+
+  // Warm the cache in the background as soon as we have data.
+  useEffect(() => {
+    if (!pdfCtx) return;
+    if (pdfEntry.status === "ready" || pdfEntry.status === "generating" || pdfEntry.status === "pending") return;
+    ensureRecuPDF(id, pdfCtx).catch(() => {
+      /* status is written to the store; UI reacts via useRecuEntry */
+    });
+  }, [id, pdfCtx, pdfEntry.status]);
 
   async function handleDownload() {
-    if (!paiement) return;
-    if (pdfStatus.state === "loading") return;
-    setPdfStatus({ state: "loading" });
+    if (!pdfCtx) return;
+    // Fast path: reuse the cached blob.
+    if (pdfEntry.status === "ready" && downloadCachedRecu(id)) {
+      toast.success("Reçu téléchargé", { description: `N° ${pdfCtx.numero_recu}` });
+      return;
+    }
     try {
-      // Yield a frame so the spinner is visible before jsPDF blocks the main thread.
-      await new Promise((res) => setTimeout(res, 30));
-      generateRecuPaiementPDF({
-        numero_recu: paiement.numero_recu,
-        paye_le: paiement.paye_le,
-        plan: paiement.plan,
-        periode: paiement.periode,
-        montant: paiement.montant,
-        devise: paiement.devise,
-        moyen_paiement: paiement.moyen_paiement,
-        plan_expires_at: paiement.plan_expires_at,
-        note: paiement.note,
-        utilisateur: {
-          nom_affiche: profil?.nom_affiche ?? null,
-          email: profil?.email ?? null,
-        },
-      });
-      setPdfStatus({ state: "success", at: Date.now() });
-      toast.success("Reçu PDF téléchargé", {
-        description: `N° ${paiement.numero_recu}`,
-      });
+      await ensureRecuPDF(id, pdfCtx);
+      if (downloadCachedRecu(id)) {
+        toast.success("Reçu téléchargé", { description: `N° ${pdfCtx.numero_recu}` });
+      }
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Impossible de générer le PDF.";
+      const message = err instanceof Error ? err.message : "Impossible de générer le PDF.";
       console.error("[recu-pdf] generation failed", err);
-      setPdfStatus({ state: "error", message, attempt: attempt + 1 });
       toast.error("Échec de la génération du PDF", { description: message });
     }
   }
+
+  function handleRetry() {
+    invalidateRecu(id);
+    void handleDownload();
+  }
+
 
   return (
     <div className="px-4 pb-6 pt-5 sm:px-5">
@@ -186,51 +218,81 @@ function RecuDetailsPage() {
             )}
           </div>
 
-          {pdfStatus.state === "error" && (
-            <div
-              role="alert"
-              className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          {/* Statut génération PDF (arrière-plan) */}
+          <div
+            className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${
+              pdfEntry.status === "ready"
+                ? "border-teal/30 bg-teal/10 text-teal"
+                : pdfEntry.status === "error"
+                  ? "border-destructive/40 bg-destructive/10 text-destructive"
+                  : "border-border bg-muted/40 text-muted-foreground"
+            }`}
+            aria-live="polite"
+          >
+            {pdfEntry.status === "ready" ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>Reçu PDF prêt — mis en cache.</span>
+              </>
+            ) : pdfEntry.status === "generating" ? (
+              <>
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                <span>Génération du PDF en cours…</span>
+              </>
+            ) : pdfEntry.status === "pending" ? (
+              <>
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>Génération planifiée en arrière-plan…</span>
+              </>
+            ) : pdfEntry.status === "error" ? (
+              <>
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span className="flex-1">
+                  Échec de la génération. {pdfEntry.error}
+                </span>
+              </>
+            ) : (
+              <>
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>En attente…</span>
+              </>
+            )}
+          </div>
+
+          {/* Lien stable */}
+          {paiement && (
+            <Link
+              to="/facturation/$id/pdf"
+              params={{ id: paiement.id }}
+              className="inline-flex items-center gap-1.5 text-xs text-teal hover:underline"
             >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="font-medium">Le PDF n'a pas pu être généré</div>
-                <p className="mt-0.5 text-xs opacity-90">
-                  {pdfStatus.message}
-                  {pdfStatus.attempt > 1 ? ` (tentative ${pdfStatus.attempt})` : ""}
-                </p>
-              </div>
-            </div>
+              <ExternalLink className="h-3.5 w-3.5" />
+              Lien direct vers le PDF (/facturation/{paiement.id}/pdf)
+            </Link>
           )}
 
-          {pdfStatus.state === "success" && (
-            <div className="flex items-center gap-2 rounded-xl border border-teal/30 bg-teal/10 p-3 text-sm text-teal">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>Reçu téléchargé. Vérifiez votre dossier de téléchargements.</span>
-            </div>
-          )}
-
-          <div className="sticky bottom-3 z-10">
+          <div className="sticky bottom-3 z-10 flex gap-2">
             <Button
               onClick={handleDownload}
-              disabled={pdfStatus.state === "loading"}
+              disabled={pdfEntry.status === "generating" || pdfEntry.status === "pending"}
               size="lg"
               className="w-full gap-2 shadow-lg"
               aria-live="polite"
             >
-              {pdfStatus.state === "loading" ? (
+              {pdfEntry.status === "generating" || pdfEntry.status === "pending" ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Génération du PDF…
                 </>
-              ) : pdfStatus.state === "error" ? (
+              ) : pdfEntry.status === "ready" ? (
+                <>
+                  <Download className="h-4 w-4" />
+                  Télécharger le reçu (depuis le cache)
+                </>
+              ) : pdfEntry.status === "error" ? (
                 <>
                   <RotateCw className="h-4 w-4" />
                   Réessayer le téléchargement
-                </>
-              ) : pdfStatus.state === "success" ? (
-                <>
-                  <Download className="h-4 w-4" />
-                  Télécharger à nouveau
                 </>
               ) : (
                 <>
@@ -239,12 +301,23 @@ function RecuDetailsPage() {
                 </>
               )}
             </Button>
+            {pdfEntry.status === "error" && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleRetry}
+                aria-label="Regénérer le PDF"
+              >
+                <RotateCw className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
 function InfoRow({
   icon,

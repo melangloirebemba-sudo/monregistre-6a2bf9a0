@@ -36,6 +36,7 @@ import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
 import { Route as AuthenticatedAdminAnneesScolairesRouteImport } from './routes/_authenticated/admin.annees-scolaires'
+import { Route as AuthenticatedFacturationIdPdfRouteImport } from './routes/_authenticated/facturation.$id.pdf'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -180,6 +181,12 @@ const AuthenticatedAdminAnneesScolairesRoute =
     path: '/annees-scolaires',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedFacturationIdPdfRoute =
+  AuthenticatedFacturationIdPdfRouteImport.update({
+    id: '/pdf',
+    path: '/pdf',
+    getParentRoute: () => AuthenticatedFacturationIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -205,9 +212,10 @@ export interface FileRoutesByFullPath {
   '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
-  '/facturation/$id': typeof AuthenticatedFacturationIdRoute
+  '/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -232,9 +240,10 @@ export interface FileRoutesByTo {
   '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
-  '/facturation/$id': typeof AuthenticatedFacturationIdRoute
+  '/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -262,9 +271,10 @@ export interface FileRoutesById {
   '/_authenticated/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
-  '/_authenticated/facturation/$id': typeof AuthenticatedFacturationIdRoute
+  '/_authenticated/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
   '/_authenticated/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/facturation/$id'
     | '/parametres/rappels'
     | '/admin/'
+    | '/facturation/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/facturation/$id'
     | '/parametres/rappels'
     | '/admin'
+    | '/facturation/$id/pdf'
   id:
     | '__root__'
     | '/'
@@ -351,6 +363,7 @@ export interface FileRouteTypes {
     | '/_authenticated/facturation/$id'
     | '/_authenticated/parametres/rappels'
     | '/_authenticated/admin/'
+    | '/_authenticated/facturation/$id/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAnneesScolairesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/facturation/$id/pdf': {
+      id: '/_authenticated/facturation/$id/pdf'
+      path: '/pdf'
+      fullPath: '/facturation/$id/pdf'
+      preLoaderRoute: typeof AuthenticatedFacturationIdPdfRouteImport
+      parentRoute: typeof AuthenticatedFacturationIdRoute
+    }
   }
 }
 
@@ -574,13 +594,28 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
 const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
+interface AuthenticatedFacturationIdRouteChildren {
+  AuthenticatedFacturationIdPdfRoute: typeof AuthenticatedFacturationIdPdfRoute
+}
+
+const AuthenticatedFacturationIdRouteChildren: AuthenticatedFacturationIdRouteChildren =
+  {
+    AuthenticatedFacturationIdPdfRoute: AuthenticatedFacturationIdPdfRoute,
+  }
+
+const AuthenticatedFacturationIdRouteWithChildren =
+  AuthenticatedFacturationIdRoute._addFileChildren(
+    AuthenticatedFacturationIdRouteChildren,
+  )
+
 interface AuthenticatedFacturationRouteChildren {
-  AuthenticatedFacturationIdRoute: typeof AuthenticatedFacturationIdRoute
+  AuthenticatedFacturationIdRoute: typeof AuthenticatedFacturationIdRouteWithChildren
 }
 
 const AuthenticatedFacturationRouteChildren: AuthenticatedFacturationRouteChildren =
   {
-    AuthenticatedFacturationIdRoute: AuthenticatedFacturationIdRoute,
+    AuthenticatedFacturationIdRoute:
+      AuthenticatedFacturationIdRouteWithChildren,
   }
 
 const AuthenticatedFacturationRouteWithChildren =
