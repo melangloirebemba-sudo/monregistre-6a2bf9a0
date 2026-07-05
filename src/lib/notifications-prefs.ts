@@ -60,6 +60,11 @@ function coerce(raw: unknown): NotificationsPrefs {
     )
       ? (r.reminderFrequency as ReminderFrequency)
       : DEFAULT_NOTIFICATIONS_PREFS.reminderFrequency,
+    defaultFilter: (["all", "feature", "fix", "account", "billing"] as DefaultFilter[]).includes(
+      r.defaultFilter as DefaultFilter,
+    )
+      ? (r.defaultFilter as DefaultFilter)
+      : DEFAULT_NOTIFICATIONS_PREFS.defaultFilter,
   };
 }
 
