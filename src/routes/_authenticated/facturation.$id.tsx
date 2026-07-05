@@ -218,51 +218,81 @@ function RecuDetailsPage() {
             )}
           </div>
 
-          {pdfStatus.state === "error" && (
-            <div
-              role="alert"
-              className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+          {/* Statut génération PDF (arrière-plan) */}
+          <div
+            className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${
+              pdfEntry.status === "ready"
+                ? "border-teal/30 bg-teal/10 text-teal"
+                : pdfEntry.status === "error"
+                  ? "border-destructive/40 bg-destructive/10 text-destructive"
+                  : "border-border bg-muted/40 text-muted-foreground"
+            }`}
+            aria-live="polite"
+          >
+            {pdfEntry.status === "ready" ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>Reçu PDF prêt — mis en cache.</span>
+              </>
+            ) : pdfEntry.status === "generating" ? (
+              <>
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                <span>Génération du PDF en cours…</span>
+              </>
+            ) : pdfEntry.status === "pending" ? (
+              <>
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>Génération planifiée en arrière-plan…</span>
+              </>
+            ) : pdfEntry.status === "error" ? (
+              <>
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span className="flex-1">
+                  Échec de la génération. {pdfEntry.error}
+                </span>
+              </>
+            ) : (
+              <>
+                <Clock className="h-4 w-4 shrink-0" />
+                <span>En attente…</span>
+              </>
+            )}
+          </div>
+
+          {/* Lien stable */}
+          {paiement && (
+            <Link
+              to="/facturation/$id/pdf"
+              params={{ id: paiement.id }}
+              className="inline-flex items-center gap-1.5 text-xs text-teal hover:underline"
             >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="font-medium">Le PDF n'a pas pu être généré</div>
-                <p className="mt-0.5 text-xs opacity-90">
-                  {pdfStatus.message}
-                  {pdfStatus.attempt > 1 ? ` (tentative ${pdfStatus.attempt})` : ""}
-                </p>
-              </div>
-            </div>
+              <ExternalLink className="h-3.5 w-3.5" />
+              Lien direct vers le PDF (/facturation/{paiement.id}/pdf)
+            </Link>
           )}
 
-          {pdfStatus.state === "success" && (
-            <div className="flex items-center gap-2 rounded-xl border border-teal/30 bg-teal/10 p-3 text-sm text-teal">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>Reçu téléchargé. Vérifiez votre dossier de téléchargements.</span>
-            </div>
-          )}
-
-          <div className="sticky bottom-3 z-10">
+          <div className="sticky bottom-3 z-10 flex gap-2">
             <Button
               onClick={handleDownload}
-              disabled={pdfStatus.state === "loading"}
+              disabled={pdfEntry.status === "generating" || pdfEntry.status === "pending"}
               size="lg"
               className="w-full gap-2 shadow-lg"
               aria-live="polite"
             >
-              {pdfStatus.state === "loading" ? (
+              {pdfEntry.status === "generating" || pdfEntry.status === "pending" ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Génération du PDF…
                 </>
-              ) : pdfStatus.state === "error" ? (
+              ) : pdfEntry.status === "ready" ? (
+                <>
+                  <Download className="h-4 w-4" />
+                  Télécharger le reçu (depuis le cache)
+                </>
+              ) : pdfEntry.status === "error" ? (
                 <>
                   <RotateCw className="h-4 w-4" />
                   Réessayer le téléchargement
-                </>
-              ) : pdfStatus.state === "success" ? (
-                <>
-                  <Download className="h-4 w-4" />
-                  Télécharger à nouveau
                 </>
               ) : (
                 <>
@@ -271,12 +301,23 @@ function RecuDetailsPage() {
                 </>
               )}
             </Button>
+            {pdfEntry.status === "error" && (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleRetry}
+                aria-label="Regénérer le PDF"
+              >
+                <RotateCw className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
+
 
 function InfoRow({
   icon,
