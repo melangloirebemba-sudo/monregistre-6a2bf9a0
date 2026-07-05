@@ -82,7 +82,7 @@ function RecuDetailsPage() {
       const uid = await requireUserId();
       const { data, error } = await supabase
         .from("paiements")
-        .select("id, plan, periode, montant, devise, numero_recu, paye_le, plan_expires_at, moyen_paiement, note")
+        .select("id, plan, periode, montant, devise, numero_recu, paye_le, plan_expires_at, moyen_paiement, note, pdf_path")
         .eq("user_id", uid)
         .eq("id", id)
         .maybeSingle();
