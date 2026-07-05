@@ -91,48 +91,60 @@ function RecuDetailsPage() {
     },
   });
 
-  type PdfStatus =
-    | { state: "idle" }
-    | { state: "loading" }
-    | { state: "success"; at: number }
-    | { state: "error"; message: string; attempt: number };
-  const [pdfStatus, setPdfStatus] = useState<PdfStatus>({ state: "idle" });
-  const attempt = pdfStatus.state === "error" ? pdfStatus.attempt : 0;
+  const pdfCtx: RecuPaiementContext | null = useMemo(() => {
+    if (!paiement) return null;
+    return {
+      numero_recu: paiement.numero_recu,
+      paye_le: paiement.paye_le,
+      plan: paiement.plan,
+      periode: paiement.periode,
+      montant: paiement.montant,
+      devise: paiement.devise,
+      moyen_paiement: paiement.moyen_paiement,
+      plan_expires_at: paiement.plan_expires_at,
+      note: paiement.note,
+      utilisateur: {
+        nom_affiche: profil?.nom_affiche ?? null,
+        email: profil?.email ?? null,
+      },
+    };
+  }, [paiement, profil?.nom_affiche, profil?.email]);
+
+  const pdfEntry = useRecuEntry(id);
+
+  // Warm the cache in the background as soon as we have data.
+  useEffect(() => {
+    if (!pdfCtx) return;
+    if (pdfEntry.status === "ready" || pdfEntry.status === "generating" || pdfEntry.status === "pending") return;
+    ensureRecuPDF(id, pdfCtx).catch(() => {
+      /* status is written to the store; UI reacts via useRecuEntry */
+    });
+  }, [id, pdfCtx, pdfEntry.status]);
 
   async function handleDownload() {
-    if (!paiement) return;
-    if (pdfStatus.state === "loading") return;
-    setPdfStatus({ state: "loading" });
+    if (!pdfCtx) return;
+    // Fast path: reuse the cached blob.
+    if (pdfEntry.status === "ready" && downloadCachedRecu(id)) {
+      toast.success("Reçu téléchargé", { description: `N° ${pdfCtx.numero_recu}` });
+      return;
+    }
     try {
-      // Yield a frame so the spinner is visible before jsPDF blocks the main thread.
-      await new Promise((res) => setTimeout(res, 30));
-      generateRecuPaiementPDF({
-        numero_recu: paiement.numero_recu,
-        paye_le: paiement.paye_le,
-        plan: paiement.plan,
-        periode: paiement.periode,
-        montant: paiement.montant,
-        devise: paiement.devise,
-        moyen_paiement: paiement.moyen_paiement,
-        plan_expires_at: paiement.plan_expires_at,
-        note: paiement.note,
-        utilisateur: {
-          nom_affiche: profil?.nom_affiche ?? null,
-          email: profil?.email ?? null,
-        },
-      });
-      setPdfStatus({ state: "success", at: Date.now() });
-      toast.success("Reçu PDF téléchargé", {
-        description: `N° ${paiement.numero_recu}`,
-      });
+      await ensureRecuPDF(id, pdfCtx);
+      if (downloadCachedRecu(id)) {
+        toast.success("Reçu téléchargé", { description: `N° ${pdfCtx.numero_recu}` });
+      }
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Impossible de générer le PDF.";
+      const message = err instanceof Error ? err.message : "Impossible de générer le PDF.";
       console.error("[recu-pdf] generation failed", err);
-      setPdfStatus({ state: "error", message, attempt: attempt + 1 });
       toast.error("Échec de la génération du PDF", { description: message });
     }
   }
+
+  function handleRetry() {
+    invalidateRecu(id);
+    void handleDownload();
+  }
+
 
   return (
     <div className="px-4 pb-6 pt-5 sm:px-5">
