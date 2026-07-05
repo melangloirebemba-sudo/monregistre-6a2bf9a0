@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, Settings2, ChevronRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -13,6 +14,16 @@ import {
   type NotifCategory,
 } from "@/lib/notifications-prefs";
 import { cn } from "@/lib/utils";
+
+// État partagé entre toutes les instances de la cloche (topbar + sidebar) :
+// - `bellOpenCount` : nombre de popovers ouvertes (0 = toutes fermées).
+// - `seenIds` : ids déjà vus, pour n'annoncer qu'une seule fois chaque
+//   nouvelle notification via toast.
+// - `toastInit` : au tout premier rendu on ne toast rien (les notifications
+//   pré-existantes ne sont pas des « nouveautés »).
+let bellOpenCount = 0;
+const seenIds = new Set<string>();
+let toastInit = false;
 
 interface NotificationsBellProps {
   variant?: "topbar" | "sidebar";
@@ -54,7 +65,63 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
     }
   }, [prefs.categories, filter]);
 
-  // Chips affichées : seulement les catégories activées dans les préférences.
+  // Contrôle l'ouverture pour savoir si l'utilisateur voit déjà la liste
+  // (on n'affiche pas de toast dans ce cas).
+  const [open, setOpen] = useState(false);
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (open === wasOpen.current) return;
+    bellOpenCount += open ? 1 : -1;
+    wasOpen.current = open;
+    return () => {
+      // Au démontage, si l'instance était ouverte on décrémente aussi.
+      if (wasOpen.current) {
+        bellOpenCount -= 1;
+        wasOpen.current = false;
+      }
+    };
+  }, [open]);
+
+  const navigate = useNavigate();
+
+  // Toast pour toute nouvelle notification (activée par les préférences) qui
+  // arrive alors qu'aucune cloche n'est ouverte.
+  useEffect(() => {
+    if (!enabled) return;
+    if (!toastInit) {
+      // Premier passage : on marque tout comme déjà vu, sans toaster.
+      for (const it of items) seenIds.add(`${it.source}:${it.id}`);
+      toastInit = true;
+      return;
+    }
+    const fresh = items.filter((it) => {
+      const key = `${it.source}:${it.id}`;
+      if (seenIds.has(key)) return false;
+      seenIds.add(key);
+      return !it.read && prefs.categories[it.category];
+    });
+    if (fresh.length === 0 || bellOpenCount > 0) return;
+    // Une seule instance de la cloche déclenche le toast (l'autre passera
+    // par `seenIds` et n'affichera rien).
+    const first = fresh[0];
+    if (fresh.length === 1) {
+      toast(first.title, {
+        description: first.description || undefined,
+        action: first.href
+          ? {
+              label: "Ouvrir",
+              onClick: () => navigate({ to: first.href! }),
+            }
+          : undefined,
+      });
+    } else {
+      toast(`${fresh.length} nouvelles notifications`, {
+        description: first.title,
+      });
+    }
+  }, [items, enabled, prefs.categories, navigate]);
+
+  // Chips visibles : seulement les catégories activées dans les préférences.
   const activeCats = (Object.keys(prefs.categories) as NotifCategory[]).filter(
     (c) => prefs.categories[c],
   );
@@ -71,7 +138,7 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
     "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors";
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button aria-label="Notifications" className={buttonBase}>
           <Bell className={variant === "sidebar" ? "h-4 w-4 shrink-0" : "h-5 w-5"} />
