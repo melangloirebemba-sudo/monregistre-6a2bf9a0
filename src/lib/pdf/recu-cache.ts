@@ -77,13 +77,52 @@ function scheduleBackground(): Promise<void> {
   });
 }
 
+async function fetchStoredPdf(path: string): Promise<Blob | null> {
+  const { data, error } = await supabase.storage.from(BUCKET).download(path);
+  if (error || !data) return null;
+  // Supabase-js returns a Blob in the browser.
+  return data instanceof Blob ? data : new Blob([data as ArrayBuffer], { type: "application/pdf" });
+}
+
+async function uploadAndPersist(
+  id: string,
+  blob: Blob,
+): Promise<string | null> {
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData?.user?.id;
+  if (!uid) return null;
+  const path = `${uid}/${id}.pdf`;
+  const { error: upErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, blob, {
+      contentType: "application/pdf",
+      upsert: true,
+      cacheControl: "31536000",
+    });
+  if (upErr) {
+    console.warn("[recu-pdf] upload failed", upErr);
+    return null;
+  }
+  const { error: dbErr } = await supabase
+    .from("paiements")
+    .update({ pdf_path: path })
+    .eq("id", id);
+  if (dbErr) console.warn("[recu-pdf] persist path failed", dbErr);
+  return path;
+}
+
 /**
  * Ensures the PDF for `id` is generated and cached. Concurrent calls share the
  * same in-flight promise. Returns immediately when a "ready" blob is cached.
+ *
+ * Persistence: if `options.pdfPath` is provided, the blob is downloaded from
+ * Supabase Storage (no regeneration). Otherwise the PDF is generated, uploaded
+ * to `recus/<uid>/<id>.pdf`, and `paiements.pdf_path` is updated.
  */
 export function ensureRecuPDF(
   id: string,
   ctx: RecuPaiementContext,
+  options: EnsureOptions = {},
 ): Promise<RecuPdfEntry> {
   const existing = cache.get(id);
   if (existing?.status === "ready" && existing.blob) {
@@ -98,9 +137,23 @@ export function ensureRecuPDF(
     await scheduleBackground();
     write(id, { status: "generating" });
     try {
-      // Yield one more frame so the "generating" state renders.
-      await new Promise((r) => setTimeout(r, 0));
-      const { blob, filename } = buildRecuPaiementPDFBlob(ctx);
+      let blob: Blob | null = null;
+
+      // 1) Try the persisted copy first.
+      if (options.pdfPath) {
+        blob = await fetchStoredPdf(options.pdfPath);
+      }
+
+      // 2) Fallback: build the PDF locally, then push it to Storage.
+      if (!blob) {
+        await new Promise((r) => setTimeout(r, 0));
+        const built = buildRecuPaiementPDFBlob(ctx);
+        blob = built.blob;
+        // Persist in the background — don't block the download on it.
+        void uploadAndPersist(id, blob);
+      }
+
+      const filename = `Recu_${ctx.numero_recu}.pdf`;
       const prev = cache.get(id);
       if (prev?.url) URL.revokeObjectURL(prev.url);
       const url = URL.createObjectURL(blob);
@@ -125,6 +178,7 @@ export function ensureRecuPDF(
   inflight.set(id, task);
   return task;
 }
+
 
 /** Trigger a browser download from the cached blob. Returns false if not ready. */
 export function downloadCachedRecu(id: string): boolean {
