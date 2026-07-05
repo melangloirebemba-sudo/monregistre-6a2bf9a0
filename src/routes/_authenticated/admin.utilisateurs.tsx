@@ -79,13 +79,17 @@ function AdminContent() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    const base = !term
-      ? users
-      : users.filter(
-          (u) =>
-            u.email.toLowerCase().includes(term) ||
-            (u.nom_affiche ?? "").toLowerCase().includes(term),
-        );
+    let base = users;
+    if (planFilter !== "all") {
+      base = base.filter((u) => u.plan === planFilter);
+    }
+    if (term) {
+      base = base.filter(
+        (u) =>
+          u.email.toLowerCase().includes(term) ||
+          (u.nom_affiche ?? "").toLowerCase().includes(term),
+      );
+    }
     const collator = new Intl.Collator("fr", { sensitivity: "base" });
     const cmp = (a: AdminUser, b: AdminUser) => {
       switch (sortKey) {
