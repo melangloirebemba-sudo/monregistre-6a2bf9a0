@@ -19,6 +19,7 @@ import {
   DEFAULT_NOTIFICATIONS_PREFS,
   type NotifCategory,
   type ReminderFrequency,
+  type DefaultFilter,
 } from "@/lib/notifications-prefs";
 
 export const Route = createFileRoute("/_authenticated/parametres/notifications")({
