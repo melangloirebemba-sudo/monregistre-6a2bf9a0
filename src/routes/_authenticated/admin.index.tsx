@@ -579,6 +579,23 @@ function DeletionRequestsSection() {
     },
   });
 
+  const userIds = data.map((r) => r.user_id);
+  const { data: phones = {} } = useQuery({
+    queryKey: ["admin", "deletion-phones", userIds.sort().join(",")],
+    enabled: userIds.length > 0,
+    staleTime: 60_000,
+    queryFn: async (): Promise<Record<string, string | null>> => {
+      const { data, error } = await supabase
+        .from("profils_enseignant")
+        .select("user_id, telephone")
+        .in("user_id", userIds);
+      if (error) throw error;
+      const map: Record<string, string | null> = {};
+      for (const row of data ?? []) map[row.user_id] = row.telephone;
+      return map;
+    },
+  });
+
   const pending = data.filter((r) => r.statut === "en_attente");
   const traitees = data.filter((r) => r.statut !== "en_attente");
 
@@ -664,6 +681,24 @@ function DeletionRequestsSection() {
                 {r.raison}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
+                {(() => {
+                  const wa = whatsappHrefFor(
+                    phones[r.user_id] ?? null,
+                    `Bonjour ${r.user_nom ?? ""}, nous avons bien reçu votre demande de suppression de compte sur MonRegistre. Pouvons-nous en discuter ?`,
+                  );
+                  return wa ? (
+                    <Button asChild size="sm" variant="outline">
+                      <a href={wa} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="mr-1.5 h-4 w-4 text-teal" />
+                        Contacter sur WhatsApp
+                      </a>
+                    </Button>
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground italic">
+                      Numéro WhatsApp non renseigné
+                    </span>
+                  );
+                })()}
                 <Button
                   size="sm"
                   variant="outline"
