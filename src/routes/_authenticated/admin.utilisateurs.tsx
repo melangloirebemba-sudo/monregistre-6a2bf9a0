@@ -108,9 +108,9 @@ function AdminContent() {
     };
     const sorted = [...base].sort(cmp);
     return sortDir === "asc" ? sorted : sorted.reverse();
-  }, [users, q, sortKey, sortDir]);
+  }, [users, q, planFilter, sortKey, sortDir]);
 
-  const pg = usePagination(filtered.length, 20, [q, sortKey, sortDir]);
+  const pg = usePagination(filtered.length, 20, [q, planFilter, sortKey, sortDir]);
   const paged = pg.slice(filtered);
 
 
