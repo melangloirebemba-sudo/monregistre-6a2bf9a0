@@ -1,8 +1,10 @@
-// Préférences locales de la cloche de notifications : catégories activées
-// et fréquence des rappels de nouveautés non lues. Persistées dans
-// localStorage et propagées via un CustomEvent.
+// Préférences de la cloche de notifications : catégories activées et
+// fréquence des rappels. Persistées dans Supabase (profils_enseignant.
+// notifications_prefs) et mises en cache dans localStorage pour un
+// démarrage instantané et un fonctionnement hors ligne.
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type NotifCategory = "feature" | "fix" | "account" | "billing";
 
@@ -57,7 +59,7 @@ function coerce(raw: unknown): NotificationsPrefs {
   };
 }
 
-export function getNotificationsPrefs(): NotificationsPrefs {
+function readCache(): NotificationsPrefs {
   if (typeof localStorage === "undefined") return { ...DEFAULT_NOTIFICATIONS_PREFS };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -67,28 +69,66 @@ export function getNotificationsPrefs(): NotificationsPrefs {
   }
 }
 
+function writeCache(prefs: NotificationsPrefs) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+  } catch {
+    /* ignore */
+  }
+}
+
+function emitChange() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
+  }
+}
+
+export function getNotificationsPrefs(): NotificationsPrefs {
+  return readCache();
+}
+
+async function fetchRemotePrefs(): Promise<NotificationsPrefs | null> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from("profils_enseignant")
+    .select("notifications_prefs")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error || !data) return null;
+  return coerce((data as { notifications_prefs?: unknown }).notifications_prefs);
+}
+
+async function pushRemotePrefs(prefs: NotificationsPrefs) {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) return;
+  await supabase
+    .from("profils_enseignant")
+    .update({ notifications_prefs: prefs as unknown as never })
+    .eq("user_id", user.id);
+}
+
 export function setNotificationsPrefs(patch: Partial<NotificationsPrefs>) {
-  const current = getNotificationsPrefs();
+  const current = readCache();
   const merged: NotificationsPrefs = coerce({
     ...current,
     ...patch,
     categories: { ...current.categories, ...(patch.categories ?? {}) },
   });
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-  } catch {
-    /* ignore */
-  }
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
-  }
+  writeCache(merged);
+  emitChange();
+  // Sync distant (best-effort, non bloquant)
+  void pushRemotePrefs(merged);
   return merged;
 }
 
 export function useNotificationsPrefs(): NotificationsPrefs {
-  const [prefs, setPrefs] = useState<NotificationsPrefs>(() => getNotificationsPrefs());
+  const [prefs, setPrefs] = useState<NotificationsPrefs>(() => readCache());
+
   useEffect(() => {
-    const onChange = () => setPrefs(getNotificationsPrefs());
+    const onChange = () => setPrefs(readCache());
     window.addEventListener(CHANGE_EVENT, onChange);
     window.addEventListener("storage", onChange);
     return () => {
@@ -96,5 +136,32 @@ export function useNotificationsPrefs(): NotificationsPrefs {
       window.removeEventListener("storage", onChange);
     };
   }, []);
+
+  // Hydratation depuis Supabase au montage et à chaque changement d'auth,
+  // pour restaurer les préférences après un rechargement / sur un autre appareil.
+  useEffect(() => {
+    let cancelled = false;
+    const hydrate = async () => {
+      const remote = await fetchRemotePrefs();
+      if (cancelled || !remote) return;
+      const local = readCache();
+      if (JSON.stringify(local) !== JSON.stringify(remote)) {
+        writeCache(remote);
+        setPrefs(remote);
+        emitChange();
+      }
+    };
+    void hydrate();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
+        void hydrate();
+      }
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
   return prefs;
 }
