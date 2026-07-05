@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, Settings2, ChevronRight } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -13,6 +14,16 @@ import {
   type NotifCategory,
 } from "@/lib/notifications-prefs";
 import { cn } from "@/lib/utils";
+
+// État partagé entre toutes les instances de la cloche (topbar + sidebar) :
+// - `bellOpenCount` : nombre de popovers ouvertes (0 = toutes fermées).
+// - `seenIds` : ids déjà vus, pour n'annoncer qu'une seule fois chaque
+//   nouvelle notification via toast.
+// - `toastInit` : au tout premier rendu on ne toast rien (les notifications
+//   pré-existantes ne sont pas des « nouveautés »).
+let bellOpenCount = 0;
+const seenIds = new Set<string>();
+let toastInit = false;
 
 interface NotificationsBellProps {
   variant?: "topbar" | "sidebar";
