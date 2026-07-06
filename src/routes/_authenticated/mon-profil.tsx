@@ -60,7 +60,7 @@ function MonProfilPage() {
   }, [profil]);
 
   const currentPhone = profil?.telephone ?? "";
-  const isVerified = !!profil?.telephone_verifie;
+  // const isVerified = !!profil?.telephone_verifie;
   const phoneChanged = telephone.trim() !== (currentPhone ?? "").trim();
 
   const save = useMutation({
