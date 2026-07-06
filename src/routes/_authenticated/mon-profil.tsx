@@ -131,27 +131,7 @@ function MonProfilPage() {
         </div>
       </div>
 
-      {!isVerified && currentPhone && (
-        <div className="card-elevated mb-4 flex items-start gap-3 border-amber-500/30 bg-amber-500/5 p-4">
-          <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-foreground">Vérifiez votre numéro</div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Recevez un code SMS à 6 chiffres pour confirmer votre numéro et sécuriser les
-              réinitialisations de mot de passe.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-3"
-              onClick={() => setVerifyOpen(true)}
-            >
-              Recevoir le code SMS
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Phone verification hidden — system not deployed yet */}
 
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
