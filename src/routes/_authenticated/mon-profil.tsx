@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { UserCircle2, KeyRound, ShieldCheck, ShieldAlert, MessageSquare } from "lucide-react";
+import { UserCircle2, KeyRound } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { requireUserId } from "@/lib/queries/data";
@@ -60,7 +60,7 @@ function MonProfilPage() {
   }, [profil]);
 
   const currentPhone = profil?.telephone ?? "";
-  const isVerified = !!profil?.telephone_verifie;
+  // const isVerified = !!profil?.telephone_verifie;
   const phoneChanged = telephone.trim() !== (currentPhone ?? "").trim();
 
   const save = useMutation({
@@ -126,41 +126,12 @@ function MonProfilPage() {
           {currentPhone && (
             <div className="mt-1 flex items-center gap-1.5 text-xs">
               <span className="text-muted-foreground">{currentPhone}</span>
-              {isVerified ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-medium text-teal">
-                  <ShieldCheck className="h-3 w-3" /> Vérifié
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-                  <ShieldAlert className="h-3 w-3" /> Non vérifié
-                </span>
-              )}
             </div>
           )}
         </div>
       </div>
 
-      {!isVerified && currentPhone && (
-        <div className="card-elevated mb-4 flex items-start gap-3 border-amber-500/30 bg-amber-500/5 p-4">
-          <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-foreground">Vérifiez votre numéro</div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Recevez un code SMS à 6 chiffres pour confirmer votre numéro et sécuriser les
-              réinitialisations de mot de passe.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-3"
-              onClick={() => setVerifyOpen(true)}
-            >
-              Recevoir le code SMS
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Phone verification hidden — system not deployed yet */}
 
       <form
         onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
@@ -193,21 +164,7 @@ function MonProfilPage() {
                 onChange={(e) => setTelephone(e.target.value)}
                 placeholder="+242 06 000 00 00"
               />
-              {phoneChanged && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setChangeOpen(true)}
-                >
-                  Vérifier par SMS
-                </Button>
-              )}
             </div>
-            {phoneChanged && (
-              <p className="text-[11px] text-muted-foreground">
-                Le nouveau numéro sera enregistré après réception du code SMS.
-              </p>
-            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="mail">Email</Label>
@@ -243,13 +200,7 @@ function MonProfilPage() {
 
       <ChangePasswordCard />
 
-      <VerifyPhoneDialog open={verifyOpen} onOpenChange={setVerifyOpen} />
-      <ChangePhoneDialog
-        open={changeOpen}
-        onOpenChange={setChangeOpen}
-        newPhone={telephone.trim()}
-        onSuccess={() => qc.invalidateQueries({ queryKey: ["profil"] })}
-      />
+      {/* Phone verification dialogs hidden — system not deployed yet */}
     </div>
   );
 }

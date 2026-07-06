@@ -15,7 +15,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
+import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
@@ -34,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/accueil")({
 
 function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: planCap } = useQuery(planCapabilitiesQO());
   const { data: counts } = useQuery(countsQueryOptions());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: creneaux = [] } = useQuery(creneauxQO());
@@ -224,6 +225,12 @@ function AccueilPage() {
                 {b.label}
               </span>
             ))}
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-ink-foreground/90 backdrop-blur">
+              <span className="font-display text-sm font-semibold text-gold-soft capitalize">
+                {planCap?.plan ?? "Gratuit"}
+              </span>
+              Plan
+            </span>
           </div>
         </div>
       </section>
