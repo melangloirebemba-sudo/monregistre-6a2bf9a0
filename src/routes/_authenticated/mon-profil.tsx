@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { UserCircle2, KeyRound, ShieldCheck, ShieldAlert, MessageSquare } from "lucide-react";
+import { UserCircle2, KeyRound } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { requireUserId } from "@/lib/queries/data";
