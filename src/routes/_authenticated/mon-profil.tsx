@@ -126,15 +126,6 @@ function MonProfilPage() {
           {currentPhone && (
             <div className="mt-1 flex items-center gap-1.5 text-xs">
               <span className="text-muted-foreground">{currentPhone}</span>
-              {isVerified ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-teal/10 px-2 py-0.5 text-[10px] font-medium text-teal">
-                  <ShieldCheck className="h-3 w-3" /> Vérifié
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-                  <ShieldAlert className="h-3 w-3" /> Non vérifié
-                </span>
-              )}
             </div>
           )}
         </div>
