@@ -34,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/accueil")({
 
 function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: planCap } = useQuery(planCapabilitiesQO());
   const { data: counts } = useQuery(countsQueryOptions());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: creneaux = [] } = useQuery(creneauxQO());
