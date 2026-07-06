@@ -200,13 +200,7 @@ function MonProfilPage() {
 
       <ChangePasswordCard />
 
-      <VerifyPhoneDialog open={verifyOpen} onOpenChange={setVerifyOpen} />
-      <ChangePhoneDialog
-        open={changeOpen}
-        onOpenChange={setChangeOpen}
-        newPhone={telephone.trim()}
-        onSuccess={() => qc.invalidateQueries({ queryKey: ["profil"] })}
-      />
+      {/* Phone verification dialogs hidden — system not deployed yet */}
     </div>
   );
 }
