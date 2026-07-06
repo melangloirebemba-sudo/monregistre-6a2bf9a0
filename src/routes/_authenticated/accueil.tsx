@@ -205,12 +205,54 @@ function AccueilPage() {
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/5" />
         <div className="pointer-events-none absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-white/5" />
         <div className="relative">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-ink-foreground/60">
-            Bonjour
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-ink-foreground/60">
+                Bonjour
+              </div>
+              <h1 className="mt-1 truncate font-display text-3xl font-semibold text-ink-foreground">
+                {nom}
+              </h1>
+            </div>
+            {planCap && (
+              <div className="shrink-0 pt-0.5 text-right">
+                <div className="inline-flex flex-col items-end rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 backdrop-blur">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-gold-soft">
+                    <span className="capitalize">{planCap.plan}</span>
+                    {planCap.periode && planCap.plan !== "gratuit" && (
+                      <span className="text-ink-foreground/50">
+                        {" · "}
+                        {planCap.periode === "mensuelle"
+                          ? "Mensuel"
+                          : planCap.periode === "trimestrielle"
+                            ? "Trimestriel"
+                            : "Annuel"}
+                      </span>
+                    )}
+                  </span>
+                  {planCap.plan !== "gratuit" && (
+                    <span
+                      className={`text-[10px] ${
+                        planCap.isExpired
+                          ? "text-ink-foreground/50 line-through"
+                          : planCap.isExpiringSoon
+                            ? "text-warning"
+                            : "text-ink-foreground/40"
+                      }`}
+                    >
+                      {planCap.isExpired
+                        ? "Expiré"
+                        : planCap.isExpiringSoon && planCap.daysRemaining !== null
+                          ? `Expire dans ${planCap.daysRemaining} j`
+                          : planCap.daysRemaining !== null
+                            ? `${planCap.daysRemaining} j restants`
+                            : null}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          <h1 className="mt-1 font-display text-3xl font-semibold text-ink-foreground">
-            {nom}
-          </h1>
           <div className="mt-1 text-sm text-ink-foreground/70">{annee}</div>
 
           <div className="mt-5 flex flex-wrap gap-2">
@@ -225,12 +267,6 @@ function AccueilPage() {
                 {b.label}
               </span>
             ))}
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-ink-foreground/90 backdrop-blur">
-              <span className="font-display text-sm font-semibold text-gold-soft capitalize">
-                {planCap?.plan ?? "Gratuit"}
-              </span>
-              Plan
-            </span>
           </div>
         </div>
       </section>
