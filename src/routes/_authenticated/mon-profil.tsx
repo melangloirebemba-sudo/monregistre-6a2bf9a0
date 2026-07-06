@@ -120,7 +120,7 @@ function MonProfilPage() {
             {`${prenom} ${nomFamille}`.trim() || profil?.nom_affiche || "Enseignant"}
           </div>
           <div className="text-xs text-muted-foreground truncate">
-            {matiere || "Enseignant"}
+            {matiere ? `Enseignant de : ${matiere}` : "Enseignant"}
             {etablissement ? ` • ${etablissement}` : ""}
           </div>
           {currentPhone && (
