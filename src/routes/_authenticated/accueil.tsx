@@ -15,7 +15,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { countsQueryOptions, profilQueryOptions } from "@/lib/queries/profil";
+import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
