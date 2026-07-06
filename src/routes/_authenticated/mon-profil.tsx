@@ -164,21 +164,7 @@ function MonProfilPage() {
                 onChange={(e) => setTelephone(e.target.value)}
                 placeholder="+242 06 000 00 00"
               />
-              {phoneChanged && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setChangeOpen(true)}
-                >
-                  Vérifier par SMS
-                </Button>
-              )}
             </div>
-            {phoneChanged && (
-              <p className="text-[11px] text-muted-foreground">
-                Le nouveau numéro sera enregistré après réception du code SMS.
-              </p>
-            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="mail">Email</Label>
