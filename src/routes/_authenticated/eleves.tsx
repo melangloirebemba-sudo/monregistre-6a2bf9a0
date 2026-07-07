@@ -703,9 +703,56 @@ function EleveDialog({
               Chef de classe
             </span>
           </label>
-          <DialogFooter>
+
+          {!isEdit && pending.length > 0 && (
+            <div className="rounded-xl border border-teal/40 bg-teal/5 p-2">
+              <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                En attente ({pending.length})
+              </div>
+              <ul className="max-h-32 space-y-1 overflow-y-auto">
+                {pending.map((p) => (
+                  <li
+                    key={p.id}
+                    className="flex items-center justify-between rounded-md bg-background/60 px-2 py-1 text-xs"
+                  >
+                    <span className="truncate">
+                      <span className="uppercase">{p.nom}</span> {p.prenom}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removePending(p.id)}
+                      aria-label="Retirer de la file"
+                      className="ml-2 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-            <Button type="submit" disabled={save.isPending || classeMismatch}>{save.isPending ? "…" : "Enregistrer"}</Button>
+            {!isEdit && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={addAnother}
+                disabled={save.isPending || classeMismatch}
+              >
+                <Plus className="mr-1 h-4 w-4" /> Ajouter un autre
+              </Button>
+            )}
+            <Button type="submit" disabled={save.isPending || classeMismatch}>
+              {save.isPending
+                ? "…"
+                : isEdit
+                  ? "Enregistrer"
+                  : pending.length > 0
+                    ? `Enregistrer (${pending.length + (form.nom.trim() || form.prenom.trim() ? 1 : 0)})`
+                    : "Enregistrer"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
