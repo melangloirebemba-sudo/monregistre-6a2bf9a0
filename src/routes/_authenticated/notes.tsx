@@ -1239,8 +1239,8 @@ function BulkNoteDialog({
                   )}
                 </div>
               )}
-              <div className="max-h-[40vh] overflow-y-auto">
-                <table className="w-full text-xs">
+              <div className="max-h-[40vh] overflow-auto">
+                <table className="w-full min-w-[420px] text-xs">
                   <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th className="w-8 px-2 py-1.5"></th>
