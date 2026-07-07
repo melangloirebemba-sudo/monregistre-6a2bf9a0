@@ -11,6 +11,7 @@ import {
   MoreHorizontal,
   ShieldCheck,
   BellRing,
+  MoreHorizontal as MoreIcon,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
