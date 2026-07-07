@@ -681,6 +681,7 @@ function BulkNoteDialog({
   const [values, setValues] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
 
   const libelleRef = useState<HTMLInputElement | null>(null as unknown as HTMLInputElement | null);
   // Simple ref via useState to avoid extra import; we only need the DOM node.
@@ -704,6 +705,7 @@ function BulkNoteDialog({
       setValues({});
       setChecked({});
       setShowPreview(false);
+      setExcludedKeys(new Set());
       // Autofocus sur le libellé au prochain tick.
       setTimeout(() => libelleRef[0]?.focus(), 30);
     }
@@ -757,22 +759,27 @@ function BulkNoteDialog({
     [periodes],
   );
   // Détail complet du produit cartésien pour la prévisualisation.
-  const previewNotes = useMemo(() => {
+  type PlannedNote = {
+    key: string;
+    eleve: (typeof eleves)[number];
+    periode_id: string | null;
+    matiere: string | null;
+    periodeLabel: string;
+    matiereLabel: string;
+    valeur: number;
+  };
+  const previewNotes = useMemo<PlannedNote[]>(() => {
     const periodesToUse: Array<string | null> = periodeIds.length > 0 ? periodeIds : [null];
     const matieresToUse: Array<string | null> = matieresList.length > 0 ? matieresList : [null];
-    const out: Array<{
-      key: string;
-      eleveName: string;
-      periodeLabel: string;
-      matiereLabel: string;
-      valeur: number;
-    }> = [];
+    const out: PlannedNote[] = [];
     for (const r of activeRows) {
       for (const pid of periodesToUse) {
         for (const mat of matieresToUse) {
           out.push({
             key: `${r.eleve.id}|${pid ?? "-"}|${mat ?? "-"}`,
-            eleveName: `${r.eleve.prenom} ${r.eleve.nom}`,
+            eleve: r.eleve,
+            periode_id: pid,
+            matiere: mat,
             periodeLabel: pid ? periodeLabelById[pid] ?? "—" : "—",
             matiereLabel: mat ?? "—",
             valeur: r.num as number,
@@ -782,6 +789,12 @@ function BulkNoteDialog({
     }
     return out;
   }, [activeRows, periodeIds, matieresList, periodeLabelById]);
+
+  const includedPreview = useMemo(
+    () => previewNotes.filter((p) => !excludedKeys.has(p.key)),
+    [previewNotes, excludedKeys],
+  );
+  const includedCount = includedPreview.length;
 
   // Navigation clavier entre les champs élèves.
   const inputRefs = useMemo(() => new Map<string, HTMLInputElement>(), []);
@@ -811,67 +824,54 @@ function BulkNoteDialog({
       if (!libelle.trim()) throw new Error("Libellé obligatoire");
       if (!classeId) throw new Error("Classe obligatoire");
       if (errorCount > 0) throw new Error("Corrigez les notes invalides");
-      if (activeRows.length === 0) throw new Error("Aucune note à enregistrer");
+      if (includedPreview.length === 0) throw new Error("Aucune note à enregistrer");
       const cls = classes.find((c) => c.id === classeId);
       const coef = Number(coefficient) || 1;
-      const periodesToUse = periodeIds.length > 0 ? periodeIds : [null];
-      const matieresToUse = matieresList.length > 0 ? matieresList : [null];
-      for (const r of activeRows) {
-        const ecole_id = r.eleve.ecole_id ?? cls?.ecole_id;
+      for (const p of includedPreview) {
+        const ecole_id = p.eleve.ecole_id ?? cls?.ecole_id;
         if (!ecole_id) continue;
-        for (const pid of periodesToUse) {
-          for (const mat of matieresToUse) {
-            await enqueueWrite({
-              table: "notes",
-              op: "insert",
-              payload: {
-                id: crypto.randomUUID(),
-                user_id,
-                eleve_id: r.eleve.id,
-                libelle: libelle.trim(),
-                valeur: r.num as number,
-                coefficient: coef,
-                matiere: mat,
-                date,
-                periode_id: pid,
-                ecole_id,
-              },
-              label: `Note ${libelle} · ${r.eleve.prenom} ${r.eleve.nom}`,
-            });
-          }
-        }
+        await enqueueWrite({
+          table: "notes",
+          op: "insert",
+          payload: {
+            id: crypto.randomUUID(),
+            user_id,
+            eleve_id: p.eleve.id,
+            libelle: libelle.trim(),
+            valeur: p.valeur,
+            coefficient: coef,
+            matiere: p.matiere,
+            date,
+            periode_id: p.periode_id,
+            ecole_id,
+          },
+          label: `Note ${libelle} · ${p.eleve.prenom} ${p.eleve.nom}`,
+        });
       }
     },
     onMutate: async (): Promise<{ snapshot: ListSnapshot<NoteRow> } | undefined> => {
-      if (!libelle.trim() || !classeId || errorCount > 0 || activeRows.length === 0) return undefined;
+      if (!libelle.trim() || !classeId || errorCount > 0 || includedPreview.length === 0) {
+        return undefined;
+      }
       const cls = classes.find((c) => c.id === classeId);
       const coef = Number(coefficient) || 1;
-      const periodesToUse = periodeIds.length > 0 ? periodeIds : [null];
-      const matieresToUse = matieresList.length > 0 ? matieresList : [null];
       await qc.cancelQueries({ queryKey: ["notes"] });
       const now = new Date().toISOString();
-      const optimistic: NoteRow[] = [];
-      for (const r of activeRows) {
-        for (const pid of periodesToUse) {
-          for (const mat of matieresToUse) {
-            optimistic.push({
-              id: `tmp-${crypto.randomUUID()}`,
-              user_id: "optimistic",
-              eleve_id: r.eleve.id,
-              libelle: libelle.trim(),
-              valeur: r.num as number,
-              coefficient: coef,
-              matiere: mat,
-              date,
-              periode_id: pid,
-              sequence_id: null,
-              ecole_id: r.eleve.ecole_id ?? cls?.ecole_id ?? "",
-              updated_at: now,
-              eleve: { nom: r.eleve.nom, prenom: r.eleve.prenom, classe_id: r.eleve.classe_id },
-            });
-          }
-        }
-      }
+      const optimistic: NoteRow[] = includedPreview.map((p) => ({
+        id: `tmp-${crypto.randomUUID()}`,
+        user_id: "optimistic",
+        eleve_id: p.eleve.id,
+        libelle: libelle.trim(),
+        valeur: p.valeur,
+        coefficient: coef,
+        matiere: p.matiere,
+        date,
+        periode_id: p.periode_id,
+        sequence_id: null,
+        ecole_id: p.eleve.ecole_id ?? cls?.ecole_id ?? "",
+        updated_at: now,
+        eleve: { nom: p.eleve.nom, prenom: p.eleve.prenom, classe_id: p.eleve.classe_id },
+      }));
       const snapshot = upsertManyInLists<NoteRow>(qc, ["notes"], optimistic, {
         sort: (a, b) => b.date.localeCompare(a.date),
         keyMatches: (row, key) => {
@@ -889,7 +889,7 @@ function BulkNoteDialog({
       if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
       toast.error(e.message);
     },
-    onSuccess: () => toast.success(`${totalNotes} note(s) ajoutée(s)`),
+    onSuccess: () => toast.success(`${includedCount} note(s) ajoutée(s)`),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["notes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
@@ -1095,22 +1095,40 @@ function BulkNoteDialog({
 
           {showPreview && (
             <div className="rounded-xl border border-teal/40 bg-teal/5">
-              <div className="flex items-center justify-between border-b border-teal/30 px-3 py-2">
+              <div className="flex items-center justify-between gap-2 border-b border-teal/30 px-3 py-2">
                 <div className="text-sm font-semibold text-foreground">
-                  Prévisualisation · {previewNotes.length} note(s)
+                  Prévisualisation · {includedCount}/{previewNotes.length} sélectionnée(s)
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPreview(false)}
-                  className="text-[11px] text-foreground underline underline-offset-2"
-                >
-                  Modifier
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="text-[11px] text-foreground underline underline-offset-2"
+                    onClick={() => setExcludedKeys(new Set())}
+                  >
+                    Tout
+                  </button>
+                  <button
+                    type="button"
+                    className="text-[11px] text-foreground underline underline-offset-2"
+                    onClick={() => setExcludedKeys(new Set(previewNotes.map((p) => p.key)))}
+                  >
+                    Aucun
+                  </button>
+                  <span className="text-muted-foreground">·</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(false)}
+                    className="text-[11px] text-foreground underline underline-offset-2"
+                  >
+                    Modifier
+                  </button>
+                </div>
               </div>
               <div className="max-h-[40vh] overflow-y-auto">
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
                     <tr>
+                      <th className="w-8 px-2 py-1.5"></th>
                       <th className="px-3 py-1.5 text-left">Élève</th>
                       <th className="px-2 py-1.5 text-left">Période</th>
                       <th className="px-2 py-1.5 text-left">Matière</th>
@@ -1118,16 +1136,46 @@ function BulkNoteDialog({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {previewNotes.map((p) => (
-                      <tr key={p.key}>
-                        <td className="truncate px-3 py-1.5">{p.eleveName}</td>
-                        <td className="px-2 py-1.5 text-muted-foreground">{p.periodeLabel}</td>
-                        <td className="px-2 py-1.5 text-muted-foreground">{p.matiereLabel}</td>
-                        <td className="px-3 py-1.5 text-right font-semibold">
-                          {formatNote(p.valeur)}/{echelle}
-                        </td>
-                      </tr>
-                    ))}
+                    {previewNotes.map((p) => {
+                      const included = !excludedKeys.has(p.key);
+                      return (
+                        <tr
+                          key={p.key}
+                          className={`cursor-pointer ${included ? "" : "opacity-40"}`}
+                          onClick={() =>
+                            setExcludedKeys((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(p.key)) next.delete(p.key);
+                              else next.add(p.key);
+                              return next;
+                            })
+                          }
+                        >
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 accent-teal"
+                              checked={included}
+                              onChange={(e) =>
+                                setExcludedKeys((prev) => {
+                                  const next = new Set(prev);
+                                  if (e.target.checked) next.delete(p.key);
+                                  else next.add(p.key);
+                                  return next;
+                                })
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+                          <td className="truncate px-3 py-1.5">{p.eleve.prenom} {p.eleve.nom}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground">{p.periodeLabel}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground">{p.matiereLabel}</td>
+                          <td className="px-3 py-1.5 text-right font-semibold">
+                            {formatNote(p.valeur)}/{echelle}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1155,6 +1203,7 @@ function BulkNoteDialog({
                     toast.error("Aucune note à enregistrer");
                     return;
                   }
+                  setExcludedKeys(new Set());
                   setShowPreview(true);
                 }}
                 disabled={totalNotes === 0 || errorCount > 0 || !libelle.trim()}
@@ -1164,9 +1213,9 @@ function BulkNoteDialog({
             ) : (
               <Button
                 type="submit"
-                disabled={save.isPending || totalNotes === 0 || errorCount > 0 || !libelle.trim()}
+                disabled={save.isPending || includedCount === 0 || errorCount > 0 || !libelle.trim()}
               >
-                {save.isPending ? "…" : `Confirmer (${totalNotes})`}
+                {save.isPending ? "…" : `Confirmer (${includedCount})`}
               </Button>
             )}
           </DialogFooter>
