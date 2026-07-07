@@ -1237,6 +1237,8 @@ function BulkNoteDialog({
                     return;
                   }
                   setExcludedKeys(new Set());
+                  setPreviewPeriodeFilter(null);
+                  setPreviewMatiereFilter(null);
                   setShowPreview(true);
                 }}
                 disabled={totalNotes === 0 || errorCount > 0 || !libelle.trim()}
