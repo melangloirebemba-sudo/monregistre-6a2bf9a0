@@ -322,6 +322,15 @@ function ElevesPage() {
         defaultClasseId={classeFilter !== "all" ? classeFilter : classes[0]?.id}
       />
       <DeleteEleveDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)} eleve={toDelete} onDone={() => setToDelete(null)} />
+      <EleveDetailsDialog
+        open={!!viewing}
+        onOpenChange={(v) => !v && setViewing(null)}
+        eleve={viewing}
+        classe={viewing ? classeById[viewing.classe_id] : null}
+        ecoleNom={viewing ? ecoleById[viewing.ecole_id] : undefined}
+        moyenne={viewing ? moyennesByEleve.get(viewing.id) : undefined}
+        echelle={echelle}
+      />
       <PlanUpgradeDialog
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
