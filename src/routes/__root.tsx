@@ -108,6 +108,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      // Préconnecte à l'API backend pour réduire la latence des premières requêtes.
+      ...(import.meta.env.VITE_SUPABASE_URL
+        ? [
+            { rel: "preconnect", href: import.meta.env.VITE_SUPABASE_URL as string, crossOrigin: "anonymous" as const },
+            { rel: "dns-prefetch", href: import.meta.env.VITE_SUPABASE_URL as string },
+          ]
+        : []),
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap",
