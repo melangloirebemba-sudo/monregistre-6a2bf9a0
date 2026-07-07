@@ -705,6 +705,7 @@ function BulkNoteDialog({
       setValues({});
       setChecked({});
       setShowPreview(false);
+      setExcludedKeys(new Set());
       // Autofocus sur le libellé au prochain tick.
       setTimeout(() => libelleRef[0]?.focus(), 30);
     }
