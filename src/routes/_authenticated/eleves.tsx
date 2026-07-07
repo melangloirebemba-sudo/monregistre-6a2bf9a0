@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Users, Plus, Pencil, Trash2, Search, Crown, Upload, Download } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, Search, Crown, Upload, Download, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { parseCsvFile, downloadCsv } from "@/lib/csv";
@@ -76,6 +76,7 @@ function ElevesPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Eleve | null>(null);
   const [open, setOpen] = useState(false);
+  const [viewing, setViewing] = useState<Eleve | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Eleve | null>(null);
 
@@ -229,7 +230,7 @@ function ElevesPage() {
               <li key={e.id} className="card-elevated p-3">
                 <div className="flex items-center gap-3">
                   <span className={`relative grid h-10 w-10 place-items-center rounded-full font-display text-sm font-semibold ${e.sexe === "F" ? "bg-gold-soft/40 text-foreground" : "bg-teal/15 text-foreground"}`}>
-                    {e.prenom.charAt(0)}{e.nom.charAt(0)}
+                    {e.nom.charAt(0)}{e.prenom.charAt(0)}
                     {isChef && (
                       <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-gold text-foreground shadow" title="Chef de classe">
                         <Crown className="h-3 w-3" />
@@ -239,7 +240,7 @@ function ElevesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <div className="truncate font-display text-sm font-semibold text-foreground">
-                        {e.prenom} {e.nom}
+                        <span className="uppercase">{e.nom}</span> {e.prenom}
                       </div>
                       {isChef && (
                         <span className="rounded-full bg-gold/25 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-foreground">Chef</span>
@@ -257,6 +258,9 @@ function ElevesPage() {
                       {formatNote(moy)}/{echelle}
                     </span>
                   )}
+                  <button onClick={() => setViewing(e)} aria-label="Voir les détails" className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground">
+                    <Eye className="h-4 w-4" />
+                  </button>
                   <button onClick={() => { setEditing(e); setOpen(true); }} aria-label="Modifier" className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground">
                     <Pencil className="h-4 w-4" />
                   </button>
@@ -478,7 +482,14 @@ function EleveDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="enom">Nom *</Label>
-              <Input id="enom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
+              <Input
+                id="enom"
+                value={form.nom}
+                onChange={(e) => setForm({ ...form, nom: e.target.value.toUpperCase() })}
+                style={{ textTransform: "uppercase" }}
+                autoCapitalize="characters"
+                spellCheck={false}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
