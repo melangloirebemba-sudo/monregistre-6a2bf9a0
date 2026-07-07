@@ -26,6 +26,9 @@ import {
   ChevronDown,
   ChevronRight,
   Eraser,
+  MailCheck,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -48,6 +51,7 @@ import {
   listBroadcastReaders,
   deleteBroadcast,
   clearBroadcastHistory,
+  previewBroadcastRecipients,
 } from "@/lib/admin-notifications.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/notifications")({
@@ -130,6 +134,21 @@ function AdminNotificationsPage() {
   const listReadersFn = useServerFn(listBroadcastReaders);
   const deleteBroadcastFn = useServerFn(deleteBroadcast);
   const clearHistoryFn = useServerFn(clearBroadcastHistory);
+  const previewFn = useServerFn(previewBroadcastRecipients);
+
+  const [showPreview, setShowPreview] = useState(false);
+  const [lastResult, setLastResult] = useState<{
+    sent: number;
+    failed: number;
+    total: number;
+    details: Array<{
+      user_id: string;
+      nom_affiche: string | null;
+      email: string | null;
+      status: "sent" | "failed";
+      error?: string;
+    }>;
+  } | null>(null);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -173,19 +192,47 @@ function AdminNotificationsPage() {
     },
     onSuccess: (res) => {
       if (mode === "now") {
-        const r = res as { recipients?: number };
-        toast.success(`Notification envoyée à ${r.recipients ?? 0} destinataire(s)`);
+        const r = res as {
+          recipients?: number;
+          sent?: number;
+          failed?: number;
+          details?: Array<{
+            user_id: string;
+            nom_affiche: string | null;
+            email: string | null;
+            status: "sent" | "failed";
+            error?: string;
+          }>;
+        };
+        const sent = r.sent ?? r.recipients ?? 0;
+        const failed = r.failed ?? 0;
+        setLastResult({
+          sent,
+          failed,
+          total: r.recipients ?? 0,
+          details: r.details ?? [],
+        });
+        if (failed === 0) {
+          toast.success(`Notification envoyée à ${sent} destinataire(s)`);
+        } else {
+          toast.error(`Envoi partiel : ${sent} succès, ${failed} échec(s)`);
+        }
       } else {
         toast.success("Notification programmée");
       }
+      setShowPreview(false);
       setTitle("");
       setBody("");
       setHref("");
       setTargetValue("");
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      setShowPreview(false);
+      toast.error(e.message);
+    },
   });
+
 
 
   const removeBroadcast = useMutation({
@@ -208,6 +255,19 @@ function AdminNotificationsPage() {
 
   const canSubmit = title.trim().length > 0 &&
     (targetType === "all" || targetValue.trim().length > 0);
+
+  const previewQuery = useQuery({
+    queryKey: ["admin-broadcast-preview", targetType, targetValue],
+    queryFn: () =>
+      previewFn({
+        data: {
+          target_type: targetType,
+          target_value: targetType === "all" ? null : targetValue.trim() || null,
+        },
+      }),
+    enabled: showPreview && canSubmit,
+    staleTime: 15_000,
+  });
 
   const cancel = useMutation({
     mutationFn: async (id: string) => cancelFn({ data: { id } }),
@@ -464,18 +524,125 @@ function AdminNotificationsPage() {
               </p>
             </div>
           )}
-          <Button
-            type="button"
-            className="w-full"
-            disabled={!canSubmit || submitting.isPending}
-            onClick={() => submitting.mutate()}
-          >
-            {submitting.isPending
-              ? "Envoi…"
-              : mode === "now"
-                ? "Envoyer immédiatement"
-                : "Programmer l'envoi"}
-          </Button>
+          {!showPreview ? (
+            <Button
+              type="button"
+              className="w-full"
+              disabled={!canSubmit}
+              onClick={() => {
+                setLastResult(null);
+                setShowPreview(true);
+              }}
+            >
+              <Eye className="mr-1.5 h-3.5 w-3.5" />
+              Aperçu avant {mode === "now" ? "envoi" : "programmation"}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
+                <div className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Aperçu du message
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                    {CATEGORY_LABELS[category]}
+                  </span>
+                  {mode === "schedule" ? (
+                    <span className="text-[11px] text-muted-foreground">
+                      Programmé pour <b className="text-foreground">{new Date(sendAt).toLocaleString("fr-FR")}</b>
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground">Envoi immédiat</span>
+                  )}
+                </div>
+                <div className="mt-2 text-sm font-semibold text-foreground">
+                  {title.trim() || <span className="italic text-muted-foreground">Sans titre</span>}
+                </div>
+                {body.trim() && (
+                  <div className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                    {body.trim()}
+                  </div>
+                )}
+                {href.trim() && (
+                  <div className="mt-2 text-[11px] text-muted-foreground">
+                    Lien : <code className="rounded bg-background/60 px-1">{href.trim()}</code>
+                  </div>
+                )}
+              </div>
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Destinataires
+                  </div>
+                  {previewQuery.isFetching && (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {previewQuery.isLoading ? (
+                  <div className="text-xs text-muted-foreground">Calcul en cours…</div>
+                ) : previewQuery.error ? (
+                  <div className="text-xs text-destructive">
+                    {(previewQuery.error as Error).message}
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-sm font-semibold text-foreground">
+                      {previewQuery.data?.total ?? 0} destinataire(s)
+                    </div>
+                    {(previewQuery.data?.recipients?.length ?? 0) > 0 && (
+                      <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto">
+                        {previewQuery.data!.recipients.slice(0, 20).map((r) => (
+                          <li
+                            key={r.user_id}
+                            className="flex items-center justify-between gap-2 rounded-md bg-background/50 px-2 py-1 text-[11px]"
+                          >
+                            <span className="truncate text-foreground">
+                              {r.nom_affiche || r.email || r.user_id}
+                            </span>
+                            {r.email && (
+                              <span className="truncate text-muted-foreground">{r.email}</span>
+                            )}
+                          </li>
+                        ))}
+                        {previewQuery.data!.total > 20 && (
+                          <li className="px-2 text-[11px] text-muted-foreground">
+                            … et {previewQuery.data!.total - 20} autre(s)
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={submitting.isPending}
+                  onClick={() => setShowPreview(false)}
+                >
+                  Modifier
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  disabled={submitting.isPending || (previewQuery.data?.total ?? 0) === 0}
+                  onClick={() => submitting.mutate()}
+                >
+                  {submitting.isPending
+                    ? "Envoi…"
+                    : mode === "now"
+                      ? "Confirmer l'envoi"
+                      : "Confirmer la programmation"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {lastResult && mode === "now" && (
+            <SendResultPanel result={lastResult} onClose={() => setLastResult(null)} />
+          )}
         </div>
       </section>
 
@@ -736,5 +903,102 @@ function ReadersPanel({ id, loader }: { id: string; loader: ReadersLoader }) {
   );
 }
 
+function SendResultPanel({
+  result,
+  onClose,
+}: {
+  result: {
+    sent: number;
+    failed: number;
+    total: number;
+    details: Array<{
+      user_id: string;
+      nom_affiche: string | null;
+      email: string | null;
+      status: "sent" | "failed";
+      error?: string;
+    }>;
+  };
+  onClose: () => void;
+}) {
+  const allOk = result.failed === 0 && result.sent > 0;
+  const partial = result.failed > 0 && result.sent > 0;
+  const allFail = result.failed > 0 && result.sent === 0;
+
+  return (
+    <div
+      className={`mt-3 rounded-xl border p-3 ${
+        allOk
+          ? "border-teal/40 bg-teal/10"
+          : allFail
+            ? "border-destructive/40 bg-destructive/10"
+            : "border-gold/40 bg-gold/10"
+      }`}
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {allOk ? (
+            <MailCheck className="h-4 w-4 text-teal" />
+          ) : allFail ? (
+            <XCircle className="h-4 w-4 text-destructive" />
+          ) : (
+            <AlertCircle className="h-4 w-4 text-gold" />
+          )}
+          <div>
+            <div className="text-sm font-semibold text-foreground">
+              {allOk
+                ? "Notification envoyée avec succès"
+                : allFail
+                  ? "Envoi échoué"
+                  : "Envoi partiel"}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {result.sent} succès · {result.failed} échec(s) · {result.total} au total
+            </div>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Fermer">
+          <XCircle className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      {result.details.length > 0 && (
+        <ul className="max-h-56 space-y-1 overflow-y-auto rounded-md bg-background/40 p-1">
+          {result.details.map((d) => (
+            <li
+              key={d.user_id}
+              className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/40"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium text-foreground">
+                  {d.nom_affiche || d.email || d.user_id}
+                </div>
+                {d.email && d.nom_affiche && (
+                  <div className="truncate text-[10px] text-muted-foreground">{d.email}</div>
+                )}
+                {d.status === "failed" && d.error && (
+                  <div className="truncate text-[10px] text-destructive">{d.error}</div>
+                )}
+              </div>
+              {d.status === "sent" ? (
+                <span className="inline-flex items-center gap-1 text-[10px] text-teal">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Envoyée
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] text-destructive">
+                  <XCircle className="h-3 w-3" />
+                  Échec
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // Silence unused import warning
 void useQuery;
+
+
