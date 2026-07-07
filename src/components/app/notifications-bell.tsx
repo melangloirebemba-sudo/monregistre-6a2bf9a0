@@ -305,12 +305,10 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
                     </span>
                   )}
                 </span>
-                {item.href && (
-                  <ChevronRight
-                    className="mt-1 h-4 w-4 shrink-0 text-muted-foreground"
-                    aria-hidden
-                  />
-                )}
+                <ChevronRight
+                  className="mt-1 h-4 w-4 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
               </>
             );
             const rowClass = cn(
@@ -319,19 +317,13 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
             );
             return (
               <li key={`${item.source}:${item.id}`}>
-                {item.href ? (
-                  <Link
-                    to={item.href}
-                    onClick={() => markRead(item)}
-                    className={rowClass}
-                  >
-                    {content}
-                  </Link>
-                ) : (
-                  <button onClick={() => markRead(item)} className={rowClass}>
-                    {content}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => openDetail(item)}
+                  className={rowClass}
+                >
+                  {content}
+                </button>
               </li>
             );
           })}
