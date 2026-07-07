@@ -161,27 +161,34 @@ function AdminNotificationsPage() {
         href: href.trim() || null,
         target_type: targetType,
         target_value: targetType === "all" ? null : targetValue.trim() || null,
-        send_at:
-          mode === "schedule" ? new Date(sendAt).toISOString() : null,
+        send_at: new Date(sendAt).toISOString(),
       };
-      if (mode === "now") {
-        return sendNow({ data: payload });
-      }
       return scheduleFn({ data: payload });
     },
-    onSuccess: (res) => {
-      if (mode === "now") {
-        const r = res as { recipients?: number };
-        toast.success(
-          `Notification envoyée à ${r.recipients ?? 0} destinataire(s)`,
-        );
-      } else {
-        toast.success("Notification programmée");
-      }
+    onSuccess: () => {
+      toast.success("Notification programmée");
       setTitle("");
       setBody("");
       setHref("");
       setTargetValue("");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeBroadcast = useMutation({
+    mutationFn: async (id: string) => deleteBroadcastFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Notification supprimée");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const clearHistory = useMutation({
+    mutationFn: async () => clearHistoryFn({ data: { include_pending: false } }),
+    onSuccess: () => {
+      toast.success("Historique effacé");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
