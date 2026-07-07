@@ -54,7 +54,7 @@ export async function enablePush(): Promise<{ ok: true } | { ok: false; reason: 
     try {
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer as ArrayBuffer,
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Abonnement impossible.";
