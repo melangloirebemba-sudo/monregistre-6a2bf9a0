@@ -344,8 +344,13 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
             <AlertDialogCancel className="mt-0 rounded-lg">Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
+                const count = items.length;
                 clearAll();
-                toast.success("Notifications effacées");
+                toast.success(
+                  count === 0
+                    ? "Aucune notification à effacer"
+                    : `${count} notification${count > 1 ? "s" : ""} supprimée${count > 1 ? "s" : ""}`,
+                );
               }}
               className="rounded-lg bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90"
             >
