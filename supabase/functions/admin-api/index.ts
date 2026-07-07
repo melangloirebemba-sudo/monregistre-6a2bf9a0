@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
           user_id: userId,
           title: "Votre mot de passe a été réinitialisé",
           body: "Un administrateur a défini un nouveau mot de passe pour votre compte.",
-          category: "account",
+          category: "security",
           href: "/mon-profil",
         });
         return json({ ok: true });
