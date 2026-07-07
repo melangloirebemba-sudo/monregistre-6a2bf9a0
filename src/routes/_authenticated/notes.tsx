@@ -1172,7 +1172,7 @@ function BulkNoteDialog({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {previewNotes.map((p) => {
+                    {visiblePreview.map((p) => {
                       const included = !excludedKeys.has(p.key);
                       return (
                         <tr
