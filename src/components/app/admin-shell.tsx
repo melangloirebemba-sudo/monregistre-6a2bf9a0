@@ -61,7 +61,7 @@ export function AdminShell({ children }: AdminShellProps) {
       {/* Sidebar desktop — palette identique aux enseignants */}
       <aside aria-label="Navigation admin" className="topbar-ink hidden shrink-0 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-64 lg:flex-col xl:w-72">
         <div className="flex items-center gap-3 px-5 py-6">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-teal text-cream shadow-soft">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-teal text-ink-foreground shadow-soft">
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div className="min-w-0 leading-tight">
@@ -102,7 +102,7 @@ export function AdminShell({ children }: AdminShellProps) {
                 aria-label={`Compte : ${nom}`}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
               >
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-teal font-display text-xs font-semibold text-cream">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-teal font-display text-xs font-semibold text-ink-foreground">
                   {initiales}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -131,7 +131,7 @@ export function AdminShell({ children }: AdminShellProps) {
         {/* Topbar mobile/tablet */}
         <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 lg:hidden">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-teal font-semibold text-cream shadow-soft">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-teal font-semibold text-ink-foreground shadow-soft">
               <Shield className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 leading-tight">

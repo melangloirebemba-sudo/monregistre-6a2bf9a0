@@ -307,7 +307,7 @@ function AdminContent() {
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="truncate font-medium text-foreground">{displayName}</span>
                           {isAdmin && (
-                            <Badge className="bg-teal text-cream">
+                            <Badge className="bg-teal text-ink-foreground">
                               <Crown aria-hidden="true" className="mr-1 h-3 w-3" /> Admin
                             </Badge>
                           )}
@@ -455,7 +455,7 @@ function AdminContent() {
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="truncate font-medium">{displayName}</span>
                             {isAdmin && (
-                              <Badge className="bg-teal text-cream">
+                              <Badge className="bg-teal text-ink-foreground">
                                 <Crown aria-hidden="true" className="mr-1 h-3 w-3" /> Admin
                               </Badge>
                             )}

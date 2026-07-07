@@ -309,7 +309,7 @@ function ParametresPage() {
 const PLAN_BADGE: Record<PlanCapabilities["plan"], string> = {
   gratuit: "bg-muted text-muted-foreground",
   lite: "bg-gold/25 text-foreground",
-  premium: "bg-teal text-cream",
+  premium: "bg-teal text-ink-foreground",
 };
 
 function fmtLimit(n: number | null | undefined) {
@@ -484,12 +484,12 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
 
   const trigger =
     variant === "header" ? (
-      <Button size="sm" className="bg-teal text-cream hover:bg-teal/90">
+      <Button size="sm" className="bg-teal text-ink-foreground hover:bg-teal/90">
         <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
         Mettre à niveau
       </Button>
     ) : (
-      <Button size="sm" className="bg-teal text-cream hover:bg-teal/90">
+      <Button size="sm" className="bg-teal text-ink-foreground hover:bg-teal/90">
         <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
         Voir les plans supérieurs
       </Button>
@@ -547,7 +547,7 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 rounded-md bg-teal px-3 py-2 text-sm font-medium text-cream hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center gap-1.5 rounded-md bg-teal px-3 py-2 text-sm font-medium text-ink-foreground hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
           >
             <Mail className="h-4 w-4" aria-hidden="true" />
             Nous contacter sur WhatsApp

@@ -56,7 +56,7 @@ const PLAN_LABEL: Record<Paiement["plan"], string> = {
 const PLAN_BADGE: Record<Paiement["plan"], string> = {
   gratuit: "bg-muted text-muted-foreground",
   lite: "bg-gold/25 text-foreground",
-  premium: "bg-teal text-cream",
+  premium: "bg-teal text-ink-foreground",
 };
 const PERIODE_LABEL: Record<NonNullable<Paiement["periode"]>, string> = {
   mensuelle: "Mensuelle",

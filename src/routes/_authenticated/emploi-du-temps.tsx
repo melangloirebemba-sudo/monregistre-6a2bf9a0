@@ -215,7 +215,7 @@ function EmploiDuTempsPage() {
       <div className="space-y-4">
         {days.map((j) => (
           <section key={j.v} className="card-elevated overflow-hidden">
-            <div className="bg-ink text-cream px-4 py-2 font-serif text-sm tracking-wide">
+            <div className="bg-ink text-ink-foreground px-4 py-2 font-serif text-sm tracking-wide">
               {j.label}
             </div>
             <ul className="divide-y divide-ink/10">{j.items.map(renderCreneauItem)}</ul>
@@ -232,7 +232,7 @@ function EmploiDuTempsPage() {
           <h1 className="text-2xl sm:text-3xl font-serif text-foreground">Emploi du temps</h1>
           <p className="text-sm text-foreground/60">Créneaux hebdomadaires par classe.</p>
         </div>
-        <Button onClick={openCreate} className="bg-teal text-cream hover:bg-teal/90">
+        <Button onClick={openCreate} className="bg-teal text-ink-foreground hover:bg-teal/90">
           <Plus className="h-4 w-4 mr-1.5" />
           Créneau
         </Button>
@@ -320,7 +320,7 @@ function EmploiDuTempsPage() {
             <Button
               onClick={() => save.mutate()}
               disabled={save.isPending}
-              className="bg-teal text-cream hover:bg-teal/90"
+              className="bg-teal text-ink-foreground hover:bg-teal/90"
             >
               {save.isPending ? "..." : edit ? "Enregistrer" : "Ajouter"}
             </Button>

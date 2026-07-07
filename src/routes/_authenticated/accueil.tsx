@@ -372,7 +372,7 @@ function AccueilPage() {
                     </p>
                   </div>
                   {isNow && (
-                    <span className="shrink-0 rounded-full bg-teal px-2 py-0.5 text-[10px] font-semibold text-cream">
+                    <span className="shrink-0 rounded-full bg-teal px-2 py-0.5 text-[10px] font-semibold text-ink-foreground">
                       En cours
                     </span>
                   )}

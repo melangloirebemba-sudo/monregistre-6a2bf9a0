@@ -327,7 +327,7 @@ function RapportsPage() {
                 disabled={!canPdf}
                 aria-disabled={!canPdf}
                 title={!canPdf ? "Export PDF réservé aux plans Lite et Premium" : undefined}
-                className="bg-teal text-cream hover:bg-teal/90 disabled:opacity-60"
+                className="bg-teal text-ink-foreground hover:bg-teal/90 disabled:opacity-60"
               >
                 <FileDown className="h-4 w-4 mr-1.5" />
                 Tout exporter
@@ -366,12 +366,12 @@ function KpiCard({
   accent?: boolean;
 }) {
   return (
-    <div className={`card-elevated p-4 ${accent ? "bg-teal text-cream" : ""}`}>
-      <div className={`flex items-center gap-2 text-xs ${accent ? "text-cream/80" : "text-foreground/60"}`}>
+    <div className={`card-elevated p-4 ${accent ? "bg-teal text-ink-foreground" : ""}`}>
+      <div className={`flex items-center gap-2 text-xs ${accent ? "text-ink-foreground/80" : "text-foreground/60"}`}>
         {icon}
         {label}
       </div>
-      <p className={`mt-2 text-2xl font-serif ${accent ? "text-cream" : "text-foreground"}`}>{value}</p>
+      <p className={`mt-2 text-2xl font-serif ${accent ? "text-ink-foreground" : "text-foreground"}`}>{value}</p>
     </div>
   );
 }
