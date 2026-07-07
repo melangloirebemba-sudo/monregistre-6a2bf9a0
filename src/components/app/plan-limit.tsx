@@ -133,19 +133,64 @@ export function PlanUpgradeDialog({
   currentPlan,
   contextName,
   limitDescription,
+  ecole,
+  classe,
+  ressource,
+  userName,
+  telephone,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   currentPlan: PlanKey;
+  /** Kept for backward compat — used as fallback pour l'école. */
   contextName?: string;
   /** ex : "1 classe par école", "25 élèves" */
   limitDescription: string;
+  ecole?: string;
+  classe?: string;
+  ressource?: string;
+  userName?: string;
+  telephone?: string;
 }) {
+  const qc = useQueryClient();
   const nextPlan = NEXT_PLAN[currentPlan];
   const currentLabel = PLAN_LABEL[currentPlan];
   const nextLabel = nextPlan ? PLAN_LABEL[nextPlan] : null;
-  const waHref = upgradeWhatsAppHref(contextName ?? "", currentLabel);
+  const upgradeContext: UpgradeContext = {
+    planLabel: currentLabel,
+    targetPlanLabel: nextLabel,
+    ecole: ecole ?? contextName,
+    classe,
+    ressource,
+    motif: limitDescription ? `Limite atteinte : ${limitDescription}` : undefined,
+    userName,
+    telephone,
+  };
+  const waHref = upgradeWhatsAppHref(upgradeContext);
   const highlights = nextPlan ? PLAN_HIGHLIGHTS[nextPlan] : [];
+
+  // Après retour de WhatsApp (retour du focus / onglet redevient visible),
+  // on rafraîchit les capacités du plan pour refléter un éventuel upgrade.
+  const waClicked = useRef(false);
+  useEffect(() => {
+    if (!open) return;
+    const refresh = () => {
+      if (!waClicked.current) return;
+      waClicked.current = false;
+      qc.invalidateQueries({ queryKey: ["plan-capabilities"] });
+      qc.invalidateQueries({ queryKey: ["profil"] });
+      qc.invalidateQueries({ queryKey: ["counts"] });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [open, qc]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
