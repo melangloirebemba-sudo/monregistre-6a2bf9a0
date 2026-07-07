@@ -1160,6 +1160,72 @@ function BulkNoteDialog({
                   </button>
                 </div>
               </div>
+              {(previewPeriodes.length > 1 || previewMatieres.length > 1) && (
+                <div className="space-y-1.5 border-b border-teal/20 px-3 py-2">
+                  {previewPeriodes.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Périodes ·</span>
+                      {previewPeriodes.map((pp) => {
+                        const on = !previewPeriodeFilter || previewPeriodeFilter.has(pp.id);
+                        return (
+                          <button
+                            key={pp.id ?? "__none__"}
+                            type="button"
+                            onClick={() => {
+                              setPreviewPeriodeFilter((prev) => {
+                                const base = prev ?? new Set(previewPeriodes.map((x) => x.id));
+                                const next = new Set(base);
+                                if (next.has(pp.id)) next.delete(pp.id);
+                                else next.add(pp.id);
+                                if (next.size === previewPeriodes.length) return null;
+                                return next;
+                              });
+                            }}
+                            className={`rounded-full border px-2 py-0.5 text-[11px] transition ${
+                              on
+                                ? "border-teal bg-teal text-teal-foreground"
+                                : "border-border bg-background text-muted-foreground"
+                            }`}
+                          >
+                            {pp.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {previewMatieres.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Matières ·</span>
+                      {previewMatieres.map((pm) => {
+                        const on = !previewMatiereFilter || previewMatiereFilter.has(pm.id);
+                        return (
+                          <button
+                            key={pm.id ?? "__none__"}
+                            type="button"
+                            onClick={() => {
+                              setPreviewMatiereFilter((prev) => {
+                                const base = prev ?? new Set(previewMatieres.map((x) => x.id));
+                                const next = new Set(base);
+                                if (next.has(pm.id)) next.delete(pm.id);
+                                else next.add(pm.id);
+                                if (next.size === previewMatieres.length) return null;
+                                return next;
+                              });
+                            }}
+                            className={`rounded-full border px-2 py-0.5 text-[11px] transition ${
+                              on
+                                ? "border-teal bg-teal text-teal-foreground"
+                                : "border-border bg-background text-muted-foreground"
+                            }`}
+                          >
+                            {pm.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="max-h-[40vh] overflow-y-auto">
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
