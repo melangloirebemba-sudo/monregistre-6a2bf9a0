@@ -169,7 +169,9 @@ export function PlanUpgradeDialog({
     telephone,
   };
   const waHref = upgradeWhatsAppHref(upgradeContext);
+  const normalizedNumber = normalizeWhatsAppNumber(supportConfig.whatsappNumber);
   const highlights = nextPlan ? PLAN_HIGHLIGHTS[nextPlan] : [];
+
 
   // Après retour de WhatsApp (retour du focus / onglet redevient visible),
   // on rafraîchit les capacités du plan pour refléter un éventuel upgrade.
