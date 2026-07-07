@@ -1146,7 +1146,7 @@ function BulkNoteDialog({
                   <button
                     type="button"
                     className="text-[11px] text-foreground underline underline-offset-2"
-                    onClick={() => setExcludedKeys(new Set(previewNotes.map((p) => p.key)))}
+                    onClick={() => setExcludedKeys(new Set(visiblePreview.map((p) => p.key)))}
                   >
                     Aucun
                   </button>
