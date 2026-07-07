@@ -202,6 +202,44 @@ export const cancelScheduledBroadcast = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** List all users of the system (for the admin recipient picker). */
+export const listAllUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const db = context.supabase;
+
+    const { data: profils, error } = await db
+      .from("profils_enseignant")
+      .select("user_id, nom_affiche, prenom, nom_famille, email, plan, statut")
+      .order("nom_affiche", { ascending: true });
+    if (error) throw new Error(`Lecture des profils impossible: ${error.message}`);
+
+    // Complète les emails manquants depuis Supabase Auth (source de vérité).
+    const missing = (profils ?? []).filter((p) => !p.email);
+    if (missing.length > 0) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: list } = await supabaseAdmin.auth.admin.listUsers({
+        page: 1,
+        perPage: 200,
+      });
+      const byId = new Map(list?.users.map((u) => [u.id, u.email ?? ""]) ?? []);
+      for (const p of missing) {
+        p.email = byId.get(p.user_id as string) ?? null;
+      }
+    }
+
+    return (profils ?? []).map((p) => ({
+      user_id: p.user_id as string,
+      email: (p.email as string | null) ?? null,
+      nom_affiche: (p.nom_affiche as string | null) ?? null,
+      prenom: (p.prenom as string | null) ?? null,
+      nom_famille: (p.nom_famille as string | null) ?? null,
+      plan: (p.plan as string | null) ?? null,
+      statut: (p.statut as string | null) ?? null,
+    }));
+  });
+
 /** Trigger a cron hook manually (schedule daily, license expiry, relay, dispatch). */
 export const triggerNotificationHook = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
