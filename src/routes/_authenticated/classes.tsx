@@ -451,3 +451,74 @@ function DeleteDialog({ open, onOpenChange, classe, onDone }: { open: boolean; o
     </AlertDialog>
   );
 }
+
+function ClasseElevesDialog({
+  classe,
+  ecoleNom,
+  onOpenChange,
+}: {
+  classe: Classe | null;
+  ecoleNom?: string;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { data: eleves = [], isLoading } = useQuery({
+    ...elevesQO(classe?.id),
+    enabled: !!classe?.id,
+  });
+  const open = !!classe;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[440px]">
+        <DialogHeader>
+          <DialogTitle className="font-display">
+            Élèves — {classe?.nom}
+          </DialogTitle>
+          {classe && (
+            <p className="text-xs text-muted-foreground">
+              {ecoleNom ?? "École"} · {classe.code}
+              {classe.matiere ? ` · ${classe.matiere}` : ""}
+            </p>
+          )}
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto">
+          {isLoading ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Chargement…</p>
+          ) : eleves.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Aucun élève dans cette classe.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {eleves.map((e, i) => (
+                <li
+                  key={e.id}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-card/40 px-3 py-2"
+                >
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal/15 text-[11px] font-semibold text-foreground">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">
+                      {e.nom} {e.prenom}
+                    </div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {e.sexe ? `${e.sexe} · ` : ""}
+                      {e.numero_eleve ? `N° ${e.numero_eleve}` : "—"}
+                      {e.tuteur_nom ? ` · ${e.tuteur_nom}` : ""}
+                      {e.tuteur_numero ? ` · ${e.tuteur_numero}` : ""}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Fermer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
