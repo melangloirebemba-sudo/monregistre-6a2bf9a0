@@ -752,6 +752,37 @@ function BulkNoteDialog({
   const multiplier = Math.max(1, periodeIds.length) * Math.max(1, matieresList.length);
   const totalNotes = activeRows.length * multiplier;
 
+  const periodeLabelById = useMemo(
+    () => Object.fromEntries(periodes.map((p) => [p.id, p.label])),
+    [periodes],
+  );
+  // Détail complet du produit cartésien pour la prévisualisation.
+  const previewNotes = useMemo(() => {
+    const periodesToUse: Array<string | null> = periodeIds.length > 0 ? periodeIds : [null];
+    const matieresToUse: Array<string | null> = matieresList.length > 0 ? matieresList : [null];
+    const out: Array<{
+      key: string;
+      eleveName: string;
+      periodeLabel: string;
+      matiereLabel: string;
+      valeur: number;
+    }> = [];
+    for (const r of activeRows) {
+      for (const pid of periodesToUse) {
+        for (const mat of matieresToUse) {
+          out.push({
+            key: `${r.eleve.id}|${pid ?? "-"}|${mat ?? "-"}`,
+            eleveName: `${r.eleve.prenom} ${r.eleve.nom}`,
+            periodeLabel: pid ? periodeLabelById[pid] ?? "—" : "—",
+            matiereLabel: mat ?? "—",
+            valeur: r.num as number,
+          });
+        }
+      }
+    }
+    return out;
+  }, [activeRows, periodeIds, matieresList, periodeLabelById]);
+
   // Navigation clavier entre les champs élèves.
   const inputRefs = useMemo(() => new Map<string, HTMLInputElement>(), []);
   const setInputRef = (id: string) => (el: HTMLInputElement | null) => {
