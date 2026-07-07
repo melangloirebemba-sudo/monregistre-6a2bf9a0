@@ -54,21 +54,63 @@ export function buildSupportMessage(ecole: string, planLabel: string): string {
 }
 
 /** Message pré-rempli pour une demande de mise à niveau. */
-export function buildUpgradeMessage(ecole: string, planLabel: string): string {
-  return [
-    `Bonjour, je souhaite passer du plan ${planLabel} à un plan supérieur sur MonRegistre.`,
-    "",
-    `École : ${ecole || "(non renseignée)"}`,
-    `Plan actuel : ${planLabel}`,
-  ].join("\n");
+export function buildUpgradeMessage(ecole: string, planLabel: string): string;
+export function buildUpgradeMessage(ctx: UpgradeContext): string;
+export function buildUpgradeMessage(
+  a: string | UpgradeContext,
+  b?: string,
+): string {
+  if (typeof a === "string") {
+    return [
+      `Bonjour, je souhaite passer du plan ${b} à un plan supérieur sur MonRegistre.`,
+      "",
+      `École : ${a || "(non renseignée)"}`,
+      `Plan actuel : ${b}`,
+    ].join("\n");
+  }
+  const ctx = a;
+  const lines: string[] = [];
+  const target = ctx.targetPlanLabel
+    ? ` (vers le plan ${ctx.targetPlanLabel})`
+    : "";
+  lines.push(
+    `Bonjour, je souhaite passer du plan ${ctx.planLabel} à un plan supérieur${target} sur MonRegistre.`,
+  );
+  lines.push("");
+  if (ctx.userName) lines.push(`Utilisateur : ${ctx.userName}`);
+  if (ctx.telephone) lines.push(`Téléphone : ${ctx.telephone}`);
+  if (ctx.ecole) lines.push(`École concernée : ${ctx.ecole}`);
+  if (ctx.classe) lines.push(`Classe concernée : ${ctx.classe}`);
+  if (ctx.ressource) lines.push(`Ressource concernée : ${ctx.ressource}`);
+  if (ctx.motif) lines.push(`Motif : ${ctx.motif}`);
+  lines.push(`Plan actuel : ${ctx.planLabel}`);
+  return lines.join("\n");
+}
+
+export interface UpgradeContext {
+  planLabel: string;
+  targetPlanLabel?: string | null;
+  ecole?: string;
+  classe?: string;
+  ressource?: string;
+  motif?: string;
+  userName?: string;
+  telephone?: string;
 }
 
 export function supportWhatsAppHref(ecole: string, planLabel: string): string {
   return waLink(buildSupportMessage(ecole, planLabel));
 }
 
-export function upgradeWhatsAppHref(ecole: string, planLabel: string): string {
-  return waLink(buildUpgradeMessage(ecole, planLabel));
+export function upgradeWhatsAppHref(ecole: string, planLabel: string): string;
+export function upgradeWhatsAppHref(ctx: UpgradeContext): string;
+export function upgradeWhatsAppHref(
+  a: string | UpgradeContext,
+  b?: string,
+): string {
+  return waLink(
+    typeof a === "string" ? buildUpgradeMessage(a, b!) : buildUpgradeMessage(a),
+  );
 }
 
 export function supportMailtoHref(ecole: string, planLabel: string): string {
