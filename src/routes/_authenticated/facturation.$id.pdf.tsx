@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { requireUserId } from "@/lib/queries/data";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { Button } from "@/components/ui/button";
-import type { RecuPaiementContext } from "@/lib/pdf/recu-paiement";
+import type { RecuPaiementContext } from "@/lib/pdf/recu-paiement-shared";
 import {
   downloadCachedRecu,
   ensureRecuPDF,
