@@ -3,7 +3,7 @@ import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecol
 import { VirtualList } from "@/components/ui/virtual-list";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { ClipboardList, Plus, Pencil, Trash2, Search, Download } from "lucide-react";
+import { ClipboardList, Plus, Pencil, Trash2, Search, Download, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
 import {
