@@ -849,3 +849,73 @@ function ExportElevesButton({
     </Button>
   );
 }
+
+function EleveDetailsDialog({
+  open,
+  onOpenChange,
+  eleve,
+  classe,
+  ecoleNom,
+  moyenne,
+  echelle,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  eleve: Eleve | null;
+  classe: { id: string; nom: string; chef_id: string | null } | null | undefined;
+  ecoleNom?: string;
+  moyenne?: number;
+  echelle: number;
+}) {
+  if (!eleve) return null;
+  const isChef = classe?.chef_id === eleve.id;
+  const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div className="flex items-start justify-between gap-3 border-b border-border/60 py-2 last:border-b-0">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="max-w-[65%] text-right text-sm text-foreground">{value || <span className="text-muted-foreground">—</span>}</span>
+    </div>
+  );
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[420px] max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display">Détails de l'élève</DialogTitle>
+        </DialogHeader>
+        <div className="mt-2 flex items-center gap-3">
+          <span className={`grid h-12 w-12 place-items-center rounded-full font-display text-base font-semibold ${eleve.sexe === "F" ? "bg-gold-soft/40 text-foreground" : "bg-teal/15 text-foreground"}`}>
+            {eleve.nom.charAt(0)}{eleve.prenom.charAt(0)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-lg font-semibold text-foreground truncate">
+              <span className="uppercase">{eleve.nom}</span> {eleve.prenom}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              <span>{eleve.sexe === "F" ? "Féminin" : "Masculin"}</span>
+              {isChef && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-gold/25 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground">
+                  <Crown className="h-3 w-3" /> Chef
+                </span>
+              )}
+            </div>
+          </div>
+          {moyenne !== undefined && (
+            <span className={`rounded-full px-2.5 py-1 text-sm font-semibold ${noteColorClass(moyenne, echelle)}`}>
+              {formatNote(moyenne)}/{echelle}
+            </span>
+          )}
+        </div>
+        <div className="mt-4 rounded-lg border border-border bg-background/60 p-3">
+          <Row label="École" value={ecoleNom} />
+          <Row label="Classe" value={classe?.nom} />
+          <Row label="Numéro / matricule" value={eleve.numero_eleve} />
+          <Row label="Adresse" value={eleve.adresse} />
+          <Row label="Nom du tuteur" value={eleve.tuteur_nom} />
+          <Row label="Téléphone tuteur" value={eleve.tuteur_numero} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Fermer</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
