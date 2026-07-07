@@ -680,6 +680,7 @@ function BulkNoteDialog({
   const [periodeIds, setPeriodeIds] = useState<string[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [showPreview, setShowPreview] = useState(false);
 
   const libelleRef = useState<HTMLInputElement | null>(null as unknown as HTMLInputElement | null);
   // Simple ref via useState to avoid extra import; we only need the DOM node.
@@ -702,6 +703,7 @@ function BulkNoteDialog({
       setPeriodeIds(defaultPeriodeId ? [defaultPeriodeId] : []);
       setValues({});
       setChecked({});
+      setShowPreview(false);
       // Autofocus sur le libellé au prochain tick.
       setTimeout(() => libelleRef[0]?.focus(), 30);
     }
@@ -749,6 +751,37 @@ function BulkNoteDialog({
   const errorCount = parsedRows.filter((r) => r.checked && r.error).length;
   const multiplier = Math.max(1, periodeIds.length) * Math.max(1, matieresList.length);
   const totalNotes = activeRows.length * multiplier;
+
+  const periodeLabelById = useMemo(
+    () => Object.fromEntries(periodes.map((p) => [p.id, p.label])),
+    [periodes],
+  );
+  // Détail complet du produit cartésien pour la prévisualisation.
+  const previewNotes = useMemo(() => {
+    const periodesToUse: Array<string | null> = periodeIds.length > 0 ? periodeIds : [null];
+    const matieresToUse: Array<string | null> = matieresList.length > 0 ? matieresList : [null];
+    const out: Array<{
+      key: string;
+      eleveName: string;
+      periodeLabel: string;
+      matiereLabel: string;
+      valeur: number;
+    }> = [];
+    for (const r of activeRows) {
+      for (const pid of periodesToUse) {
+        for (const mat of matieresToUse) {
+          out.push({
+            key: `${r.eleve.id}|${pid ?? "-"}|${mat ?? "-"}`,
+            eleveName: `${r.eleve.prenom} ${r.eleve.nom}`,
+            periodeLabel: pid ? periodeLabelById[pid] ?? "—" : "—",
+            matiereLabel: mat ?? "—",
+            valeur: r.num as number,
+          });
+        }
+      }
+    }
+    return out;
+  }, [activeRows, periodeIds, matieresList, periodeLabelById]);
 
   // Navigation clavier entre les champs élèves.
   const inputRefs = useMemo(() => new Map<string, HTMLInputElement>(), []);
@@ -875,14 +908,23 @@ function BulkNoteDialog({
         onKeyDown={(e) => {
           if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault();
-            save.mutate();
+            if (showPreview) save.mutate();
+            else if (libelle.trim() && errorCount === 0 && totalNotes > 0) setShowPreview(true);
           }
         }}
       >
         <DialogHeader>
-          <DialogTitle className="font-display">Saisie rapide de notes</DialogTitle>
+          <DialogTitle className="font-display">
+            {showPreview ? "Confirmer les notes" : "Saisie rapide de notes"}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (showPreview) save.mutate();
+          }}
+          className="space-y-3"
+        >
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Classe *</Label>
@@ -1048,17 +1090,85 @@ function BulkNoteDialog({
           </div>
 
           <div className="text-[11px] text-muted-foreground">
-            Astuce : ↑/↓ ou Entrée pour naviguer entre les élèves · Ctrl+Entrée pour valider.
+            Astuce : ↑/↓ ou Entrée pour naviguer entre les élèves · Ctrl+Entrée pour prévisualiser.
           </div>
+
+          {showPreview && (
+            <div className="rounded-xl border border-teal/40 bg-teal/5">
+              <div className="flex items-center justify-between border-b border-teal/30 px-3 py-2">
+                <div className="text-sm font-semibold text-foreground">
+                  Prévisualisation · {previewNotes.length} note(s)
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(false)}
+                  className="text-[11px] text-foreground underline underline-offset-2"
+                >
+                  Modifier
+                </button>
+              </div>
+              <div className="max-h-[40vh] overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-1.5 text-left">Élève</th>
+                      <th className="px-2 py-1.5 text-left">Période</th>
+                      <th className="px-2 py-1.5 text-left">Matière</th>
+                      <th className="px-3 py-1.5 text-right">Note</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/50">
+                    {previewNotes.map((p) => (
+                      <tr key={p.key}>
+                        <td className="truncate px-3 py-1.5">{p.eleveName}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{p.periodeLabel}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{p.matiereLabel}</td>
+                        <td className="px-3 py-1.5 text-right font-semibold">
+                          {formatNote(p.valeur)}/{echelle}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="border-t border-teal/30 px-3 py-2 text-[11px] text-muted-foreground">
+                Libellé <span className="text-foreground">{libelle.trim() || "—"}</span> · coef {Number(coefficient) || 1} · {new Date(date).toLocaleDateString("fr-FR")}
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-            <Button
-              type="submit"
-              disabled={save.isPending || totalNotes === 0 || errorCount > 0 || !libelle.trim()}
-            >
-              {save.isPending ? "…" : `Enregistrer (${totalNotes})`}
-            </Button>
+            {!showPreview ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  if (!libelle.trim()) {
+                    toast.error("Libellé obligatoire");
+                    return;
+                  }
+                  if (errorCount > 0) {
+                    toast.error("Corrigez les notes invalides");
+                    return;
+                  }
+                  if (totalNotes === 0) {
+                    toast.error("Aucune note à enregistrer");
+                    return;
+                  }
+                  setShowPreview(true);
+                }}
+                disabled={totalNotes === 0 || errorCount > 0 || !libelle.trim()}
+              >
+                Prévisualiser ({totalNotes})
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={save.isPending || totalNotes === 0 || errorCount > 0 || !libelle.trim()}
+              >
+                {save.isPending ? "…" : `Confirmer (${totalNotes})`}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>
