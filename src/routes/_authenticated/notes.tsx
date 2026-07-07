@@ -9,6 +9,7 @@ import { enqueueWrite } from "@/lib/offline-queue";
 import {
   rollbackLists,
   upsertInLists,
+  upsertManyInLists,
   removeFromLists,
   type ListSnapshot,
 } from "@/lib/optimistic";
