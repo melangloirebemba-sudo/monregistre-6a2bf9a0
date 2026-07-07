@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Lock, Sparkles, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,7 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PLAN_LABEL, upgradeWhatsAppHref, type PlanKey } from "@/config/support";
+import {
+  PLAN_LABEL,
+  upgradeWhatsAppHref,
+  type PlanKey,
+  type UpgradeContext,
+} from "@/config/support";
 
 export function PlanLimitBanner({
   planLabel,
@@ -126,19 +133,63 @@ export function PlanUpgradeDialog({
   currentPlan,
   contextName,
   limitDescription,
+  ecole,
+  classe,
+  ressource,
+  userName,
+  telephone,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   currentPlan: PlanKey;
+  /** Kept for backward compat — used as fallback pour l'école. */
   contextName?: string;
   /** ex : "1 classe par école", "25 élèves" */
   limitDescription: string;
+  ecole?: string;
+  classe?: string;
+  ressource?: string;
+  userName?: string;
+  telephone?: string;
 }) {
+  const qc = useQueryClient();
   const nextPlan = NEXT_PLAN[currentPlan];
   const currentLabel = PLAN_LABEL[currentPlan];
   const nextLabel = nextPlan ? PLAN_LABEL[nextPlan] : null;
-  const waHref = upgradeWhatsAppHref(contextName ?? "", currentLabel);
+  const upgradeContext: UpgradeContext = {
+    planLabel: currentLabel,
+    targetPlanLabel: nextLabel,
+    ecole: ecole ?? contextName,
+    classe,
+    ressource,
+    motif: limitDescription ? `Limite atteinte : ${limitDescription}` : undefined,
+    userName,
+    telephone,
+  };
+  const waHref = upgradeWhatsAppHref(upgradeContext);
   const highlights = nextPlan ? PLAN_HIGHLIGHTS[nextPlan] : [];
+
+  // Après retour de WhatsApp (retour du focus / onglet redevient visible),
+  // on rafraîchit les capacités du plan pour refléter un éventuel upgrade.
+  const waClicked = useRef(false);
+  useEffect(() => {
+    const refresh = () => {
+      if (!waClicked.current) return;
+      waClicked.current = false;
+      qc.invalidateQueries({ queryKey: ["plan-capabilities"] });
+      qc.invalidateQueries({ queryKey: ["profil"] });
+      qc.invalidateQueries({ queryKey: ["counts"] });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [qc]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -190,7 +241,10 @@ export function PlanUpgradeDialog({
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              waClicked.current = true;
+              onOpenChange(false);
+            }}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
           >
             <MessageCircle className="h-4 w-4" aria-hidden="true" />

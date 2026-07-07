@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { ecolesQO, requireUserId, type Ecole } from "@/lib/queries/data";
 import { planCapabilitiesQO } from "@/lib/queries/profil";
-import { PLAN_LABEL, upgradeWhatsAppHref, type PlanKey } from "@/config/support";
+import { PLAN_LABEL, type PlanKey } from "@/config/support";
+import { PlanUpgradeDialog } from "@/components/app/plan-limit";
 import { Button } from "@/components/ui/button";
 import { DataPagination } from "@/components/ui/data-pagination";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
@@ -204,12 +205,13 @@ function EcolesPage() {
         onDone={() => setToDelete(null)}
       />
 
-      <UpgradeDialog
+      <PlanUpgradeDialog
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
         currentPlan={currentPlan}
-        ecoleNom={caps ? (ecoles[0]?.nom ?? "") : ""}
-        maxEcoles={maxEcoles}
+        ecole={ecoles[0]?.nom ?? ""}
+        ressource="Écoles"
+        limitDescription={`${maxEcoles} école${maxEcoles > 1 ? "s" : ""}`}
       />
     </div>
   );
@@ -435,113 +437,3 @@ function DeleteDialog({
   );
 }
 
-const NEXT_PLAN: Record<PlanKey, PlanKey | null> = {
-  gratuit: "lite",
-  lite: "premium",
-  premium: null,
-};
-
-const PLAN_HIGHLIGHTS: Record<PlanKey, string[]> = {
-  gratuit: [],
-  lite: [
-    "Plus d'écoles et de classes",
-    "Export PDF des bulletins",
-    "Rapports détaillés par classe",
-  ],
-  premium: [
-    "Quotas étendus (écoles, classes, élèves)",
-    "Toutes les fonctionnalités Lite",
-    "Suivi de progression avancé",
-  ],
-};
-
-function UpgradeDialog({
-  open,
-  onOpenChange,
-  currentPlan,
-  ecoleNom,
-  maxEcoles,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  currentPlan: PlanKey;
-  ecoleNom: string;
-  maxEcoles: number;
-}) {
-  const nextPlan = NEXT_PLAN[currentPlan];
-  const currentLabel = PLAN_LABEL[currentPlan];
-  const nextLabel = nextPlan ? PLAN_LABEL[nextPlan] : null;
-  const waHref = upgradeWhatsAppHref(ecoleNom, currentLabel);
-  const highlights = nextPlan ? PLAN_HIGHLIGHTS[nextPlan] : [];
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[380px]">
-        <DialogHeader>
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gold/20 text-ink">
-            <Sparkles className="h-6 w-6" />
-          </div>
-          <DialogTitle className="text-center font-display">
-            {nextLabel
-              ? `Passez au plan ${nextLabel}`
-              : "Limite atteinte"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-3 text-sm text-ink/80">
-          <p className="text-center">
-            Le plan <strong>{currentLabel}</strong> autorise{" "}
-            <strong>
-              {maxEcoles} école{maxEcoles > 1 ? "s" : ""}
-            </strong>
-            . Vous avez atteint cette limite.
-          </p>
-
-          {nextPlan && highlights.length > 0 && (
-            <div className="rounded-xl border border-teal/30 bg-teal/5 p-3">
-              <div className="mb-1.5 font-display text-sm font-semibold text-foreground">
-                Avec le plan {nextLabel}
-              </div>
-              <ul className="space-y-1.5 text-xs">
-                {highlights.map((h) => (
-                  <li key={h} className="flex items-start gap-2">
-                    <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-teal" aria-hidden="true" />
-                    <span>{h}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {!nextPlan && (
-            <p className="text-center text-xs text-muted-foreground">
-              Vous êtes déjà sur notre plan le plus complet. Contactez le support pour
-              étendre vos quotas.
-            </p>
-          )}
-        </div>
-
-        <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <a
-            href={waHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => onOpenChange(false)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
-          >
-            <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            {nextLabel ? `Demander le plan ${nextLabel}` : "Contacter le support"}
-          </a>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full"
-          >
-            Plus tard
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}

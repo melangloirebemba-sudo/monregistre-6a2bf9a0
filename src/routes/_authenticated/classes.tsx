@@ -261,7 +261,12 @@ function ClassesPage() {
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
         currentPlan={currentPlan}
-        contextName={ecoles[0]?.nom ?? ""}
+        ecole={
+          ecoleFilter !== "all"
+            ? ecoleById[ecoleFilter]
+            : ecoles[0]?.nom ?? ""
+        }
+        ressource="Classes"
         limitDescription={limitDescription}
       />
     </div>

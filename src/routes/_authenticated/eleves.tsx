@@ -322,7 +322,15 @@ function ElevesPage() {
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
         currentPlan={currentPlan}
-        contextName={ecoles[0]?.nom ?? ""}
+        ecole={
+          ecoleFilter !== "all"
+            ? ecoleById[ecoleFilter]
+            : ecoles[0]?.nom ?? ""
+        }
+        classe={
+          classeFilter !== "all" ? classeById[classeFilter]?.nom : undefined
+        }
+        ressource="Élèves"
         limitDescription={limitDescription}
       />
     </div>
