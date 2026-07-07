@@ -703,6 +703,7 @@ function BulkNoteDialog({
       setPeriodeIds(defaultPeriodeId ? [defaultPeriodeId] : []);
       setValues({});
       setChecked({});
+      setShowPreview(false);
       // Autofocus sur le libellé au prochain tick.
       setTimeout(() => libelleRef[0]?.focus(), 30);
     }
