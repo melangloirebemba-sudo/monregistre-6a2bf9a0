@@ -34,6 +34,7 @@ import { Route as AuthenticatedParametresRappelsRouteImport } from './routes/_au
 import { Route as AuthenticatedParametresNotificationsRouteImport } from './routes/_authenticated/parametres.notifications'
 import { Route as AuthenticatedFacturationIdRouteImport } from './routes/_authenticated/facturation.$id'
 import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
+import { Route as AuthenticatedAdminPlusRouteImport } from './routes/_authenticated/admin.plus'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
@@ -177,6 +178,11 @@ const AuthenticatedAdminUtilisateursRoute =
     path: '/utilisateurs',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPlusRoute = AuthenticatedAdminPlusRouteImport.update({
+  id: '/plus',
+  path: '/plus',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/admin/plus': typeof AuthenticatedAdminPlusRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
   '/parametres/notifications': typeof AuthenticatedParametresNotificationsRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/admin/plus': typeof AuthenticatedAdminPlusRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
   '/parametres/notifications': typeof AuthenticatedParametresNotificationsRoute
@@ -335,6 +343,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
+  '/_authenticated/admin/plus': typeof AuthenticatedAdminPlusRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
   '/_authenticated/facturation/$id': typeof AuthenticatedFacturationIdRouteWithChildren
   '/_authenticated/parametres/notifications': typeof AuthenticatedParametresNotificationsRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/parametres'
     | '/admin/plans'
+    | '/admin/plus'
     | '/admin/utilisateurs'
     | '/facturation/$id'
     | '/parametres/notifications'
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/parametres'
     | '/admin/plans'
+    | '/admin/plus'
     | '/admin/utilisateurs'
     | '/facturation/$id'
     | '/parametres/notifications'
@@ -445,6 +456,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/parametres'
     | '/_authenticated/admin/plans'
+    | '/_authenticated/admin/plus'
     | '/_authenticated/admin/utilisateurs'
     | '/_authenticated/facturation/$id'
     | '/_authenticated/parametres/notifications'
@@ -645,6 +657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUtilisateursRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/plus': {
+      id: '/_authenticated/admin/plus'
+      path: '/plus'
+      fullPath: '/admin/plus'
+      preLoaderRoute: typeof AuthenticatedAdminPlusRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/plans': {
       id: '/_authenticated/admin/plans'
       path: '/plans'
@@ -724,6 +743,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminParametresRoute: typeof AuthenticatedAdminParametresRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
+  AuthenticatedAdminPlusRoute: typeof AuthenticatedAdminPlusRoute
   AuthenticatedAdminUtilisateursRoute: typeof AuthenticatedAdminUtilisateursRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -735,6 +755,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
   AuthenticatedAdminParametresRoute: AuthenticatedAdminParametresRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
+  AuthenticatedAdminPlusRoute: AuthenticatedAdminPlusRoute,
   AuthenticatedAdminUtilisateursRoute: AuthenticatedAdminUtilisateursRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
