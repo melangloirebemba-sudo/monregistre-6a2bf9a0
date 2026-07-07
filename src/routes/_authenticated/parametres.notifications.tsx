@@ -26,7 +26,7 @@ import {
   type NotifChannel,
   type ReminderFrequency,
   type DefaultFilter,
-  type PushKind,
+  
 } from "@/lib/notifications-prefs";
 import { PushToggle } from "@/components/app/push-toggle";
 
