@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { BookMarked } from "lucide-react";
 import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
+import { resolveLandingPath } from "@/lib/auth-landing";
 
 const searchSchema = z.object({
   next: z.string().optional(),
@@ -32,13 +33,21 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { next } = Route.useSearch();
-  const target = safeNext(next);
+
+  // Redirige l'utilisateur (déjà connecté ou fraîchement authentifié) vers son
+  // espace en fonction de son rôle : /admin pour les administrateurs, /accueil
+  // pour les enseignants. Un `next` explicite (ex. /notes) est prioritaire.
+  const goToLanding = async () => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return;
+    const target = await resolveLandingPath(data.user.id, next);
+    navigate({ to: target, replace: true });
+  };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: target, replace: true });
-    });
-  }, [navigate, target]);
+    void goToLanding();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [next]);
 
   return (
     <div className="min-h-screen w-full hero-gradient">
@@ -69,10 +78,10 @@ function AuthPage() {
               <TabsTrigger value="signup">Créer un compte</TabsTrigger>
             </TabsList>
             <TabsContent value="signin" className="mt-4">
-              <SignInForm onDone={() => navigate({ to: target, replace: true })} />
+              <SignInForm onDone={goToLanding} />
             </TabsContent>
             <TabsContent value="signup" className="mt-4">
-              <SignUpForm onDone={() => navigate({ to: target, replace: true })} />
+              <SignUpForm onDone={goToLanding} />
             </TabsContent>
           </Tabs>
         </div>
@@ -85,10 +94,6 @@ function AuthPage() {
   );
 }
 
-function safeNext(next: string | undefined): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) return "/accueil";
-  return next;
-}
 
 function SignInForm({ onDone }: { onDone: () => void }) {
   const [email, setEmail] = useState("");

@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { isUserAdmin } from "@/lib/auth-landing";
 import { useQuery } from "@tanstack/react-query";
 import {
   School,
@@ -23,6 +25,13 @@ import { useReminderNotifications } from "@/lib/notifications";
 import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
+  // Un admin ne doit jamais voir l'espace enseignant : on l'envoie sur /admin.
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data.user && (await isUserAdmin(data.user.id))) {
+      throw redirect({ to: "/admin" });
+    }
+  },
   head: () => ({
     meta: [
       { title: "Accueil — MonRegistre" },
@@ -31,6 +40,7 @@ export const Route = createFileRoute("/_authenticated/accueil")({
   }),
   component: AccueilPage,
 });
+
 
 function AccueilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
