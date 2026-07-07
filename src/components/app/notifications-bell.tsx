@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, CheckCheck, Settings2, ChevronRight, Trash2 } from "lucide-react";
+import { Bell, CheckCheck, Settings2, ChevronRight, Trash2, AlertTriangle } from "lucide-react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -7,6 +7,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useNotificationCenter, type NotificationItem } from "@/lib/changelog";
 import {
   useNotificationsPrefs,
@@ -73,6 +83,7 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
   // Contrôle l'ouverture pour savoir si l'utilisateur voit déjà la liste
   // (on n'affiche pas de toast dans ce cas).
   const [open, setOpen] = useState(false);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const wasOpen = useRef(false);
   useEffect(() => {
     if (open === wasOpen.current) return;
@@ -199,9 +210,7 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
             )}
             {enabled && items.length > 0 && (
               <button
-                onClick={() => {
-                  if (confirm("Effacer toutes les notifications ?")) clearAll();
-                }}
+                onClick={() => setConfirmClearOpen(true)}
                 aria-label="Effacer tout"
                 className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/10"
               >
@@ -312,6 +321,40 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
           })}
         </ul>
       </PopoverContent>
+
+      <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <AlertDialogContent className="max-w-sm gap-0 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl">
+          <div className="relative border-b border-border/60 bg-gradient-to-br from-destructive/12 via-destructive/6 to-transparent px-6 pb-5 pt-6">
+            <div className="absolute inset-x-0 -top-8 h-16 bg-destructive/20 blur-3xl" aria-hidden />
+            <div className="relative flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-destructive/30 bg-destructive/15 text-destructive shadow-inner">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <AlertDialogHeader className="flex-1 space-y-1 text-left">
+                <AlertDialogTitle className="font-display text-lg font-semibold leading-tight">
+                  Effacer toutes les notifications ?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs leading-relaxed text-muted-foreground">
+                  {items.length} notification{items.length > 1 ? "s" : ""} seront définitivement supprimées de votre compte. Cette action est irréversible.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+            </div>
+          </div>
+          <AlertDialogFooter className="gap-2 px-5 py-4 sm:justify-end">
+            <AlertDialogCancel className="mt-0 rounded-lg">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                clearAll();
+                toast.success("Notifications effacées");
+              }}
+              className="rounded-lg bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Tout effacer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Popover>
   );
 }
