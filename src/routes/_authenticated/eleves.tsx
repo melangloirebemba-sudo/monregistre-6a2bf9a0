@@ -233,7 +233,7 @@ function ElevesPage() {
             const cls = classeById[e.classe_id];
             const isChef = cls?.chef_id === e.id;
             return (
-              <li key={e.id} className="card-elevated p-3">
+              <div key={e.id} className="card-elevated p-3 mb-2">
                 <div className="flex items-center gap-3">
                   <span className={`relative grid h-10 w-10 place-items-center rounded-full font-display text-sm font-semibold ${e.sexe === "F" ? "bg-gold-soft/40 text-foreground" : "bg-teal/15 text-foreground"}`}>
                     {e.nom.charAt(0)}{e.prenom.charAt(0)}
@@ -274,7 +274,7 @@ function ElevesPage() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              </li>
+              </div>
             );
           };
           const listView = grouped ? (
@@ -282,12 +282,19 @@ function ElevesPage() {
               {grouped.map(([ecoleId, list]) => (
                 <section key={ecoleId}>
                   <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                  <ul className="space-y-2">{list.map(renderItem)}</ul>
+                  <ul className="space-y-2">{list.map((e) => <li key={e.id}>{renderItem(e)}</li>)}</ul>
                 </section>
               ))}
             </div>
           ) : (
-            <ul className="space-y-2">{paged.map(renderItem)}</ul>
+            <VirtualList
+              items={paged}
+              estimateSize={82}
+              overscan={6}
+              className="max-h-[70vh]"
+              getItemKey={(e) => e.id}
+              renderItem={renderItem}
+            />
           );
           return (
             <div className="space-y-3">
