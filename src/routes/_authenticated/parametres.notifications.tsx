@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Bell, BellOff, RotateCcw } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, RotateCcw, Mail, MessageSquare, MonitorSmartphone } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,12 @@ import {
   useNotificationsPrefs,
   setNotificationsPrefs,
   NOTIF_CATEGORY_LABELS,
+  NOTIF_CATEGORY_DESCRIPTIONS,
+  CATEGORIES_WITH_EMAIL_SMS,
   REMINDER_FREQUENCY_LABELS,
   DEFAULT_NOTIFICATIONS_PREFS,
   type NotifCategory,
+  type NotifChannel,
   type ReminderFrequency,
   type DefaultFilter,
 } from "@/lib/notifications-prefs";
@@ -29,15 +32,29 @@ export const Route = createFileRoute("/_authenticated/parametres/notifications")
       {
         name: "description",
         content:
-          "Activez ou désactivez chaque type de notification et choisissez la fréquence des rappels.",
+          "Activez ou désactivez chaque type de notification, choisissez le canal (in-app, email, SMS) et la fréquence des rappels.",
       },
     ],
   }),
   component: NotificationsPrefsPage,
 });
 
-const CATEGORY_ORDER: NotifCategory[] = ["feature", "fix", "account", "billing"];
+const CATEGORY_ORDER: NotifCategory[] = [
+  "admin",
+  "reactivation",
+  "security",
+  "billing",
+  "account",
+  "feature",
+  "fix",
+];
 const FREQUENCY_ORDER: ReminderFrequency[] = ["off", "immediate", "daily", "weekly"];
+
+const CHANNEL_META: Record<NotifChannel, { label: string; icon: typeof Mail }> = {
+  inApp: { label: "In-app", icon: MonitorSmartphone },
+  email: { label: "Email", icon: Mail },
+  sms: { label: "SMS", icon: MessageSquare },
+};
 
 function NotificationsPrefsPage() {
   const prefs = useNotificationsPrefs();
@@ -67,7 +84,7 @@ function NotificationsPrefsPage() {
           Réglages des notifications
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choisissez les types de notifications à recevoir et la fréquence des rappels.
+          Choisissez les types de notifications, les canaux (in-app, email, SMS) et la fréquence des rappels.
         </p>
       </div>
 
@@ -78,7 +95,7 @@ function NotificationsPrefsPage() {
               Recevoir les notifications
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Active ou désactive globalement la cloche de nouveautés.
+              Active ou désactive globalement la cloche de notifications.
             </p>
           </div>
           <Switch
@@ -95,30 +112,93 @@ function NotificationsPrefsPage() {
       <section
         className={`mt-4 rounded-2xl border border-border bg-card p-5 shadow-soft ${!prefs.enabled ? "opacity-60" : ""}`}
       >
-        <h2 className="text-sm font-semibold text-foreground">Types de notifications</h2>
+        <h2 className="text-sm font-semibold text-foreground">Types & canaux</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Recevez uniquement les catégories qui vous intéressent.
+          Pour chaque catégorie, choisissez si vous la recevez et par quel canal.
+          Email et SMS ne sont disponibles que pour certaines catégories.
         </p>
-        <div className="mt-4 space-y-3">
-          {CATEGORY_ORDER.map((cat) => (
-            <div key={cat} className="flex items-center justify-between gap-3">
-              <Label
-                htmlFor={`cat-${cat}`}
-                className="text-sm font-medium text-foreground"
+        <div className="mt-4 space-y-4">
+          {CATEGORY_ORDER.map((cat) => {
+            const enabled = prefs.enabled && prefs.categories[cat];
+            const chans = prefs.channels[cat];
+            const emailSmsAvailable = CATEGORIES_WITH_EMAIL_SMS.includes(cat);
+            return (
+              <div
+                key={cat}
+                className="rounded-xl border border-border/60 bg-background/50 p-3.5"
               >
-                {NOTIF_CATEGORY_LABELS[cat]}
-              </Label>
-              <Switch
-                id={`cat-${cat}`}
-                disabled={!prefs.enabled}
-                checked={prefs.categories[cat]}
-                onCheckedChange={(v) =>
-                  setNotificationsPrefs({ categories: { [cat]: v } as Record<NotifCategory, boolean> })
-                }
-              />
-            </div>
-          ))}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <Label
+                      htmlFor={`cat-${cat}`}
+                      className="text-sm font-medium text-foreground"
+                    >
+                      {NOTIF_CATEGORY_LABELS[cat]}
+                    </Label>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {NOTIF_CATEGORY_DESCRIPTIONS[cat]}
+                    </p>
+                  </div>
+                  <Switch
+                    id={`cat-${cat}`}
+                    disabled={!prefs.enabled}
+                    checked={prefs.categories[cat]}
+                    onCheckedChange={(v) =>
+                      setNotificationsPrefs({
+                        categories: { [cat]: v } as Record<NotifCategory, boolean>,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {(["inApp", "email", "sms"] as NotifChannel[]).map((ch) => {
+                    const meta = CHANNEL_META[ch];
+                    const Icon = meta.icon;
+                    const available = ch === "inApp" || emailSmsAvailable;
+                    const active = chans[ch];
+                    const disabled = !enabled || !available;
+                    return (
+                      <button
+                        key={ch}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() =>
+                          setNotificationsPrefs({
+                            channels: {
+                              [cat]: { [ch]: !active },
+                            } as never,
+                          })
+                        }
+                        className={[
+                          "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-[11px] font-medium transition-colors",
+                          disabled
+                            ? "cursor-not-allowed border-dashed border-border/50 text-muted-foreground/50"
+                            : active
+                              ? "border-teal bg-teal/10 text-teal"
+                              : "border-border bg-background text-muted-foreground hover:text-foreground",
+                        ].join(" ")}
+                        aria-pressed={active}
+                        aria-label={`${meta.label} pour ${NOTIF_CATEGORY_LABELS[cat]}`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{meta.label}</span>
+                        {!available && ch !== "inApp" && (
+                          <span className="text-[9px] uppercase tracking-wider">
+                            N/A
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
+        <p className="mt-4 rounded-lg border border-dashed border-border/70 bg-muted/40 p-3 text-[11px] text-muted-foreground">
+          Les canaux email et SMS sont enregistrés comme préférences. La diffusion externe (email/SMS) est en cours de déploiement — pour l'instant, seules les notifications in-app sont affichées dans la cloche.
+        </p>
       </section>
 
       <section
@@ -150,6 +230,7 @@ function NotificationsPrefsPage() {
           </Select>
         </div>
       </section>
+
       <section
         className={`mt-4 rounded-2xl border border-border bg-card p-5 shadow-soft ${!prefs.enabled ? "opacity-60" : ""}`}
       >
