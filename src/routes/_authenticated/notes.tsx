@@ -648,3 +648,252 @@ function DeleteNoteDialog({ open, onOpenChange, note, onDone }: { open: boolean;
     </AlertDialog>
   );
 }
+
+// Dialogue de saisie rapide : une entrée par élève avec validation par ligne
+// et patch optimiste par lot (upsertManyInLists) pour zéro latence perçue.
+function BulkNoteDialog({
+  open,
+  onOpenChange,
+  classes,
+  periodes,
+  echelle,
+  defaultClasseId,
+  defaultPeriodeId,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  classes: Array<{ id: string; nom: string; ecole_id: string; matiere: string | null }>;
+  periodes: Array<{ id: string; label: string }>;
+  echelle: number;
+  defaultClasseId?: string;
+  defaultPeriodeId?: string;
+}) {
+  const qc = useQueryClient();
+  const [classeId, setClasseId] = useState<string>("");
+  const [libelle, setLibelle] = useState("");
+  const [matiere, setMatiere] = useState("");
+  const [coefficient, setCoefficient] = useState("1");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [periodeId, setPeriodeId] = useState<string>("none");
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  const { data: eleves = [] } = useQuery({
+    ...elevesQO(classeId || undefined),
+    enabled: !!classeId && open,
+  });
+
+  useEffect(() => {
+    if (open) {
+      const initial = defaultClasseId ?? classes[0]?.id ?? "";
+      setClasseId(initial);
+      const cls = classes.find((c) => c.id === initial);
+      setLibelle("");
+      setMatiere(cls?.matiere ?? "");
+      setCoefficient("1");
+      setDate(new Date().toISOString().slice(0, 10));
+      setPeriodeId(defaultPeriodeId ?? "none");
+      setValues({});
+    }
+  }, [open, defaultClasseId, defaultPeriodeId, classes]);
+
+  useEffect(() => {
+    setValues({});
+    const cls = classes.find((c) => c.id === classeId);
+    if (cls?.matiere && !matiere) setMatiere(cls.matiere);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classeId]);
+
+  const parsedRows = useMemo(() => {
+    return eleves.map((e) => {
+      const raw = (values[e.id] ?? "").trim().replace(",", ".");
+      if (!raw) return { eleve: e, raw, num: null as number | null, error: null as string | null };
+      const num = Number(raw);
+      if (Number.isNaN(num)) return { eleve: e, raw, num: null, error: "Nombre invalide" };
+      if (num < 0 || num > echelle) return { eleve: e, raw, num: null, error: `0–${echelle}` };
+      return { eleve: e, raw, num, error: null };
+    });
+  }, [eleves, values, echelle]);
+
+  const validCount = parsedRows.filter((r) => r.num !== null).length;
+  const errorCount = parsedRows.filter((r) => r.error).length;
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const user_id = await requireUserId();
+      if (!libelle.trim()) throw new Error("Libellé obligatoire");
+      if (!classeId) throw new Error("Classe obligatoire");
+      if (errorCount > 0) throw new Error("Corrigez les notes invalides");
+      if (validCount === 0) throw new Error("Aucune note à enregistrer");
+      const cls = classes.find((c) => c.id === classeId);
+      const coef = Number(coefficient) || 1;
+      const rows = parsedRows.filter((r) => r.num !== null);
+      for (const r of rows) {
+        const ecole_id = r.eleve.ecole_id ?? cls?.ecole_id;
+        if (!ecole_id) continue;
+        await enqueueWrite({
+          table: "notes",
+          op: "insert",
+          payload: {
+            id: crypto.randomUUID(),
+            user_id,
+            eleve_id: r.eleve.id,
+            libelle: libelle.trim(),
+            valeur: r.num as number,
+            coefficient: coef,
+            matiere: matiere.trim() || null,
+            date,
+            periode_id: periodeId === "none" ? null : periodeId,
+            ecole_id,
+          },
+          label: `Note ${libelle} · ${r.eleve.prenom} ${r.eleve.nom}`,
+        });
+      }
+    },
+    onMutate: async (): Promise<{ snapshot: ListSnapshot<NoteRow> } | undefined> => {
+      if (!libelle.trim() || !classeId || errorCount > 0 || validCount === 0) return undefined;
+      const cls = classes.find((c) => c.id === classeId);
+      const coef = Number(coefficient) || 1;
+      await qc.cancelQueries({ queryKey: ["notes"] });
+      const now = new Date().toISOString();
+      const optimistic: NoteRow[] = parsedRows
+        .filter((r) => r.num !== null)
+        .map((r) => ({
+          id: `tmp-${crypto.randomUUID()}`,
+          user_id: "optimistic",
+          eleve_id: r.eleve.id,
+          libelle: libelle.trim(),
+          valeur: r.num as number,
+          coefficient: coef,
+          matiere: matiere.trim() || null,
+          date,
+          periode_id: periodeId === "none" ? null : periodeId,
+          sequence_id: null,
+          ecole_id: r.eleve.ecole_id ?? cls?.ecole_id ?? "",
+          updated_at: now,
+          eleve: { nom: r.eleve.nom, prenom: r.eleve.prenom, classe_id: r.eleve.classe_id },
+        }));
+      const snapshot = upsertManyInLists<NoteRow>(qc, ["notes"], optimistic, {
+        sort: (a, b) => b.date.localeCompare(a.date),
+        keyMatches: (row, key) => {
+          const [, kClasse, kEleve, kPeriode] = key as string[];
+          if (kClasse && kClasse !== "-" && row.eleve?.classe_id !== kClasse) return false;
+          if (kEleve && kEleve !== "-" && row.eleve_id !== kEleve) return false;
+          if (kPeriode && kPeriode !== "-" && (row.periode_id ?? "-") !== kPeriode) return false;
+          return true;
+        },
+      });
+      onOpenChange(false);
+      return { snapshot };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
+      toast.error(e.message);
+    },
+    onSuccess: () => toast.success(`${validCount} note(s) ajoutée(s)`),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["notes"] });
+      qc.invalidateQueries({ queryKey: ["counts"] });
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle className="font-display">Saisie rapide de notes</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Classe *</Label>
+              <Select value={classeId} onValueChange={setClasseId}>
+                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectContent>
+                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="blib">Libellé *</Label>
+              <Input id="blib" placeholder="Devoir 1…" value={libelle} onChange={(e) => setLibelle(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="bcoef">Coef.</Label>
+              <Input id="bcoef" type="number" min={0.5} step="0.5" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
+            </div>
+            <div className="space-y-1.5 col-span-2">
+              <Label htmlFor="bmat">Matière</Label>
+              <Input id="bmat" value={matiere} onChange={(e) => setMatiere(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bdate">Date</Label>
+              <Input id="bdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Période</Label>
+            <Select value={periodeId} onValueChange={setPeriodeId}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">—</SelectItem>
+                {periodes.map((p) => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="rounded-xl border border-border/60">
+            <div className="flex items-center justify-between border-b border-border/60 bg-cream-deep/40 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <span>Élèves ({eleves.length})</span>
+              <span>
+                {validCount} à enregistrer
+                {errorCount > 0 ? ` · ${errorCount} erreur(s)` : ""}
+              </span>
+            </div>
+            <div className="max-h-[45vh] overflow-y-auto divide-y divide-border/60">
+              {eleves.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  {classeId ? "Aucun élève dans cette classe" : "Choisissez une classe"}
+                </div>
+              ) : (
+                parsedRows.map((r) => (
+                  <div key={r.eleve.id} className="flex items-center gap-2 px-3 py-2">
+                    <div className="min-w-0 flex-1 truncate text-sm">
+                      {r.eleve.prenom} {r.eleve.nom}
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder={`/${echelle}`}
+                        className={`h-9 w-20 text-right ${r.error ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        value={values[r.eleve.id] ?? ""}
+                        onChange={(e) =>
+                          setValues((v) => ({ ...v, [r.eleve.id]: e.target.value }))
+                        }
+                      />
+                      {r.error ? (
+                        <span className="mt-0.5 text-[10px] text-destructive">{r.error}</span>
+                      ) : null}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+            <Button
+              type="submit"
+              disabled={save.isPending || validCount === 0 || errorCount > 0 || !libelle.trim()}
+            >
+              {save.isPending ? "…" : `Enregistrer (${validCount})`}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
