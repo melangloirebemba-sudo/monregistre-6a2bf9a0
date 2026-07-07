@@ -26,6 +26,9 @@ import {
   ChevronDown,
   ChevronRight,
   Eraser,
+  MailCheck,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
