@@ -908,14 +908,23 @@ function BulkNoteDialog({
         onKeyDown={(e) => {
           if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault();
-            save.mutate();
+            if (showPreview) save.mutate();
+            else if (libelle.trim() && errorCount === 0 && totalNotes > 0) setShowPreview(true);
           }
         }}
       >
         <DialogHeader>
-          <DialogTitle className="font-display">Saisie rapide de notes</DialogTitle>
+          <DialogTitle className="font-display">
+            {showPreview ? "Confirmer les notes" : "Saisie rapide de notes"}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); save.mutate(); }} className="space-y-3">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (showPreview) save.mutate();
+          }}
+          className="space-y-3"
+        >
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Classe *</Label>
