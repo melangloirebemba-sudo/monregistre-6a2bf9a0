@@ -39,6 +39,14 @@ const adminNav = [
   { to: "/admin/plans", label: "Plans", icon: Crown },
 ] as const;
 
+// Navigation mobile compacte : les rubriques secondaires sont regroupées sous « Plus ».
+const mobileNav = [
+  { to: "/admin", label: "Accueil", icon: LayoutDashboard },
+  { to: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
+  { to: "/admin/notifications", label: "Notifs", icon: BellRing },
+  { to: "/admin/plus", label: "Plus", icon: MoreHorizontal },
+] as const;
+
 function isActive(pathname: string, to: string) {
   if (to === "/admin") return pathname === "/admin";
   return pathname === to || pathname.startsWith(to + "/");
