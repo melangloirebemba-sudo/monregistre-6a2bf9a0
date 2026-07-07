@@ -40,18 +40,35 @@ export function updateSupportConfig(patch: Partial<SupportConfig>) {
 }
 
 /**
- * Normalise un numéro WhatsApp pour wa.me : uniquement des chiffres,
- * sans espace ni « + ». On conserve tous les chiffres (y compris un
- * éventuel 0 après l'indicatif pays qui fait partie du numéro opérateur
- * local, ex. Congo : +242 06 …).
+ * Normalise un numéro de téléphone pour l'API wa.me.
+ *
+ * Règles :
+ *  - on supprime tout ce qui n'est pas un chiffre (espaces, « + », tirets,
+ *    parenthèses, points…) ;
+ *  - un éventuel préfixe d'accès international « 00 » est retiré
+ *    (ex. « 00242069… » → « 242069… ») ;
+ *  - le zéro opérateur qui suit l'indicatif pays est **conservé** car il
+ *    fait partie du numéro local (Congo : +242 06 …) ;
+ *  - la longueur finale doit être comprise entre 8 et 15 chiffres
+ *    (recommandation E.164). Si le numéro est invalide, on renvoie une
+ *    chaîne vide pour que `waLink` puisse générer un lien de repli.
  */
 export function normalizeWhatsAppNumber(raw: string): string {
-  return (raw || "").replace(/\D/g, "");
+  let digits = (raw || "").replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length < 8 || digits.length > 15) return "";
+  return digits;
 }
 
 function waLink(message: string): string {
   const number = normalizeWhatsAppNumber(supportConfig.whatsappNumber);
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+  const text = encodeURIComponent(message);
+  // Si le numéro est invalide on retombe sur le formulaire générique wa.me
+  // qui laisse l'utilisateur choisir le destinataire — cela évite l'erreur
+  // « API WhatsApp bloquée / numéro invalide ».
+  return number
+    ? `https://wa.me/${number}?text=${text}`
+    : `https://wa.me/?text=${text}`;
 }
 
 /** Message d'aide générique (contact support). */
