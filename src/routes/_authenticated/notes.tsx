@@ -111,6 +111,7 @@ function NotesPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<NoteRow | null>(null);
   const [open, setOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [toDelete, setToDelete] = useState<NoteRow | null>(null);
 
   const deferredQ = useDeferredValue(q);
