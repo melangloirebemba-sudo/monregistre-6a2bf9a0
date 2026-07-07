@@ -754,30 +754,63 @@ function EleveDialog({
             </span>
           </label>
 
+          {!isEdit && currentDuplicate && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {currentDuplicate === "existing"
+                ? "Un élève avec ce nom, prénom et cette classe existe déjà."
+                : "Cet élève est déjà présent dans la file d'attente."}
+            </div>
+          )}
+
           {!isEdit && pending.length > 0 && (
             <div className="rounded-xl border border-teal/40 bg-teal/5 p-2">
-              <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                En attente ({pending.length})
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  En attente · récapitulatif ({pending.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPending([])}
+                  className="text-[10px] uppercase tracking-wider text-muted-foreground underline underline-offset-2 hover:text-destructive"
+                >
+                  Vider
+                </button>
               </div>
-              <ul className="max-h-32 space-y-1 overflow-y-auto">
-                {pending.map((p) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center justify-between rounded-md bg-background/60 px-2 py-1 text-xs"
-                  >
-                    <span className="truncate">
-                      <span className="uppercase">{p.nom}</span> {p.prenom}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removePending(p.id)}
-                      aria-label="Retirer de la file"
-                      className="ml-2 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              <ul className="max-h-56 space-y-1 overflow-y-auto">
+                {pending.map((p) => {
+                  const cls = classes.find((c) => c.id === p.classe_id);
+                  const ecoleNom = ecoles.find((e) => e.id === p.ecole_id)?.nom;
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex items-start justify-between gap-2 rounded-md bg-background/60 px-2 py-1.5 text-xs"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                ))}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-semibold">
+                          <span className="uppercase">{p.nom}</span> {p.prenom}
+                          <span className="ml-1 text-[10px] font-normal text-muted-foreground">
+                            ({p.sexe === "F" ? "F" : "M"})
+                          </span>
+                        </div>
+                        <div className="truncate text-[10px] text-muted-foreground">
+                          {ecoleNom ?? "École ?"} · {cls?.nom ?? "Classe ?"}
+                          {p.numero_eleve ? ` · ${p.numero_eleve}` : ""}
+                          {p.tuteur_nom ? ` · Tuteur ${p.tuteur_nom}` : ""}
+                          {p.tuteur_numero ? ` (${p.tuteur_numero})` : ""}
+                          {p.chef ? " · Chef" : ""}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePending(p.id)}
+                        aria-label="Retirer de la file"
+                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -789,12 +822,19 @@ function EleveDialog({
                 type="button"
                 variant="secondary"
                 onClick={addAnother}
-                disabled={save.isPending || classeMismatch}
+                disabled={save.isPending || classeMismatch || !!currentDuplicate}
               >
                 <Plus className="mr-1 h-4 w-4" /> Ajouter un autre
               </Button>
             )}
-            <Button type="submit" disabled={save.isPending || classeMismatch}>
+            <Button
+              type="submit"
+              disabled={
+                save.isPending ||
+                classeMismatch ||
+                (!isEdit && !!currentDuplicate && (!!form.nom.trim() || !!form.prenom.trim()))
+              }
+            >
               {save.isPending
                 ? "…"
                 : isEdit
