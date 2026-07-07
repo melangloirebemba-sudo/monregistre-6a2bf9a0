@@ -311,13 +311,18 @@ function AdminNotificationsPage() {
           )}
           {targetType === "user" && (
             <div>
-              <Label htmlFor="notif-user">ID utilisateur</Label>
+              <Label htmlFor="notif-user">Email du destinataire</Label>
               <Input
                 id="notif-user"
+                type="email"
+                autoComplete="off"
                 value={targetValue}
                 onChange={(e) => setTargetValue(e.target.value)}
-                placeholder="uuid de l'utilisateur"
+                placeholder="prenom.nom@exemple.com"
               />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Entrez l'email de connexion de l'utilisateur. L'identifiant est résolu automatiquement.
+              </p>
             </div>
           )}
         </div>
