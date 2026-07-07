@@ -96,9 +96,8 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
   const [detailItem, setDetailItem] = useState<NotificationItem | null>(null);
 
   const openDetail = (item: NotificationItem) => {
-    setDetailItem(item);
     if (!item.read) markRead(item);
-    setOpen(false);
+    setDetailItem(item);
   };
   const wasOpen = useRef(false);
   useEffect(() => {
@@ -183,7 +182,8 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
     "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors";
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button aria-label="Notifications" className={buttonBase}>
           <Bell className={variant === "sidebar" ? "h-4 w-4 shrink-0" : "h-5 w-5"} />
@@ -368,8 +368,9 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </Popover>
 
-      <Dialog open={!!detailItem} onOpenChange={(v) => !v && setDetailItem(null)}>
+    <Dialog open={!!detailItem} onOpenChange={(v) => !v && setDetailItem(null)}>
         <DialogContent className="max-w-md gap-0 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl">
           {detailItem && (
             <>
@@ -429,6 +430,6 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
           )}
         </DialogContent>
       </Dialog>
-    </Popover>
+    </>
   );
 }
