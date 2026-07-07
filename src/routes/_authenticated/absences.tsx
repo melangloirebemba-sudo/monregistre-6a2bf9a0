@@ -405,12 +405,45 @@ function AbsenceDialog({
         });
       }
     },
+    // Patch optimiste des caches `absences` : la ligne apparaît / est mise
+    // à jour instantanément dans la liste.
+    onMutate: async (): Promise<{ snapshot: ListSnapshot<AbsenceRow> } | undefined> => {
+      const eleve = eleves.find((e) => e.id === form.eleve_id);
+      if (!form.eleve_id || !form.date || !eleve) return undefined;
+      await qc.cancelQueries({ queryKey: ["absences"] });
+      const now = new Date().toISOString();
+      const optimistic: AbsenceRow = {
+        id: absence?.id ?? `tmp-${crypto.randomUUID()}`,
+        user_id: absence?.user_id ?? "optimistic",
+        eleve_id: form.eleve_id,
+        date: form.date,
+        motif: form.motif.trim() || null,
+        justifiee: form.justifiee,
+        updated_at: now,
+        eleve: { nom: eleve.nom, prenom: eleve.prenom, classe_id: eleve.classe_id },
+      };
+      const snapshot = upsertInLists<AbsenceRow>(qc, ["absences"], optimistic, {
+        sort: (a, b) => b.date.localeCompare(a.date),
+        keyMatches: (row, key) => {
+          const [, kClasse, kEleve] = key as string[];
+          if (kClasse && kClasse !== "-" && row.eleve?.classe_id !== kClasse) return false;
+          if (kEleve && kEleve !== "-" && row.eleve_id !== kEleve) return false;
+          return true;
+        },
+      });
+      onOpenChange(false);
+      return { snapshot };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.snapshot) rollbackLists<AbsenceRow>(qc, ctx.snapshot);
+      toast.error(e.message);
+    },
     onSuccess: () => {
       toast.success(absence ? "Absence modifiée" : "Absence enregistrée");
-      qc.invalidateQueries({ queryKey: ["absences"] });
-      onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["absences"] });
+    },
   });
 
   return (
