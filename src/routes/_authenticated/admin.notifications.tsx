@@ -524,18 +524,125 @@ function AdminNotificationsPage() {
               </p>
             </div>
           )}
-          <Button
-            type="button"
-            className="w-full"
-            disabled={!canSubmit || submitting.isPending}
-            onClick={() => submitting.mutate()}
-          >
-            {submitting.isPending
-              ? "Envoi…"
-              : mode === "now"
-                ? "Envoyer immédiatement"
-                : "Programmer l'envoi"}
-          </Button>
+          {!showPreview ? (
+            <Button
+              type="button"
+              className="w-full"
+              disabled={!canSubmit}
+              onClick={() => {
+                setLastResult(null);
+                setShowPreview(true);
+              }}
+            >
+              <Eye className="mr-1.5 h-3.5 w-3.5" />
+              Aperçu avant {mode === "now" ? "envoi" : "programmation"}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
+                <div className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Aperçu du message
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-medium text-foreground">
+                    {CATEGORY_LABELS[category]}
+                  </span>
+                  {mode === "schedule" ? (
+                    <span className="text-[11px] text-muted-foreground">
+                      Programmé pour <b className="text-foreground">{new Date(sendAt).toLocaleString("fr-FR")}</b>
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground">Envoi immédiat</span>
+                  )}
+                </div>
+                <div className="mt-2 text-sm font-semibold text-foreground">
+                  {title.trim() || <span className="italic text-muted-foreground">Sans titre</span>}
+                </div>
+                {body.trim() && (
+                  <div className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                    {body.trim()}
+                  </div>
+                )}
+                {href.trim() && (
+                  <div className="mt-2 text-[11px] text-muted-foreground">
+                    Lien : <code className="rounded bg-background/60 px-1">{href.trim()}</code>
+                  </div>
+                )}
+              </div>
+              <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Destinataires
+                  </div>
+                  {previewQuery.isFetching && (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {previewQuery.isLoading ? (
+                  <div className="text-xs text-muted-foreground">Calcul en cours…</div>
+                ) : previewQuery.error ? (
+                  <div className="text-xs text-destructive">
+                    {(previewQuery.error as Error).message}
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-sm font-semibold text-foreground">
+                      {previewQuery.data?.total ?? 0} destinataire(s)
+                    </div>
+                    {(previewQuery.data?.recipients?.length ?? 0) > 0 && (
+                      <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto">
+                        {previewQuery.data!.recipients.slice(0, 20).map((r) => (
+                          <li
+                            key={r.user_id}
+                            className="flex items-center justify-between gap-2 rounded-md bg-background/50 px-2 py-1 text-[11px]"
+                          >
+                            <span className="truncate text-foreground">
+                              {r.nom_affiche || r.email || r.user_id}
+                            </span>
+                            {r.email && (
+                              <span className="truncate text-muted-foreground">{r.email}</span>
+                            )}
+                          </li>
+                        ))}
+                        {previewQuery.data!.total > 20 && (
+                          <li className="px-2 text-[11px] text-muted-foreground">
+                            … et {previewQuery.data!.total - 20} autre(s)
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  disabled={submitting.isPending}
+                  onClick={() => setShowPreview(false)}
+                >
+                  Modifier
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  disabled={submitting.isPending || (previewQuery.data?.total ?? 0) === 0}
+                  onClick={() => submitting.mutate()}
+                >
+                  {submitting.isPending
+                    ? "Envoi…"
+                    : mode === "now"
+                      ? "Confirmer l'envoi"
+                      : "Confirmer la programmation"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {lastResult && mode === "now" && (
+            <SendResultPanel result={lastResult} onClose={() => setLastResult(null)} />
+          )}
         </div>
       </section>
 
