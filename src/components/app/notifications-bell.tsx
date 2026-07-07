@@ -49,7 +49,7 @@ function formatDate(iso: string) {
 type Filter = "all" | NotifCategory;
 
 export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps) {
-  const { items, unreadCount, markRead, markAllRead, enabled } =
+  const { items, unreadCount, markRead, markAllRead, clearAll, enabled } =
     useNotificationCenter();
   const prefs = useNotificationsPrefs();
   const [filter, setFilter] = useState<Filter>(prefs.defaultFilter);
