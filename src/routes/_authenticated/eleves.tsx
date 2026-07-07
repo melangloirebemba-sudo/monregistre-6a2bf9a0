@@ -403,7 +403,16 @@ function EleveDialog({
     tuteur_numero: string | null;
     chef: boolean;
   };
-  const [pending, setPending] = useState<PendingEleve[]>([]);
+  const PENDING_STORAGE_KEY = "eleves-pending-v1";
+  const [pending, setPending] = useState<PendingEleve[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(PENDING_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as PendingEleve[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [form, setForm] = useState({
     nom: "",
     prenom: "",
@@ -416,6 +425,17 @@ function EleveDialog({
     tuteur_numero: "",
     chef: false,
   });
+
+  // Persistance de la file « en attente » — survit rechargement / navigation.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (pending.length === 0) localStorage.removeItem(PENDING_STORAGE_KEY);
+      else localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(pending));
+    } catch {
+      // ignore quota errors
+    }
+  }, [pending]);
 
   useEffect(() => {
     if (open) {
@@ -434,7 +454,8 @@ function EleveDialog({
         tuteur_numero: eleve?.tuteur_numero ?? "",
         chef: !!(eleve && cls && cls.chef_id === eleve.id),
       });
-      setPending([]);
+      // Ne pas vider `pending` : on conserve la file entre ouvertures / navigation.
+      // En mode édition, on masque simplement la file dans l'UI.
     }
   }, [open, eleve, defaultClasseId, classes, ecoles]);
 
@@ -450,6 +471,24 @@ function EleveDialog({
   const classeMismatch =
     !!form.classe_id && !!form.ecole_id && !!selectedClasse && selectedClasse.ecole_id !== form.ecole_id;
 
+  // Clé de dédoublonnage : nom+prénom+classe (insensible à la casse/espaces).
+  const dedupKey = (nom: string, prenom: string, classe_id: string) =>
+    `${nom.trim().toLowerCase()}|${prenom.trim().toLowerCase()}|${classe_id}`;
+
+  const existingKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const e of existingEleves) s.add(dedupKey(e.nom, e.prenom, e.classe_id));
+    return s;
+  }, [existingEleves]);
+
+  const currentDuplicate = useMemo(() => {
+    if (!form.nom.trim() || !form.prenom.trim() || !form.classe_id) return null as null | "existing" | "pending";
+    const k = dedupKey(form.nom, form.prenom, form.classe_id);
+    if (existingKeys.has(k)) return "existing";
+    if (pending.some((p) => dedupKey(p.nom, p.prenom, p.classe_id) === k)) return "pending";
+    return null;
+  }, [form.nom, form.prenom, form.classe_id, existingKeys, pending]);
+
   // Valide le formulaire courant et retourne le payload, ou lève une erreur.
   const buildPending = (): PendingEleve => {
     if (!form.nom.trim() || !form.prenom.trim()) throw new Error("Nom et prénom obligatoires");
@@ -458,6 +497,13 @@ function EleveDialog({
     const classe = classes.find((c) => c.id === form.classe_id);
     if (!classe) throw new Error("Classe invalide");
     if (classe.ecole_id !== form.ecole_id) throw new Error("La classe ne correspond pas à l'école sélectionnée");
+    const k = dedupKey(form.nom, form.prenom, form.classe_id);
+    if (existingKeys.has(k)) {
+      throw new Error(`${form.prenom} ${form.nom} existe déjà dans cette classe`);
+    }
+    if (pending.some((p) => dedupKey(p.nom, p.prenom, p.classe_id) === k)) {
+      throw new Error(`${form.prenom} ${form.nom} est déjà dans la file d'attente`);
+    }
     return {
       id: crypto.randomUUID(),
       nom: form.nom.trim(),
@@ -497,6 +543,8 @@ function EleveDialog({
       toast.error((e as Error).message);
     }
   };
+
+
 
   const removePending = (id: string) => {
     setPending((prev) => prev.filter((p) => p.id !== id));
