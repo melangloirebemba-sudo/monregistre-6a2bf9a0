@@ -678,6 +678,13 @@ function BulkNoteDialog({
     enabled: !!classeId && open,
   });
 
+  // Notes existantes de la classe : sert à afficher un aperçu des élèves
+  // qui ont déjà été notés et à repérer les doublons dans la prévisualisation.
+  const { data: existingNotes = [] } = useQuery({
+    ...notesQO({ classeId: classeId || undefined }),
+    enabled: !!classeId && open,
+  });
+
   useEffect(() => {
     if (open) {
       const initial = defaultClasseId ?? classes[0]?.id ?? "";
