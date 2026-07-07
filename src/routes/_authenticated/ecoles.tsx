@@ -205,12 +205,13 @@ function EcolesPage() {
         onDone={() => setToDelete(null)}
       />
 
-      <UpgradeDialog
+      <PlanUpgradeDialog
         open={upgradeOpen}
         onOpenChange={setUpgradeOpen}
         currentPlan={currentPlan}
-        ecoleNom={caps ? (ecoles[0]?.nom ?? "") : ""}
-        maxEcoles={maxEcoles}
+        ecole={ecoles[0]?.nom ?? ""}
+        ressource="Écoles"
+        limitDescription={`${maxEcoles} école${maxEcoles > 1 ? "s" : ""}`}
       />
     </div>
   );
