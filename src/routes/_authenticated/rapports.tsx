@@ -112,7 +112,7 @@ function RapportsPage() {
     return { moyennes, moyClasse, top3, bottom3, buckets, sorted };
   }, [notes, eleves, echelle]);
 
-  function handleExport(eleveId: string) {
+  async function handleExport(eleveId: string) {
     if (!canPdf) {
       toast.error("Export PDF réservé aux plans Lite et Premium.");
       return;
@@ -124,6 +124,7 @@ function RapportsPage() {
       toast.error("Aucune note pour cet élève sur la période.");
       return;
     }
+    const { generateBulletinPDF } = await import("@/lib/pdf/bulletin");
     generateBulletinPDF({
       ecole,
       classe,
@@ -136,7 +137,7 @@ function RapportsPage() {
     });
   }
 
-  function handleExportAll() {
+  async function handleExportAll() {
     if (!canPdf) {
       toast.error("Export PDF réservé aux plans Lite et Premium.");
       return;
@@ -145,6 +146,7 @@ function RapportsPage() {
       toast.error("Aucun élève à exporter.");
       return;
     }
+    const { generateClasseRapportPDF } = await import("@/lib/pdf/classe-rapport");
     generateClasseRapportPDF({
       ecole,
       classe,
