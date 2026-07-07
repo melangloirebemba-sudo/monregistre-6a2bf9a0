@@ -259,7 +259,8 @@ export const notesQO = (opts: { classeId?: string; eleveId?: string; periodeId?:
 export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =>
   queryOptions({
     queryKey: ["creneaux", opts.ecoleId ?? "-", opts.classeId ?? "-"],
-    staleTime: DEFAULT_STALE,
+    staleTime: REF_STALE,
+    gcTime: 30 * 60_000,
     queryFn: async (): Promise<Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>> => {
       let q = supabase
         .from("creneaux")
