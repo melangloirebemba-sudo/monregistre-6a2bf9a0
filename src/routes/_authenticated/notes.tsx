@@ -1121,7 +1121,28 @@ function BulkNoteDialog({
                       }
                     />
                     <div className="min-w-0 flex-1 truncate text-sm">
-                      {r.eleve.prenom} {r.eleve.nom}
+                      <span>{r.eleve.prenom} {r.eleve.nom}</span>
+                      {(() => {
+                        const info = existingByEleve.get(r.eleve.id);
+                        if (!info || info.total === 0) return null;
+                        const dup = info.sameLibelle > 0;
+                        return (
+                          <span
+                            className={`ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                              dup
+                                ? "bg-destructive/15 text-destructive"
+                                : "bg-gold/15 text-gold-foreground text-[10px]"
+                            }`}
+                            title={
+                              dup
+                                ? `Déjà noté « ${libelle.trim()} » (${info.sameLibelle})`
+                                : `${info.total} note(s) déjà saisie(s)${info.lastLibelle ? ` — dernier : ${info.lastLibelle}` : ""}`
+                            }
+                          >
+                            {dup ? `⚠ ${info.sameLibelle}` : `${info.total}`}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="flex flex-col items-end">
                       <Input
