@@ -183,7 +183,7 @@ function NotificationsPrefsPage() {
                       >
                         <Icon className="h-4 w-4" />
                         <span>{meta.label}</span>
-                        {!available && ch !== "inApp" && (
+                        {!available && (
                           <span className="text-[9px] uppercase tracking-wider">
                             N/A
                           </span>
