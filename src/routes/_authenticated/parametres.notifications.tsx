@@ -24,6 +24,7 @@ import {
   type ReminderFrequency,
   type DefaultFilter,
 } from "@/lib/notifications-prefs";
+import { PushToggle } from "@/components/app/push-toggle";
 
 export const Route = createFileRoute("/_authenticated/parametres/notifications")({
   head: () => ({
@@ -88,7 +89,11 @@ function NotificationsPrefsPage() {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <div className="mt-4">
+        <PushToggle />
+      </div>
+
+      <section className="mt-4 rounded-2xl border border-border bg-card p-5 shadow-soft">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-foreground">
