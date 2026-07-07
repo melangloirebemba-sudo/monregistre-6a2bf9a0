@@ -284,37 +284,25 @@ function NotesPage() {
             );
           };
           const listView = (() => {
-            if (ecoleFilter === "all") {
-              const map = new Map<string, NoteRow[]>();
-              paged.forEach((n) => {
-                const key = n.ecole_id ?? "__unknown__";
-                const list = map.get(key) ?? [];
-                list.push(n);
-                map.set(key, list);
-              });
-              const grouped = Array.from(map.entries()).sort((a, b) =>
-                (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
-              );
-              return (
-                <div className="space-y-4">
-                  {grouped.map(([ecoleId, list]) => (
-                    <section key={ecoleId}>
-                      <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                      <div>{list.map((n) => renderItem(n))}</div>
-                    </section>
-                  ))}
-                </div>
-              );
-            }
+            const map = new Map<string, NoteRow[]>();
+            paged.forEach((n) => {
+              const key = n.ecole_id ?? "__unknown__";
+              const list = map.get(key) ?? [];
+              list.push(n);
+              map.set(key, list);
+            });
+            const grouped = Array.from(map.entries()).sort((a, b) =>
+              (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
+            );
             return (
-              <VirtualList
-                items={paged}
-                estimateSize={78}
-                overscan={6}
-                className="max-h-[70vh]"
-                getItemKey={(n) => n.id}
-                renderItem={renderItem}
-              />
+              <div className="space-y-4">
+                {grouped.map(([ecoleId, list]) => (
+                  <section key={ecoleId}>
+                    <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
+                    <div>{list.map((n) => renderItem(n))}</div>
+                  </section>
+                ))}
+              </div>
             );
           })();
           return (
