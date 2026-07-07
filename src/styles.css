@@ -76,31 +76,31 @@
   /* Mode clair humanisé — papier crème, encre séchée, or patiné, sarcelle sourde.
      Aucun blanc pur, saturations basses, bordures discrètes. */
 
-  /* Crème */
-  --cream: oklch(0.955 0.018 82);          /* papier crème */
-  --cream-deep: oklch(0.915 0.026 80);     /* pli du papier */
-  --background: oklch(0.955 0.018 82);
-  --surface: oklch(0.975 0.012 82);        /* surface légèrement plus claire, jamais blanche */
-  --foreground: oklch(0.28 0.025 268);     /* encre marine séchée */
+  /* Crème / blanc doux — arrière-plan blanc adouci, cartes teintées or */
+  --cream: oklch(0.985 0.006 85);          /* blanc chaud (fond) */
+  --cream-deep: oklch(0.93 0.03 82);       /* or très pâle (surfaces marquées) */
+  --background: oklch(0.985 0.006 85);     /* fond principal, blanc doux */
+  --surface: oklch(0.97 0.018 84);         /* légère teinte or */
+  --foreground: oklch(0.24 0.025 268);     /* encre marine séchée */
 
   /* Encre marine */
   --ink: oklch(0.24 0.025 268);
   --ink-soft: oklch(0.4 0.03 268);
-  --ink-foreground: oklch(0.955 0.018 82);
+  --ink-foreground: oklch(0.985 0.006 85);
 
-  --card: oklch(0.975 0.012 82);
-  --card-foreground: oklch(0.28 0.025 268);
-  --popover: oklch(0.975 0.012 82);
-  --popover-foreground: oklch(0.28 0.025 268);
+  --card: oklch(0.955 0.03 84);            /* carte or pâle, se détache du fond blanc */
+  --card-foreground: oklch(0.24 0.025 268);
+  --popover: oklch(0.985 0.006 85);
+  --popover-foreground: oklch(0.24 0.025 268);
 
   --primary: oklch(0.28 0.025 268);
-  --primary-foreground: oklch(0.955 0.018 82);
+  --primary-foreground: oklch(0.985 0.006 85);
 
-  --secondary: oklch(0.915 0.026 80);
-  --secondary-foreground: oklch(0.28 0.025 268);
+  --secondary: oklch(0.94 0.028 82);
+  --secondary-foreground: oklch(0.24 0.025 268);
 
-  --muted: oklch(0.93 0.018 80);
-  --muted-foreground: oklch(0.46 0.02 268);
+  --muted: oklch(0.95 0.022 82);
+  --muted-foreground: oklch(0.44 0.02 268);
 
   --accent: oklch(0.68 0.09 78);           /* or patiné */
   --accent-foreground: oklch(0.24 0.025 268);
@@ -123,9 +123,10 @@
   --warning-foreground: oklch(0.24 0.025 268);
 
   /* Bordures discrètes — plus proches du fond, moins agressives */
-  --border: oklch(0.88 0.018 80 / 0.7);
-  --input: oklch(0.9 0.016 80);
-  --ring: oklch(0.68 0.09 78 / 0.45);
+  /* Bordures — teintées or discret pour dialoguer avec les cartes */
+  --border: oklch(0.86 0.035 82 / 0.7);
+  --input: oklch(0.9 0.03 82);
+  --ring: oklch(0.68 0.09 78 / 0.5);
 
   --chart-1: oklch(0.68 0.09 78);
   --chart-2: oklch(0.48 0.07 195);
