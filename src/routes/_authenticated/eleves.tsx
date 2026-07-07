@@ -143,7 +143,6 @@ function ElevesPage() {
   const canAdd = classes.length > 0;
 
   const grouped = useMemo(() => {
-    if (ecoleFilter !== "all") return null;
     const map = new Map<string, typeof paged>();
     paged.forEach((e) => {
       const list = map.get(e.ecole_id) ?? [];
@@ -153,7 +152,7 @@ function ElevesPage() {
     return Array.from(map.entries()).sort((a, b) =>
       (ecoleById[a[0]] ?? "").localeCompare(ecoleById[b[0]] ?? ""),
     );
-  }, [paged, ecoleFilter, ecoleById]);
+  }, [paged, ecoleById]);
 
   const handleAdd = () => {
     if (atLimit) {
