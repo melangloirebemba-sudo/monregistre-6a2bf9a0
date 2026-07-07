@@ -378,13 +378,14 @@ function ElevesPage() {
 }
 
 function EleveDialog({
-  open, onOpenChange, eleve, classes, ecoles, defaultClasseId,
+  open, onOpenChange, eleve, classes, ecoles, existingEleves, defaultClasseId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eleve: Eleve | null;
   classes: Array<{ id: string; nom: string; ecole_id: string; chef_id: string | null }>;
   ecoles: Array<{ id: string; nom: string }>;
+  existingEleves: Eleve[];
   defaultClasseId?: string;
 }) {
   const qc = useQueryClient();
