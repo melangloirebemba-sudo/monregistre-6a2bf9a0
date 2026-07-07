@@ -97,6 +97,54 @@ function NotificationsPrefsPage() {
         <PushToggle />
       </div>
 
+      <section
+        className={`mt-4 rounded-2xl border border-border bg-card p-5 shadow-soft ${!prefs.enabled ? "opacity-60" : ""}`}
+      >
+        <div className="flex items-start gap-2 text-gold">
+          <Smartphone className="mt-0.5 h-4 w-4" />
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-foreground">
+              Notifications push mobiles
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Choisissez quels types de notifications vous voulez recevoir sur votre téléphone.
+              Nécessite l'activation ci-dessus.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          {ALL_PUSH_KINDS.map((k) => {
+            const active = prefs.push[k];
+            return (
+              <div
+                key={k}
+                className="flex items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/50 p-3.5"
+              >
+                <div className="min-w-0">
+                  <Label htmlFor={`push-${k}`} className="text-sm font-medium text-foreground">
+                    {PUSH_KIND_LABELS[k]}
+                  </Label>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {PUSH_KIND_DESCRIPTIONS[k]}
+                  </p>
+                </div>
+                <Switch
+                  id={`push-${k}`}
+                  disabled={!prefs.enabled}
+                  checked={active}
+                  onCheckedChange={(v) =>
+                    setNotificationsPrefs({
+                      push: { [k]: v } as Partial<Record<PushKind, boolean>> as Record<PushKind, boolean>,
+                    })
+                  }
+                  aria-label={`Push ${PUSH_KIND_LABELS[k]}`}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="mt-4 rounded-2xl border border-border bg-card p-5 shadow-soft">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
