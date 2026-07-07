@@ -69,6 +69,7 @@ function ClassesPage() {
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Classe | null>(null);
+  const [viewing, setViewing] = useState<Classe | null>(null);
 
   const pq = usePaginatedQuery({
     data: classes,
