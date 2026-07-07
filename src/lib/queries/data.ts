@@ -97,24 +97,77 @@ export interface Absence {
   updated_at: string;
 }
 
+// Cache court des données de référence (auth utilisateur + année active)
+// pour éviter d'exécuter les mêmes requêtes en cascade sur chaque appel de
+// query. Le cache est invalidé côté client par l'écoute de auth.onAuthStateChange
+// dans __root.tsx (queryClient.invalidateQueries) et expire naturellement.
+const REF_TTL = 30_000;
+let _userIdCache: { value: string | null; at: number; p?: Promise<string | null> } | null = null;
+let _anneeCache: { value: string | null; at: number; p?: Promise<string | null> } | null = null;
+
+async function getCachedUserId(): Promise<string | null> {
+  const now = Date.now();
+  if (_userIdCache && now - _userIdCache.at < REF_TTL) return _userIdCache.value;
+  if (_userIdCache?.p) return _userIdCache.p;
+  const p = (async () => {
+    const { data } = await supabase.auth.getUser();
+    const v = data.user?.id ?? null;
+    _userIdCache = { value: v, at: Date.now() };
+    return v;
+  })();
+  _userIdCache = { value: null, at: 0, p };
+  return p;
+}
+
+async function getAnneeActive(): Promise<string | null> {
+  const now = Date.now();
+  if (_anneeCache && now - _anneeCache.at < REF_TTL) return _anneeCache.value;
+  if (_anneeCache?.p) return _anneeCache.p;
+  const p = (async () => {
+    const uid = await getCachedUserId();
+    if (!uid) return null;
+    const { data } = await supabase
+      .from("profils_enseignant")
+      .select("annee_active")
+      .eq("user_id", uid)
+      .maybeSingle();
+    const val = (data as { annee_active?: string } | null)?.annee_active;
+    const v = val && val.trim() ? val : null;
+    _anneeCache = { value: v, at: Date.now() };
+    return v;
+  })();
+  _anneeCache = { value: null, at: 0, p };
+  return p;
+}
+
+export function invalidateDataRefCache() {
+  _userIdCache = null;
+  _anneeCache = null;
+}
+
+// Fraîcheur par défaut : navigation instantanée entre pages sans refetch systématique.
+const DEFAULT_STALE = 60_000;
+
 export const absencesQO = (opts: { classeId?: string; eleveId?: string } = {}) =>
   queryOptions({
     queryKey: ["absences", opts.classeId ?? "-", opts.eleveId ?? "-"],
+    staleTime: DEFAULT_STALE,
     queryFn: async (): Promise<
       Array<Absence & { eleve: { nom: string; prenom: string; classe_id: string } | null }>
     > => {
+      // Filtre côté DB via jointure inner quand une classe est demandée.
+      const rel = opts.classeId ? "eleve:eleves!inner(nom, prenom, classe_id)" : "eleve:eleves(nom, prenom, classe_id)";
       let q = supabase
         .from("absences")
-        .select("*, eleve:eleves(nom, prenom, classe_id)")
+        .select(`*, ${rel}`)
         .order("date", { ascending: false });
       if (opts.eleveId) q = q.eq("eleve_id", opts.eleveId);
+      if (opts.classeId) q = q.eq("eleve.classe_id", opts.classeId);
       const { data, error } = await q;
       if (error) throw error;
-      let rows = (data ?? []) as Array<
+      return (data ?? []) as Array<
         Absence & { eleve: { nom: string; prenom: string; classe_id: string } | null }
       >;
-      if (opts.classeId) rows = rows.filter((r) => r.eleve?.classe_id === opts.classeId);
-      return rows;
     },
   });
 
@@ -122,6 +175,7 @@ export const absencesQO = (opts: { classeId?: string; eleveId?: string } = {}) =
 export const ecolesQO = () =>
   queryOptions({
     queryKey: ["ecoles"],
+    staleTime: DEFAULT_STALE,
     queryFn: async (): Promise<Ecole[]> => {
       const { data, error } = await supabase
         .from("ecoles")
@@ -132,21 +186,10 @@ export const ecolesQO = () =>
     },
   });
 
-async function getAnneeActive(): Promise<string | null> {
-  const { data: userRes } = await supabase.auth.getUser();
-  if (!userRes.user) return null;
-  const { data } = await supabase
-    .from("profils_enseignant")
-    .select("annee_active")
-    .eq("user_id", userRes.user.id)
-    .maybeSingle();
-  const val = (data as { annee_active?: string } | null)?.annee_active;
-  return val && val.trim() ? val : null;
-}
-
 export const classesQO = (ecoleId?: string) =>
   queryOptions({
     queryKey: ["classes", ecoleId ?? "all"],
+    staleTime: DEFAULT_STALE,
     queryFn: async (): Promise<Classe[]> => {
       const annee = await getAnneeActive();
       let q = supabase.from("classes").select("*").order("nom");
@@ -161,6 +204,7 @@ export const classesQO = (ecoleId?: string) =>
 export const elevesQO = (classeId?: string) =>
   queryOptions({
     queryKey: ["eleves", classeId ?? "all"],
+    staleTime: DEFAULT_STALE,
     queryFn: async (): Promise<Eleve[]> => {
       let q = supabase.from("eleves").select("*").order("nom");
       if (classeId) q = q.eq("classe_id", classeId);
@@ -173,6 +217,7 @@ export const elevesQO = (classeId?: string) =>
 export const periodesQO = () =>
   queryOptions({
     queryKey: ["periodes"],
+    staleTime: DEFAULT_STALE,
     queryFn: async (): Promise<Periode[]> => {
       const annee = await getAnneeActive();
       let q = supabase.from("periodes").select("*").order("ordre");
@@ -187,24 +232,26 @@ export const periodesQO = () =>
 export const notesQO = (opts: { classeId?: string; eleveId?: string; periodeId?: string } = {}) =>
   queryOptions({
     queryKey: ["notes", opts.classeId ?? "-", opts.eleveId ?? "-", opts.periodeId ?? "-"],
+    staleTime: DEFAULT_STALE,
     queryFn: async (): Promise<Array<Note & { eleve: { nom: string; prenom: string; classe_id: string } | null }>> => {
+      const rel = opts.classeId ? "eleve:eleves!inner(nom, prenom, classe_id)" : "eleve:eleves(nom, prenom, classe_id)";
       let q = supabase
         .from("notes")
-        .select("*, eleve:eleves(nom, prenom, classe_id)")
+        .select(`*, ${rel}`)
         .order("date", { ascending: false });
       if (opts.eleveId) q = q.eq("eleve_id", opts.eleveId);
       if (opts.periodeId) q = q.eq("periode_id", opts.periodeId);
+      if (opts.classeId) q = q.eq("eleve.classe_id", opts.classeId);
       const { data, error } = await q;
       if (error) throw error;
-      let rows = (data ?? []) as Array<Note & { eleve: { nom: string; prenom: string; classe_id: string } | null }>;
-      if (opts.classeId) rows = rows.filter((r) => r.eleve?.classe_id === opts.classeId);
-      return rows;
+      return (data ?? []) as Array<Note & { eleve: { nom: string; prenom: string; classe_id: string } | null }>;
     },
   });
 
 export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =>
   queryOptions({
     queryKey: ["creneaux", opts.ecoleId ?? "-", opts.classeId ?? "-"],
+    staleTime: DEFAULT_STALE,
     queryFn: async (): Promise<Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>> => {
       let q = supabase
         .from("creneaux")
@@ -222,6 +269,7 @@ export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =
 export const sequencesQO = (opts: { classeId?: string; periodeId?: string } = {}) =>
   queryOptions({
     queryKey: ["sequences", opts.classeId ?? "-", opts.periodeId ?? "-"],
+    staleTime: DEFAULT_STALE,
     queryFn: async (): Promise<Array<Sequence & { classe: { nom: string; code: string; ecole_id: string } | null; periode: { label: string } | null }>> => {
       let q = supabase
         .from("sequences_programme")
@@ -236,7 +284,7 @@ export const sequencesQO = (opts: { classeId?: string; periodeId?: string } = {}
   });
 
 export async function requireUserId(): Promise<string> {
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error("Session expirée");
-  return data.user.id;
+  const uid = await getCachedUserId();
+  if (!uid) throw new Error("Session expirée");
+  return uid;
 }
