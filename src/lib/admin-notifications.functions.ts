@@ -115,7 +115,10 @@ export const previewBroadcastRecipients = createServerFn({ method: "POST" })
         .from("profils_enseignant")
         .select("user_id");
       if (error) throw new Error(`Lecture des profils impossible: ${error.message}`);
-      userIds = (rows ?? []).map((r) => r.user_id as string);
+      const admins = await getAdminUserIds(db);
+      userIds = (rows ?? [])
+        .map((r) => r.user_id as string)
+        .filter((id) => !admins.has(id));
     } else if (data.target_type === "plan") {
       const plan = planSchema.parse(data.target_value);
       const { data: rows, error } = await db
@@ -123,7 +126,10 @@ export const previewBroadcastRecipients = createServerFn({ method: "POST" })
         .select("user_id")
         .eq("plan", plan);
       if (error) throw new Error(`Lecture des profils impossible: ${error.message}`);
-      userIds = (rows ?? []).map((r) => r.user_id as string);
+      const admins = await getAdminUserIds(db);
+      userIds = (rows ?? [])
+        .map((r) => r.user_id as string)
+        .filter((id) => !admins.has(id));
     } else if (data.target_type === "user") {
       if (!data.target_value) throw new Error("Destinataire manquant");
       userIds = [await resolveUserByEmailOrId(db, data.target_value)];
