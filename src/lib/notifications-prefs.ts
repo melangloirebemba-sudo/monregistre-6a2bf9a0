@@ -155,12 +155,19 @@ function defaultCategories(): Record<NotifCategory, boolean> {
   return out;
 }
 
+function defaultPush(): Record<PushKind, boolean> {
+  const out = {} as Record<PushKind, boolean>;
+  for (const k of ALL_PUSH_KINDS) out[k] = true;
+  return out;
+}
+
 export const DEFAULT_NOTIFICATIONS_PREFS: NotificationsPrefs = {
   enabled: true,
   categories: defaultCategories(),
   channels: defaultChannels(),
   reminderFrequency: "daily",
   defaultFilter: "all",
+  push: defaultPush(),
 };
 
 /** Catégories pour lesquelles email et SMS peuvent être proposés. */
