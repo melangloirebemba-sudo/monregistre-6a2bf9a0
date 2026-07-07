@@ -120,11 +120,7 @@ function NotesPage() {
     search: deferredQ,
     searchFields: (n) => [n.eleve?.prenom, n.eleve?.nom, n.libelle, n.matiere],
     filters: [
-      (n) => {
-        if (ecoleFilter === "all") return true;
-        const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
-        return cls?.ecole_id === ecoleFilter;
-      },
+      (n) => ecoleFilter === "all" || n.ecole_id === ecoleFilter,
     ],
     sortKey: `${ecoleFilter}|${classeFilter}|${periodeFilter}`,
   });
@@ -291,8 +287,7 @@ function NotesPage() {
             if (ecoleFilter === "all") {
               const map = new Map<string, NoteRow[]>();
               paged.forEach((n) => {
-                const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
-                const key = cls?.ecole_id ?? "__unknown__";
+                const key = n.ecole_id ?? "__unknown__";
                 const list = map.get(key) ?? [];
                 list.push(n);
                 map.set(key, list);
