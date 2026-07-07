@@ -1,20 +1,7 @@
 import jsPDF from "jspdf";
+import { formatMontantXAF, type RecuPaiementContext } from "./recu-paiement-shared";
 
-export interface RecuPaiementContext {
-  numero_recu: string;
-  paye_le: string;                 // ISO
-  plan: "lite" | "premium" | "gratuit";
-  periode: "mensuelle" | "trimestrielle" | "annuelle" | null;
-  montant: number;
-  devise: string;                  // XAF
-  moyen_paiement: string;
-  plan_expires_at?: string | null; // ISO
-  note?: string | null;
-  utilisateur: {
-    nom_affiche?: string | null;
-    email?: string | null;
-  };
-}
+export { formatMontantXAF, type RecuPaiementContext };
 
 const PLAN_LABEL: Record<string, string> = {
   gratuit: "Gratuit",
@@ -34,11 +21,6 @@ function fmtDate(iso: string | null | undefined): string {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
-export function formatMontantXAF(montant: number, devise = "XAF"): string {
-  const groupé = new Intl.NumberFormat("fr-FR").format(Math.max(0, Math.floor(montant)));
-  const suffix = devise === "XAF" ? "FCFA" : devise;
-  return `${groupé} ${suffix}`;
-}
 
 function buildDoc(ctx: RecuPaiementContext): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a5", orientation: "portrait" });
