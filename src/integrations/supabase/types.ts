@@ -849,6 +849,72 @@ export type Database = {
         }
         Relationships: []
       }
+      push_deliveries: {
+        Row: {
+          error: string | null
+          id: string
+          key: string
+          kind: string
+          ok: boolean
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          error?: string | null
+          id?: string
+          key: string
+          kind: string
+          ok?: boolean
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          error?: string | null
+          id?: string
+          key?: string
+          kind?: string
+          ok?: boolean
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          disabled_at: string | null
+          endpoint: string
+          id: string
+          last_seen_at: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          disabled_at?: string | null
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          disabled_at?: string | null
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sequences_programme: {
         Row: {
           classe_id: string
