@@ -59,8 +59,8 @@ export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
       if (error) throw new Error(`Lecture des profils impossible: ${error.message}`);
       userIds = (rows ?? []).map((r) => r.user_id as string);
     } else if (data.target_type === "user") {
-      if (!data.target_value) throw new Error("Utilisateur cible manquant");
-      userIds = [data.target_value];
+      if (!data.target_value) throw new Error("Destinataire manquant");
+      userIds = [await resolveUserByEmailOrId(db, data.target_value)];
     }
 
     if (userIds.length === 0) {
