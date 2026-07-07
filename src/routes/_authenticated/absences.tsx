@@ -569,12 +569,21 @@ function DeleteAbsenceDialog({
         conflictStrategy: "merge",
       });
     },
-    onSuccess: () => {
-      toast.success("Absence supprimée");
-      qc.invalidateQueries({ queryKey: ["absences"] });
+    onMutate: async (): Promise<{ snapshot: ListSnapshot<AbsenceRow> } | undefined> => {
+      if (!absence) return undefined;
+      await qc.cancelQueries({ queryKey: ["absences"] });
+      const snapshot = removeFromLists<AbsenceRow>(qc, ["absences"], absence.id);
       onDone();
+      return { snapshot };
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.snapshot) rollbackLists<AbsenceRow>(qc, ctx.snapshot);
+      toast.error(e.message);
+    },
+    onSuccess: () => toast.success("Absence supprimée"),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["absences"] });
+    },
   });
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
