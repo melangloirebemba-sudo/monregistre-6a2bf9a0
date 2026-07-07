@@ -57,6 +57,30 @@ export function upsertInLists<T extends WithId>(
   });
 }
 
+/**
+ * Insère/remplace plusieurs lignes d'un coup dans les listes en cache.
+ * Plus efficace qu'un boucle sur `upsertInLists` (un seul snapshot par clé).
+ */
+export function upsertManyInLists<T extends WithId>(
+  qc: QueryClient,
+  prefix: QueryKey,
+  rows: T[],
+  opts: {
+    sort?: (a: T, b: T) => number;
+    keyMatches?: (row: T, key: QueryKey) => boolean;
+  } = {},
+): ListSnapshot<T> {
+  return patchLists<T>(qc, prefix, (list, key) => {
+    const ids = new Set(rows.map((r) => r.id));
+    const without = list.filter((r) => !ids.has(r.id));
+    const toAdd = opts.keyMatches
+      ? rows.filter((r) => opts.keyMatches!(r, key))
+      : rows;
+    const next = [...without, ...toAdd];
+    return opts.sort ? next.sort(opts.sort) : next;
+  });
+}
+
 export function removeFromLists<T extends WithId>(
   qc: QueryClient,
   prefix: QueryKey,
