@@ -121,6 +121,8 @@ function AdminNotificationsPage() {
     const d = new Date(Date.now() + 60 * 60 * 1000);
     return toLocalInputValue(d);
   });
+  const [mode, setMode] = useState<"now" | "schedule">("now");
+  const sendNow = useServerFn(sendAdminBroadcastNow);
   const scheduleFn = useServerFn(scheduleAdminBroadcast);
   const cancelFn = useServerFn(cancelScheduledBroadcast);
   const triggerFn = useServerFn(triggerNotificationHook);
