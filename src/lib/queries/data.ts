@@ -147,11 +147,14 @@ export function invalidateDataRefCache() {
 
 // Fraîcheur par défaut : navigation instantanée entre pages sans refetch systématique.
 const DEFAULT_STALE = 60_000;
+// Données de référence rarement modifiées : plus long TTL, moins de refetch inutiles.
+const REF_STALE = 5 * 60_000;
 
 export const absencesQO = (opts: { classeId?: string; eleveId?: string } = {}) =>
   queryOptions({
     queryKey: ["absences", opts.classeId ?? "-", opts.eleveId ?? "-"],
     staleTime: DEFAULT_STALE,
+    gcTime: 10 * 60_000,
     queryFn: async (): Promise<
       Array<Absence & { eleve: { nom: string; prenom: string; classe_id: string } | null }>
     > => {
@@ -175,7 +178,8 @@ export const absencesQO = (opts: { classeId?: string; eleveId?: string } = {}) =
 export const ecolesQO = () =>
   queryOptions({
     queryKey: ["ecoles"],
-    staleTime: DEFAULT_STALE,
+    staleTime: REF_STALE,
+    gcTime: 30 * 60_000,
     queryFn: async (): Promise<Ecole[]> => {
       const { data, error } = await supabase
         .from("ecoles")
@@ -189,7 +193,8 @@ export const ecolesQO = () =>
 export const classesQO = (ecoleId?: string) =>
   queryOptions({
     queryKey: ["classes", ecoleId ?? "all"],
-    staleTime: DEFAULT_STALE,
+    staleTime: REF_STALE,
+    gcTime: 30 * 60_000,
     queryFn: async (): Promise<Classe[]> => {
       const annee = await getAnneeActive();
       let q = supabase.from("classes").select("*").order("nom");
@@ -205,6 +210,7 @@ export const elevesQO = (classeId?: string) =>
   queryOptions({
     queryKey: ["eleves", classeId ?? "all"],
     staleTime: DEFAULT_STALE,
+    gcTime: 15 * 60_000,
     queryFn: async (): Promise<Eleve[]> => {
       let q = supabase.from("eleves").select("*").order("nom");
       if (classeId) q = q.eq("classe_id", classeId);
@@ -217,7 +223,8 @@ export const elevesQO = (classeId?: string) =>
 export const periodesQO = () =>
   queryOptions({
     queryKey: ["periodes"],
-    staleTime: DEFAULT_STALE,
+    staleTime: REF_STALE,
+    gcTime: 30 * 60_000,
     queryFn: async (): Promise<Periode[]> => {
       const annee = await getAnneeActive();
       let q = supabase.from("periodes").select("*").order("ordre");
@@ -227,6 +234,7 @@ export const periodesQO = () =>
       return data as Periode[];
     },
   });
+
 
 
 export const notesQO = (opts: { classeId?: string; eleveId?: string; periodeId?: string } = {}) =>

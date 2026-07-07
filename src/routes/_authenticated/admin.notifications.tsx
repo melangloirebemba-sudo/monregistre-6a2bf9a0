@@ -31,6 +31,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { VirtualList } from "@/components/ui/virtual-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -440,7 +441,7 @@ function AdminNotificationsPage() {
                 placeholder="Rechercher par nom ou email…"
                 className="mb-2"
               />
-              <div className="max-h-60 overflow-y-auto rounded-lg border border-border/60 bg-background/50">
+              <div className="max-h-60 rounded-lg border border-border/60 bg-background/50">
                 {usersLoading ? (
                   <div className="p-3 text-center text-xs text-muted-foreground">
                     Chargement des utilisateurs…
@@ -450,47 +451,51 @@ function AdminNotificationsPage() {
                     Aucun utilisateur trouvé.
                   </div>
                 ) : (
-                  <ul className="divide-y divide-border/40">
-                    {filteredUsers.map((u) => {
+                  <VirtualList
+                    items={filteredUsers}
+                    estimateSize={52}
+                    overscan={8}
+                    className="max-h-60"
+                    getItemKey={(u) => u.user_id}
+                    renderItem={(u) => {
                       const selected = targetValue === (u.email ?? u.user_id);
                       const label = u.nom_affiche
                         || [u.prenom, u.nom_famille].filter(Boolean).join(" ")
                         || u.email
                         || u.user_id;
                       return (
-                        <li key={u.user_id}>
-                          <button
-                            type="button"
-                            onClick={() => setTargetValue(u.email ?? u.user_id)}
-                            className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs transition hover:bg-muted/50 ${
-                              selected ? "bg-gold/10 text-foreground" : "text-foreground"
-                            }`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-medium">{label}</div>
-                              <div className="truncate text-[11px] text-muted-foreground">
-                                {u.email ?? "email non renseigné"}
-                              </div>
+                        <button
+                          type="button"
+                          onClick={() => setTargetValue(u.email ?? u.user_id)}
+                          className={`flex w-full items-center justify-between gap-3 border-b border-border/40 px-3 py-2 text-left text-xs transition hover:bg-muted/50 ${
+                            selected ? "bg-gold/10 text-foreground" : "text-foreground"
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">{label}</div>
+                            <div className="truncate text-[11px] text-muted-foreground">
+                              {u.email ?? "email non renseigné"}
                             </div>
-                            <div className="flex shrink-0 items-center gap-1.5">
-                              {u.plan && (
-                                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                                  {u.plan}
-                                </span>
-                              )}
-                              {u.statut && u.statut !== "actif" && (
-                                <span className="rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] text-destructive">
-                                  {u.statut}
-                                </span>
-                              )}
-                            </div>
-                          </button>
-                        </li>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            {u.plan && (
+                              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                {u.plan}
+                              </span>
+                            )}
+                            {u.statut && u.statut !== "actif" && (
+                              <span className="rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] text-destructive">
+                                {u.statut}
+                              </span>
+                            )}
+                          </div>
+                        </button>
                       );
-                    })}
-                  </ul>
+                    }}
+                  />
                 )}
               </div>
+
               <p className="mt-1 text-[11px] text-muted-foreground">
                 {targetValue
                   ? <>Sélectionné : <b className="text-foreground">{targetValue}</b></>
@@ -933,12 +938,14 @@ function ReadersPanel({ id, loader }: { id: string; loader: ReadersLoader }) {
         </span>
         <span>{Math.round((data.read / data.total) * 100)}%</span>
       </div>
-      <ul className="max-h-56 space-y-1 overflow-y-auto">
-        {data.readers.map((r) => (
-          <li
-            key={r.user_id}
-            className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/40"
-          >
+      <VirtualList
+        items={data.readers}
+        estimateSize={44}
+        overscan={8}
+        className="max-h-56"
+        getItemKey={(r) => r.user_id}
+        renderItem={(r) => (
+          <div className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/40">
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium text-foreground">
                 {r.nom_affiche || r.email || r.user_id}
@@ -958,9 +965,10 @@ function ReadersPanel({ id, loader }: { id: string; loader: ReadersLoader }) {
                 Non lue
               </span>
             )}
-          </li>
-        ))}
-      </ul>
+          </div>
+        )}
+      />
+
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
+import { VirtualList } from "@/components/ui/virtual-list";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Plus, Pencil, Trash2, Search, Download } from "lucide-react";
@@ -62,11 +63,25 @@ export const Route = createFileRoute("/_authenticated/notes")({
 type NoteRow = Note & { eleve: { nom: string; prenom: string; classe_id: string } | null };
 
 function NotesPage() {
+  const queryClient = useQueryClient();
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: classes = [] } = useQuery(classesQO());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
   const echelle = profil?.echelle_notation ?? 20;
+
+  // Précharge silencieusement les combinaisons de filtres voisines dès que
+  // les classes/périodes sont connues → changement de filtre = instantané.
+  useEffect(() => {
+    for (const c of classes.slice(0, 6)) {
+      void queryClient.prefetchQuery(notesQO({ classeId: c.id }));
+      void queryClient.prefetchQuery(elevesQO(c.id));
+    }
+    for (const p of periodes.slice(0, 4)) {
+      void queryClient.prefetchQuery(notesQO({ periodeId: p.id }));
+    }
+  }, [classes, periodes, queryClient]);
+
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [classeFilter, setClasseFilter] = useState<string>("all");
@@ -226,7 +241,7 @@ function NotesPage() {
           const renderItem = (n: NoteRow) => {
             const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
             return (
-              <li key={n.id} className="card-elevated p-3">
+              <div key={n.id} className="card-elevated p-3 mb-2">
                 <div className="flex items-center gap-3">
                   <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl font-display text-sm font-semibold ${noteColorClass(n.valeur, echelle)}`}>
                     {formatNote(n.valeur)}
@@ -251,7 +266,7 @@ function NotesPage() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              </li>
+              </div>
             );
           };
           const listView = (() => {
@@ -272,13 +287,22 @@ function NotesPage() {
                   {grouped.map(([ecoleId, list]) => (
                     <section key={ecoleId}>
                       <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                      <ul className="space-y-2">{list.map(renderItem)}</ul>
+                      <div>{list.map((n) => renderItem(n))}</div>
                     </section>
                   ))}
                 </div>
               );
             }
-            return <ul className="space-y-2">{paged.map(renderItem)}</ul>;
+            return (
+              <VirtualList
+                items={paged}
+                estimateSize={78}
+                overscan={6}
+                className="max-h-[70vh]"
+                getItemKey={(n) => n.id}
+                renderItem={renderItem}
+              />
+            );
           })();
           return (
             <div className="space-y-3">

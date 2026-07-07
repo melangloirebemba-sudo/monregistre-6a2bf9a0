@@ -53,6 +53,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
+import { VirtualList } from "@/components/ui/virtual-list";
 
 export const Route = createFileRoute("/_authenticated/eleves")({
   head: () => ({ meta: [{ title: "Élèves — MonRegistre" }] }),
@@ -65,6 +66,7 @@ export const Route = createFileRoute("/_authenticated/eleves")({
 });
 
 function ElevesPage() {
+  const queryClient = useQueryClient();
   const { data: classes = [] } = useQuery(classesQO());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: profil } = useQuery(profilQueryOptions());
@@ -84,6 +86,15 @@ function ElevesPage() {
   const [viewing, setViewing] = useState<Eleve | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Eleve | null>(null);
+
+  // Précharge les élèves/notes pour les classes voisines afin que le changement
+  // de filtre soit instantané depuis le cache.
+  useEffect(() => {
+    for (const c of classes.slice(0, 8)) {
+      void queryClient.prefetchQuery(elevesQO(c.id));
+      void queryClient.prefetchQuery(notesQO({ classeId: c.id }));
+    }
+  }, [classes, queryClient]);
 
   const maxEleves = caps?.max_eleves ?? 0;
   const isAdmin = !!caps?.isAdmin;
@@ -232,7 +243,7 @@ function ElevesPage() {
             const cls = classeById[e.classe_id];
             const isChef = cls?.chef_id === e.id;
             return (
-              <li key={e.id} className="card-elevated p-3">
+              <div key={e.id} className="card-elevated p-3 mb-2">
                 <div className="flex items-center gap-3">
                   <span className={`relative grid h-10 w-10 place-items-center rounded-full font-display text-sm font-semibold ${e.sexe === "F" ? "bg-gold-soft/40 text-foreground" : "bg-teal/15 text-foreground"}`}>
                     {e.nom.charAt(0)}{e.prenom.charAt(0)}
@@ -273,7 +284,7 @@ function ElevesPage() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              </li>
+              </div>
             );
           };
           const listView = grouped ? (
@@ -281,12 +292,19 @@ function ElevesPage() {
               {grouped.map(([ecoleId, list]) => (
                 <section key={ecoleId}>
                   <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                  <ul className="space-y-2">{list.map(renderItem)}</ul>
+                  <ul className="space-y-2">{list.map((e) => <li key={e.id}>{renderItem(e)}</li>)}</ul>
                 </section>
               ))}
             </div>
           ) : (
-            <ul className="space-y-2">{paged.map(renderItem)}</ul>
+            <VirtualList
+              items={paged}
+              estimateSize={82}
+              overscan={6}
+              className="max-h-[70vh]"
+              getItemKey={(e) => e.id}
+              renderItem={renderItem}
+            />
           );
           return (
             <div className="space-y-3">
