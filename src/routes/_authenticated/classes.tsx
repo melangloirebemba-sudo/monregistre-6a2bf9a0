@@ -5,7 +5,7 @@ import { GraduationCap, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { enqueueWrite } from "@/lib/offline-queue";
-import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
+import { classesQO, ecolesQO, elevesQO, requireUserId, type Classe } from "@/lib/queries/data";
 import { planCapabilitiesQO } from "@/lib/queries/profil";
 import { PLAN_LABEL, type PlanKey } from "@/config/support";
 import {
@@ -69,6 +69,7 @@ function ClassesPage() {
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Classe | null>(null);
+  const [viewing, setViewing] = useState<Classe | null>(null);
 
   const pq = usePaginatedQuery({
     data: classes,
@@ -180,7 +181,19 @@ function ClassesPage() {
       ) : (
         (() => {
           const renderItem = (c: Classe) => (
-            <li key={c.id} className="card-elevated p-4">
+            <li
+              key={c.id}
+              className="card-elevated cursor-pointer p-4 transition hover:bg-cream-deep/40"
+              onClick={() => setViewing(c)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setViewing(c);
+                }
+              }}
+            >
               <div className="flex items-start gap-3">
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal/15 text-foreground">
                   <GraduationCap className="h-5 w-5" />
@@ -197,10 +210,10 @@ function ClassesPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <button onClick={() => { setEditing(c); setOpen(true); }} aria-label="Modifier" className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground">
+                  <button onClick={(e) => { e.stopPropagation(); setEditing(c); setOpen(true); }} aria-label="Modifier" className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground">
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <button onClick={() => setToDelete(c)} aria-label="Supprimer" className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                  <button onClick={(e) => { e.stopPropagation(); setToDelete(c); }} aria-label="Supprimer" className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -273,6 +286,11 @@ function ClassesPage() {
         }
         ressource="Classes"
         limitDescription={limitDescription}
+      />
+      <ClasseElevesDialog
+        classe={viewing}
+        ecoleNom={viewing ? ecoleById[viewing.ecole_id] : undefined}
+        onOpenChange={(v) => !v && setViewing(null)}
       />
     </div>
   );
@@ -431,5 +449,76 @@ function DeleteDialog({ open, onOpenChange, classe, onDone }: { open: boolean; o
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+}
+
+function ClasseElevesDialog({
+  classe,
+  ecoleNom,
+  onOpenChange,
+}: {
+  classe: Classe | null;
+  ecoleNom?: string;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const { data: eleves = [], isLoading } = useQuery({
+    ...elevesQO(classe?.id),
+    enabled: !!classe?.id,
+  });
+  const open = !!classe;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[440px]">
+        <DialogHeader>
+          <DialogTitle className="font-display">
+            Élèves — {classe?.nom}
+          </DialogTitle>
+          {classe && (
+            <p className="text-xs text-muted-foreground">
+              {ecoleNom ?? "École"} · {classe.code}
+              {classe.matiere ? ` · ${classe.matiere}` : ""}
+            </p>
+          )}
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto">
+          {isLoading ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Chargement…</p>
+          ) : eleves.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Aucun élève dans cette classe.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {eleves.map((e, i) => (
+                <li
+                  key={e.id}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-card/40 px-3 py-2"
+                >
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal/15 text-[11px] font-semibold text-foreground">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">
+                      {e.nom} {e.prenom}
+                    </div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {e.sexe ? `${e.sexe} · ` : ""}
+                      {e.numero_eleve ? `N° ${e.numero_eleve}` : "—"}
+                      {e.tuteur_nom ? ` · ${e.tuteur_nom}` : ""}
+                      {e.tuteur_numero ? ` · ${e.tuteur_numero}` : ""}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Fermer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
