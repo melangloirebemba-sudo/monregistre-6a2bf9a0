@@ -681,6 +681,7 @@ function BulkNoteDialog({
   const [values, setValues] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
 
   const libelleRef = useState<HTMLInputElement | null>(null as unknown as HTMLInputElement | null);
   // Simple ref via useState to avoid extra import; we only need the DOM node.
