@@ -1149,20 +1149,26 @@ function BulkNoteDialog({
                         if (!info || info.total === 0) return null;
                         const dup = info.sameLibelle > 0;
                         return (
-                          <span
-                            className={`ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDetailEleveId(r.eleve.id);
+                            }}
+                            className={`ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold transition hover:brightness-110 ${
                               dup
                                 ? "bg-destructive/15 text-destructive"
-                                : "bg-gold/15 text-gold-foreground text-[10px]"
+                                : "bg-gold/15 text-gold-foreground"
                             }`}
                             title={
                               dup
-                                ? `Déjà noté « ${libelle.trim()} » (${info.sameLibelle})`
-                                : `${info.total} note(s) déjà saisie(s)${info.lastLibelle ? ` — dernier : ${info.lastLibelle}` : ""}`
+                                ? `Déjà noté « ${libelle.trim()} » (${info.sameLibelle}) — cliquer pour voir/pré-remplir`
+                                : `${info.total} note(s) déjà saisie(s) — cliquer pour voir/pré-remplir`
                             }
                           >
                             {dup ? `⚠ ${info.sameLibelle}` : `${info.total}`}
-                          </span>
+                          </button>
                         );
                       })()}
                     </div>
