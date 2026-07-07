@@ -53,6 +53,8 @@ export const Route = createFileRoute("/_authenticated/classes")({
 
 function ClassesPage() {
   const { data: ecoles = [] } = useQuery(ecolesQO());
+  const { data: allClasses = [] } = useQuery(classesQO());
+  const { data: caps } = useQuery(planCapabilitiesQO());
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const { data: classes = [], isLoading } = useQuery(
     classesQO(ecoleFilter === "all" ? undefined : ecoleFilter),
@@ -60,6 +62,7 @@ function ClassesPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Classe | null>(null);
   const [open, setOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Classe | null>(null);
 
   const pq = usePaginatedQuery({
@@ -73,6 +76,39 @@ function ClassesPage() {
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
 
   const canAdd = ecoles.length > 0;
+
+  // Comptage classes par école pour la vérification de limite
+  const maxClassesParEcole = caps?.max_classes_par_ecole ?? 0;
+  const isAdmin = !!caps?.isAdmin;
+  const classesCountByEcole = useMemo(() => {
+    const map = new Map<string, number>();
+    allClasses.forEach((c) => map.set(c.ecole_id, (map.get(c.ecole_id) ?? 0) + 1));
+    return map;
+  }, [allClasses]);
+
+  const atLimit = useMemo(() => {
+    if (isAdmin || maxClassesParEcole <= 0 || ecoles.length === 0) return false;
+    if (ecoleFilter !== "all") {
+      return (classesCountByEcole.get(ecoleFilter) ?? 0) >= maxClassesParEcole;
+    }
+    return ecoles.every(
+      (e) => (classesCountByEcole.get(e.id) ?? 0) >= maxClassesParEcole,
+    );
+  }, [isAdmin, maxClassesParEcole, ecoles, classesCountByEcole, ecoleFilter]);
+
+  const currentPlan: PlanKey = caps?.plan ?? "gratuit";
+  const planLabel = PLAN_LABEL[currentPlan];
+  const limitDescription = `${maxClassesParEcole} classe${maxClassesParEcole > 1 ? "s" : ""} par école`;
+  const bannerMessage = `Le plan ${planLabel} autorise ${limitDescription}. Passez à un plan supérieur pour en ajouter davantage.`;
+
+  const handleAdd = () => {
+    if (atLimit) {
+      setUpgradeOpen(true);
+      return;
+    }
+    setEditing(null);
+    setOpen(true);
+  };
 
 
   return (
