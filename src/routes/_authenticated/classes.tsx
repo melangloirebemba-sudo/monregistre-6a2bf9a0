@@ -177,13 +177,13 @@ function ClassesPage() {
           const renderItem = (c: Classe) => (
             <li key={c.id} className="card-elevated p-4">
               <div className="flex items-start gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal/15 text-ink">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal/15 text-foreground">
                   <GraduationCap className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="truncate font-display text-base font-semibold text-foreground">{c.nom}</h3>
-                    <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-semibold text-ink">{c.code}</span>
+                    <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-semibold text-foreground">{c.code}</span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
                     <EcoleBadge name={ecoleById[c.ecole_id]} fallback="École inconnue" />

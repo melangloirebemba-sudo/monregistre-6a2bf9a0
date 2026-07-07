@@ -25,7 +25,7 @@ const PLAN_TONE: Record<AppPlan, string> = {
 };
 const PLAN_BADGE: Record<AppPlan, string> = {
   gratuit: "bg-muted text-muted-foreground",
-  lite: "bg-gold/25 text-ink",
+  lite: "bg-gold/25 text-foreground",
   premium: "bg-teal text-cream",
 };
 

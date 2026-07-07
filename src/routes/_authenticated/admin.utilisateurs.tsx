@@ -654,7 +654,7 @@ function AdminContent() {
               )}
             </div>
 
-            <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-ink/80">
+            <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-foreground/80">
               {(() => {
                 const days = activateTrial
                   ? Math.max(1, Math.floor(Number(activateTrialDays) || 0))

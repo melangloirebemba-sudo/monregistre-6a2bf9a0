@@ -1,7 +1,7 @@
 export function noteColorClass(valeur: number, echelle = 20): string {
   const v = (valeur / echelle) * 20;
   if (v >= 14) return "bg-success/15 text-success border border-success/30";
-  if (v >= 10) return "bg-gold/20 text-ink border border-gold/40";
+  if (v >= 10) return "bg-gold/20 text-foreground border border-gold/40";
   return "bg-destructive/15 text-destructive border border-destructive/30";
 }
 

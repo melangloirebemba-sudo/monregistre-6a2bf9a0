@@ -180,7 +180,7 @@ function AdminAnneesPage() {
                       </Badge>
                     )}
                     {a.a_venir > 0 && (
-                      <Badge className="bg-gold/25 text-ink hover:bg-gold/30">
+                      <Badge className="bg-gold/25 text-foreground hover:bg-gold/30">
                         {a.a_venir} à venir
                       </Badge>
                     )}

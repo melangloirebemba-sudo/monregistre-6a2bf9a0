@@ -39,7 +39,7 @@ const statutLabels: Record<StatutAnnee, string> = {
 const statutStyles: Record<StatutAnnee, string> = {
   active: "bg-teal/15 text-teal",
   archivee: "bg-muted text-muted-foreground",
-  a_venir: "bg-gold/15 text-ink",
+  a_venir: "bg-gold/15 text-foreground",
 };
 
 function AnneesPage() {

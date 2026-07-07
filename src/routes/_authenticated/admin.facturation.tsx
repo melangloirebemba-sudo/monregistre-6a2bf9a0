@@ -52,7 +52,7 @@ const PLAN_LABEL: Record<PaiementRow["plan"], string> = {
 };
 const PLAN_BADGE: Record<PaiementRow["plan"], string> = {
   gratuit: "bg-muted text-muted-foreground",
-  lite: "bg-gold/25 text-ink",
+  lite: "bg-gold/25 text-foreground",
   premium: "bg-teal text-cream",
 };
 const PERIODE_LABEL: Record<NonNullable<PaiementRow["periode"]>, string> = {
@@ -215,7 +215,7 @@ function AdminFacturationPage() {
                       {PLAN_LABEL[r.plan]}
                     </span>
                     {r.periode && (
-                      <span className="text-xs text-ink/80">{PERIODE_LABEL[r.periode]}</span>
+                      <span className="text-xs text-foreground/80">{PERIODE_LABEL[r.periode]}</span>
                     )}
                     <span className="font-mono text-[10px] text-muted-foreground">
                       {r.numero_recu}
@@ -283,7 +283,7 @@ function Kpi({
     tone === "teal"
       ? "bg-teal/15 text-teal"
       : tone === "gold"
-        ? "bg-gold/20 text-ink"
+        ? "bg-gold/20 text-foreground"
         : "bg-muted text-muted-foreground";
   return (
     <div className="card-elevated p-4">

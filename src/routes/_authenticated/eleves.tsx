@@ -228,10 +228,10 @@ function ElevesPage() {
             return (
               <li key={e.id} className="card-elevated p-3">
                 <div className="flex items-center gap-3">
-                  <span className={`relative grid h-10 w-10 place-items-center rounded-full font-display text-sm font-semibold ${e.sexe === "F" ? "bg-gold-soft/40 text-ink" : "bg-teal/15 text-ink"}`}>
+                  <span className={`relative grid h-10 w-10 place-items-center rounded-full font-display text-sm font-semibold ${e.sexe === "F" ? "bg-gold-soft/40 text-foreground" : "bg-teal/15 text-foreground"}`}>
                     {e.prenom.charAt(0)}{e.nom.charAt(0)}
                     {isChef && (
-                      <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-gold text-ink shadow" title="Chef de classe">
+                      <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-gold text-foreground shadow" title="Chef de classe">
                         <Crown className="h-3 w-3" />
                       </span>
                     )}
@@ -242,7 +242,7 @@ function ElevesPage() {
                         {e.prenom} {e.nom}
                       </div>
                       {isChef && (
-                        <span className="rounded-full bg-gold/25 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink">Chef</span>
+                        <span className="rounded-full bg-gold/25 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-foreground">Chef</span>
                       )}
                     </div>
                     <div className="text-[11px] text-muted-foreground truncate">
