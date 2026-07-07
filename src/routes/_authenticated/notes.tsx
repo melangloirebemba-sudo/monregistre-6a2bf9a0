@@ -1218,7 +1218,6 @@ function BulkNoteDialog({
                 {save.isPending ? "…" : `Confirmer (${includedCount})`}
               </Button>
             )}
-            )}
           </DialogFooter>
         </form>
       </DialogContent>
