@@ -610,14 +610,25 @@ function EleveDialog({
       }
 
       // Mode ajout : file d'attente + élève courant (si le formulaire est rempli).
-      const batch: PendingEleve[] = [...pending];
+      const raw: PendingEleve[] = [...pending];
       const hasCurrent =
         form.nom.trim() || form.prenom.trim() || form.numero_eleve.trim() ||
         form.adresse.trim() || form.tuteur_nom.trim() || form.tuteur_numero.trim();
       if (hasCurrent) {
-        batch.push(buildPending());
+        raw.push(buildPending());
       }
-      if (batch.length === 0) throw new Error("Aucun élève à enregistrer");
+      if (raw.length === 0) throw new Error("Aucun élève à enregistrer");
+
+      // Filtre les doublons contre la base existante ; on les remet dans la file.
+      const batch: PendingEleve[] = [];
+      const skipped: PendingEleve[] = [];
+      for (const p of raw) {
+        if (existingKeys.has(dedupKey(p.nom, p.prenom, p.classe_id))) skipped.push(p);
+        else batch.push(p);
+      }
+      if (batch.length === 0) {
+        throw new Error("Tous les élèves sont des doublons — aucun enregistrement.");
+      }
 
       for (const p of batch) {
         const { chef, ...rest } = p;
@@ -637,9 +648,9 @@ function EleveDialog({
           });
         }
       }
-      return { count: batch.length };
+      return { count: batch.length, skipped };
     },
-    onSuccess: ({ count }) => {
+    onSuccess: ({ count, skipped }) => {
       toast.success(
         isEdit
           ? "Élève modifié"
@@ -647,6 +658,16 @@ function EleveDialog({
             ? `${count} élèves ajoutés`
             : "Élève ajouté",
       );
+      if (skipped && skipped.length > 0) {
+        toast.warning(`${skipped.length} doublon(s) ignoré(s)`);
+        // Conserve les doublons dans la file pour permettre la correction.
+        setPending(skipped);
+      }
+      qc.invalidateQueries({ queryKey: ["eleves"] });
+      qc.invalidateQueries({ queryKey: ["classes"] });
+      qc.invalidateQueries({ queryKey: ["counts"] });
+      if (!skipped || skipped.length === 0) onOpenChange(false);
+    },
       qc.invalidateQueries({ queryKey: ["eleves"] });
       qc.invalidateQueries({ queryKey: ["classes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
