@@ -50,6 +50,12 @@ import {
 
 export const Route = createFileRoute("/_authenticated/notes")({
   head: () => ({ meta: [{ title: "Notes — MonRegistre" }] }),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(classesQO());
+    void context.queryClient.prefetchQuery(ecolesQO());
+    void context.queryClient.prefetchQuery(periodesQO());
+    void context.queryClient.prefetchQuery(notesQO());
+  },
   component: NotesPage,
 });
 
