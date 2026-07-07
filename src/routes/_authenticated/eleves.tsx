@@ -345,6 +345,7 @@ function ElevesPage() {
         eleve={editing}
         classes={classes}
         ecoles={ecoles}
+        existingEleves={allEleves}
         defaultClasseId={classeFilter !== "all" ? classeFilter : classes[0]?.id}
       />
       <DeleteEleveDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)} eleve={toDelete} onDone={() => setToDelete(null)} />
