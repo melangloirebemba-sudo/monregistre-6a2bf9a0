@@ -87,6 +87,15 @@ function ElevesPage() {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Eleve | null>(null);
 
+  // Précharge les élèves/notes pour les classes voisines afin que le changement
+  // de filtre soit instantané depuis le cache.
+  useEffect(() => {
+    for (const c of classes.slice(0, 8)) {
+      void queryClient.prefetchQuery(elevesQO(c.id));
+      void queryClient.prefetchQuery(notesQO({ classeId: c.id }));
+    }
+  }, [classes, queryClient]);
+
   const maxEleves = caps?.max_eleves ?? 0;
   const isAdmin = !!caps?.isAdmin;
   const atLimit = !isAdmin && maxEleves > 0 && allEleves.length >= maxEleves;
