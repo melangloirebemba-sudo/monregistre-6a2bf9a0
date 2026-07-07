@@ -20,8 +20,9 @@ import {
 } from "@/lib/queries/data";
 import { profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { moyennePonderee, noteColorClass } from "@/lib/format";
-import { generateBulletinPDF } from "@/lib/pdf/bulletin";
-import { generateClasseRapportPDF } from "@/lib/pdf/classe-rapport";
+// Les générateurs PDF (jspdf + jspdf-autotable) sont chargés à la demande
+// via import() pour ne pas peser sur le bundle initial de la page.
+
 import { Button } from "@/components/ui/button";
 import { DataPagination } from "@/components/ui/data-pagination";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
