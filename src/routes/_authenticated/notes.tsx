@@ -793,9 +793,37 @@ function BulkNoteDialog({
     return out;
   }, [activeRows, periodeIds, matieresList, periodeLabelById]);
 
+  // Périodes / matières distinctes présentes dans le plan (pour les chips de filtre).
+  const previewPeriodes = useMemo(() => {
+    const seen = new Map<string, { id: string | null; label: string }>();
+    for (const p of previewNotes) {
+      const k = p.periode_id ?? "__none__";
+      if (!seen.has(k)) seen.set(k, { id: p.periode_id, label: p.periodeLabel });
+    }
+    return Array.from(seen.values());
+  }, [previewNotes]);
+  const previewMatieres = useMemo(() => {
+    const seen = new Map<string, { id: string | null; label: string }>();
+    for (const p of previewNotes) {
+      const k = p.matiere ?? "__none__";
+      if (!seen.has(k)) seen.set(k, { id: p.matiere, label: p.matiereLabel });
+    }
+    return Array.from(seen.values());
+  }, [previewNotes]);
+
+  // Application des filtres (null = tous).
+  const visiblePreview = useMemo(() => {
+    return previewNotes.filter((p) => {
+      if (previewPeriodeFilter && !previewPeriodeFilter.has(p.periode_id)) return false;
+      if (previewMatiereFilter && !previewMatiereFilter.has(p.matiere)) return false;
+      return true;
+    });
+  }, [previewNotes, previewPeriodeFilter, previewMatiereFilter]);
+
+  // Seules les lignes visibles ET non exclues sont confirmées.
   const includedPreview = useMemo(
-    () => previewNotes.filter((p) => !excludedKeys.has(p.key)),
-    [previewNotes, excludedKeys],
+    () => visiblePreview.filter((p) => !excludedKeys.has(p.key)),
+    [visiblePreview, excludedKeys],
   );
   const includedCount = includedPreview.length;
 
