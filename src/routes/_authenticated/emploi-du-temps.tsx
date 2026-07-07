@@ -42,6 +42,11 @@ import {
 
 export const Route = createFileRoute("/_authenticated/emploi-du-temps")({
   head: () => ({ meta: [{ title: "Emploi du temps — MonRegistre" }] }),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(ecolesQO());
+    void context.queryClient.prefetchQuery(classesQO());
+    void context.queryClient.prefetchQuery(creneauxQO());
+  },
   component: EmploiDuTempsPage,
 });
 

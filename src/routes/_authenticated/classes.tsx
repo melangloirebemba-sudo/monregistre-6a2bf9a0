@@ -48,6 +48,11 @@ import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecol
 
 export const Route = createFileRoute("/_authenticated/classes")({
   head: () => ({ meta: [{ title: "Classes — MonRegistre" }] }),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(classesQO());
+    void context.queryClient.prefetchQuery(ecolesQO());
+    void context.queryClient.prefetchQuery(planCapabilitiesQO());
+  },
   component: ClassesPage,
 });
 

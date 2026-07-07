@@ -34,6 +34,10 @@ import {
 
 export const Route = createFileRoute("/_authenticated/ecoles")({
   head: () => ({ meta: [{ title: "Écoles — MonRegistre" }] }),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(ecolesQO());
+    void context.queryClient.prefetchQuery(planCapabilitiesQO());
+  },
   component: EcolesPage,
 });
 
