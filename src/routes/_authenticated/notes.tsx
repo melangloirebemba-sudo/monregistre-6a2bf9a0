@@ -1141,14 +1141,14 @@ function BulkNoteDialog({
 
           {showPreview && (
             <div className="rounded-xl border border-teal/40 bg-teal/5">
-              <div className="flex items-center justify-between gap-2 border-b border-teal/30 px-3 py-2">
-                <div className="text-sm font-semibold text-foreground">
-                  Prévisualisation · {includedCount}/{visiblePreview.length} sélectionnée(s)
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-teal/30 px-3 py-2">
+                <div className="min-w-0 truncate text-sm font-semibold text-foreground">
+                  {includedCount}/{visiblePreview.length} sélectionnée(s)
                   {visiblePreview.length !== previewNotes.length && (
                     <span className="text-muted-foreground font-normal"> · {previewNotes.length - visiblePreview.length} masquée(s)</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
                     className="text-[11px] text-foreground underline underline-offset-2"
