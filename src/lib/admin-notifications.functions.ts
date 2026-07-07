@@ -399,7 +399,10 @@ export const listBroadcastReaders = createServerFn({ method: "GET" })
       .lte("created_at", to);
     if (error) throw new Error(error.message);
 
-    const list = notifs ?? [];
+    // Sécurité : on retire toute ligne appartenant à un administrateur (rétro-
+    // compatibilité avec d'anciennes diffusions qui incluaient les admins).
+    const admins = await getAdminUserIds(db);
+    const list = (notifs ?? []).filter((n) => !admins.has(n.user_id as string));
     const ids = list.map((n) => n.user_id as string);
     let profils: Array<{ user_id: string; nom_affiche: string | null; email: string | null }> = [];
     if (ids.length > 0) {
