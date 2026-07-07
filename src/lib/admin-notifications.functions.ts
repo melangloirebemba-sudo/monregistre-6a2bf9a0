@@ -147,8 +147,7 @@ export const cancelScheduledBroadcast = createServerFn({ method: "POST" })
   .inputValidator((raw) => z.object({ id: z.string().uuid() }).parse(raw))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await context.supabase
       .from("scheduled_notifications")
       .update({ status: "cancelled" })
       .eq("id", data.id)
