@@ -165,12 +165,19 @@ function AdminNotificationsPage() {
         href: href.trim() || null,
         target_type: targetType,
         target_value: targetType === "all" ? null : targetValue.trim() || null,
-        send_at: new Date(sendAt).toISOString(),
+        send_at: mode === "schedule" ? new Date(sendAt).toISOString() : null,
       };
-      return scheduleFn({ data: payload });
+      return mode === "now"
+        ? sendNow({ data: payload })
+        : scheduleFn({ data: payload });
     },
-    onSuccess: () => {
-      toast.success("Notification programmée");
+    onSuccess: (res) => {
+      if (mode === "now") {
+        const r = res as { recipients?: number };
+        toast.success(`Notification envoyée à ${r.recipients ?? 0} destinataire(s)`);
+      } else {
+        toast.success("Notification programmée");
+      }
       setTitle("");
       setBody("");
       setHref("");
@@ -179,6 +186,7 @@ function AdminNotificationsPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const removeBroadcast = useMutation({
     mutationFn: async (id: string) => deleteBroadcastFn({ data: { id } }),
