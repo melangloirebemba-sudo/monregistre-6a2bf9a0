@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             title: "Votre compte a été suspendu",
             body: "Un administrateur a suspendu votre compte. Contactez le support pour plus d'informations.",
-            category: "account",
+            category: "admin",
             href: "/parametres",
           });
         }
