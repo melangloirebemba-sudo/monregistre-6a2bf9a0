@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, CheckCheck, Settings2, ChevronRight } from "lucide-react";
+import { Bell, CheckCheck, Settings2, ChevronRight, Trash2 } from "lucide-react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
