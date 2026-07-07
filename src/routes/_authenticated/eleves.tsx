@@ -668,11 +668,6 @@ function EleveDialog({
       qc.invalidateQueries({ queryKey: ["counts"] });
       if (!skipped || skipped.length === 0) onOpenChange(false);
     },
-      qc.invalidateQueries({ queryKey: ["eleves"] });
-      qc.invalidateQueries({ queryKey: ["classes"] });
-      qc.invalidateQueries({ queryKey: ["counts"] });
-      onOpenChange(false);
-    },
     onError: (e: Error) => toast.error(e.message),
   });
 
