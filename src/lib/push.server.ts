@@ -38,9 +38,29 @@ export async function sendPushToUser(
   userId: string,
   payload: PushPayload,
   dedup?: { kind: string; key: string },
+  options?: { pushKind?: string },
 ): Promise<{ sent: number; skipped: boolean; errors: number }> {
   ensureVapid();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  // Vérifie la préférence push utilisateur pour cette catégorie
+  const pushKind = options?.pushKind;
+  if (pushKind) {
+    const { data: profil } = await supabaseAdmin
+      .from("profils_enseignant")
+      .select("notifications_prefs")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const prefs = (profil?.notifications_prefs ?? null) as
+      | { enabled?: boolean; push?: Record<string, boolean> }
+      | null;
+    if (prefs) {
+      if (prefs.enabled === false) return { sent: 0, skipped: true, errors: 0 };
+      if (prefs.push && prefs.push[pushKind] === false) {
+        return { sent: 0, skipped: true, errors: 0 };
+      }
+    }
+  }
 
   if (dedup) {
     const { data: existing } = await supabaseAdmin
