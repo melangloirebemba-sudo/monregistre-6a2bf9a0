@@ -7,7 +7,7 @@ import {
   Settings,
   ChevronRight,
 } from "lucide-react";
-import { AdminShell } from "@/components/app/admin-shell";
+
 
 export const Route = createFileRoute("/_authenticated/admin/plus")({
   head: () => ({ meta: [{ title: "Plus — Console admin" }, { name: "robots", content: "noindex" }] }),
