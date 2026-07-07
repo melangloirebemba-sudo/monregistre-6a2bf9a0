@@ -34,6 +34,23 @@ async function assertAdmin(supabase: {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
+ * Retourne la liste des user_id ayant le rôle 'admin'. On les exclut des
+ * diffusions "all" et "plan" pour éviter que les administrateurs reçoivent
+ * leurs propres messages.
+ */
+async function getAdminUserIds(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
+): Promise<Set<string>> {
+  const { data, error } = await db
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin");
+  if (error) return new Set();
+  return new Set(((data ?? []) as Array<{ user_id: string }>).map((r) => r.user_id));
+}
+
+/**
  * Résout un destinataire à partir d'un email ou d'un UUID.
  * - Si la valeur est un UUID, on la considère comme user_id directement.
  * - Sinon on cherche l'email dans `profils_enseignant` (rempli par l'utilisateur),
