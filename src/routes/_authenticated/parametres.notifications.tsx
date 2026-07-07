@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Bell, BellOff, RotateCcw, Mail, MessageSquare, MonitorSmartphone } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, RotateCcw, Mail, MessageSquare, MonitorSmartphone, Smartphone } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,14 @@ import {
   CATEGORIES_WITH_EMAIL_SMS,
   REMINDER_FREQUENCY_LABELS,
   DEFAULT_NOTIFICATIONS_PREFS,
+  ALL_PUSH_KINDS,
+  PUSH_KIND_LABELS,
+  PUSH_KIND_DESCRIPTIONS,
   type NotifCategory,
   type NotifChannel,
   type ReminderFrequency,
   type DefaultFilter,
+  type PushKind,
 } from "@/lib/notifications-prefs";
 import { PushToggle } from "@/components/app/push-toggle";
 
