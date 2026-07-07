@@ -45,6 +45,12 @@ import {
 
 export const Route = createFileRoute("/_authenticated/progression")({
   head: () => ({ meta: [{ title: "Progression — MonRegistre" }] }),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(classesQO());
+    void context.queryClient.prefetchQuery(ecolesQO());
+    void context.queryClient.prefetchQuery(periodesQO());
+    void context.queryClient.prefetchQuery(sequencesQO());
+  },
   component: ProgressionPage,
 });
 
