@@ -358,15 +358,18 @@ export const listAllUsers = createServerFn({ method: "GET" })
       }
     }
 
-    return (profils ?? []).map((p) => ({
-      user_id: p.user_id as string,
-      email: (p.email as string | null) ?? null,
-      nom_affiche: (p.nom_affiche as string | null) ?? null,
-      prenom: (p.prenom as string | null) ?? null,
-      nom_famille: (p.nom_famille as string | null) ?? null,
-      plan: (p.plan as string | null) ?? null,
-      statut: (p.statut as string | null) ?? null,
-    }));
+    const admins = await getAdminUserIds(db);
+    return (profils ?? [])
+      .filter((p) => !admins.has(p.user_id as string))
+      .map((p) => ({
+        user_id: p.user_id as string,
+        email: (p.email as string | null) ?? null,
+        nom_affiche: (p.nom_affiche as string | null) ?? null,
+        prenom: (p.prenom as string | null) ?? null,
+        nom_famille: (p.nom_famille as string | null) ?? null,
+        plan: (p.plan as string | null) ?? null,
+        statut: (p.statut as string | null) ?? null,
+      }));
   });
 
 /** List readers of a specific broadcast (matched by title + time window around sent_at). */
