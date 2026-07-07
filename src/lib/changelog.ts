@@ -111,7 +111,16 @@ function writeLocal(ids: string[]) {
 }
 
 function normalizeCategory(v: string | null | undefined): NotifCategory {
-  if (v === "feature" || v === "fix" || v === "account" || v === "billing") return v;
+  if (
+    v === "feature" ||
+    v === "fix" ||
+    v === "account" ||
+    v === "billing" ||
+    v === "admin" ||
+    v === "security" ||
+    v === "reactivation"
+  )
+    return v;
   return "feature";
 }
 
