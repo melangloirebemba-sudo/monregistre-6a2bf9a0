@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { isUserAdmin } from "@/lib/auth-landing";
 import { useQuery } from "@tanstack/react-query";
 import {
   School,
