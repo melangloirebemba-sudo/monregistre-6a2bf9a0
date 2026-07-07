@@ -242,7 +242,10 @@ export function PlanUpgradeDialog({
             href={waHref}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              waClicked.current = true;
+              onOpenChange(false);
+            }}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
           >
             <MessageCircle className="h-4 w-4" aria-hidden="true" />
