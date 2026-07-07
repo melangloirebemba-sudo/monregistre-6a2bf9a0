@@ -1081,17 +1081,85 @@ function BulkNoteDialog({
           </div>
 
           <div className="text-[11px] text-muted-foreground">
-            Astuce : ↑/↓ ou Entrée pour naviguer entre les élèves · Ctrl+Entrée pour valider.
+            Astuce : ↑/↓ ou Entrée pour naviguer entre les élèves · Ctrl+Entrée pour prévisualiser.
           </div>
+
+          {showPreview && (
+            <div className="rounded-xl border border-teal/40 bg-teal/5">
+              <div className="flex items-center justify-between border-b border-teal/30 px-3 py-2">
+                <div className="text-sm font-semibold text-foreground">
+                  Prévisualisation · {previewNotes.length} note(s)
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(false)}
+                  className="text-[11px] text-foreground underline underline-offset-2"
+                >
+                  Modifier
+                </button>
+              </div>
+              <div className="max-h-[40vh] overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-1.5 text-left">Élève</th>
+                      <th className="px-2 py-1.5 text-left">Période</th>
+                      <th className="px-2 py-1.5 text-left">Matière</th>
+                      <th className="px-3 py-1.5 text-right">Note</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/50">
+                    {previewNotes.map((p) => (
+                      <tr key={p.key}>
+                        <td className="truncate px-3 py-1.5">{p.eleveName}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{p.periodeLabel}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{p.matiereLabel}</td>
+                        <td className="px-3 py-1.5 text-right font-semibold">
+                          {formatNote(p.valeur)}/{echelle}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="border-t border-teal/30 px-3 py-2 text-[11px] text-muted-foreground">
+                Libellé <span className="text-foreground">{libelle.trim() || "—"}</span> · coef {Number(coefficient) || 1} · {new Date(date).toLocaleDateString("fr-FR")}
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-            <Button
-              type="submit"
-              disabled={save.isPending || totalNotes === 0 || errorCount > 0 || !libelle.trim()}
-            >
-              {save.isPending ? "…" : `Enregistrer (${totalNotes})`}
-            </Button>
+            {!showPreview ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  if (!libelle.trim()) {
+                    toast.error("Libellé obligatoire");
+                    return;
+                  }
+                  if (errorCount > 0) {
+                    toast.error("Corrigez les notes invalides");
+                    return;
+                  }
+                  if (totalNotes === 0) {
+                    toast.error("Aucune note à enregistrer");
+                    return;
+                  }
+                  setShowPreview(true);
+                }}
+                disabled={totalNotes === 0 || errorCount > 0 || !libelle.trim()}
+              >
+                Prévisualiser ({totalNotes})
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={save.isPending || totalNotes === 0 || errorCount > 0 || !libelle.trim()}
+              >
+                {save.isPending ? "…" : `Confirmer (${totalNotes})`}
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>
