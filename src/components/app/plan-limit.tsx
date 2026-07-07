@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Lock, Sparkles, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,7 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PLAN_LABEL, upgradeWhatsAppHref, type PlanKey } from "@/config/support";
+import {
+  PLAN_LABEL,
+  upgradeWhatsAppHref,
+  type PlanKey,
+  type UpgradeContext,
+} from "@/config/support";
 
 export function PlanLimitBanner({
   planLabel,
