@@ -142,8 +142,9 @@ function AdminNotificationsPage() {
     },
     onSuccess: (res) => {
       if (mode === "now") {
+        const r = res as { recipients?: number };
         toast.success(
-          `Notification envoyée à ${(res as { recipients: number }).recipients} destinataire(s)`,
+          `Notification envoyée à ${r.recipients ?? 0} destinataire(s)`,
         );
       } else {
         toast.success("Notification programmée");
