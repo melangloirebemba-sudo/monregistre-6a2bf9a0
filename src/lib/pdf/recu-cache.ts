@@ -1,9 +1,9 @@
 import { useSyncExternalStore } from "react";
-import {
-  buildRecuPaiementPDFBlob,
-  type RecuPaiementContext,
-} from "./recu-paiement";
+import { type RecuPaiementContext } from "./recu-paiement-shared";
 import { supabase } from "@/integrations/supabase/client";
+
+export type { RecuPaiementContext };
+
 
 const BUCKET = "recus";
 
