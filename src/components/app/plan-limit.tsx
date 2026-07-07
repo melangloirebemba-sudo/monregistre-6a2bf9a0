@@ -254,6 +254,22 @@ export function PlanUpgradeDialog({
             <MessageCircle className="h-4 w-4" aria-hidden="true" />
             {nextLabel ? `Demander le plan ${nextLabel}` : "Contacter le support"}
           </a>
+          {normalizedNumber ? (
+            <p
+              className="text-center text-[11px] text-muted-foreground"
+              aria-live="polite"
+            >
+              Redirection vers WhatsApp :{" "}
+              <span className="font-mono tabular-nums text-ink/80">
+                +{normalizedNumber}
+              </span>
+            </p>
+          ) : (
+            <p className="text-center text-[11px] text-destructive">
+              Numéro WhatsApp invalide — vérifiez les réglages.
+            </p>
+          )}
+
           <Button
             type="button"
             variant="outline"
