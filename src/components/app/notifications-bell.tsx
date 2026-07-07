@@ -93,6 +93,13 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
   // (on n'affiche pas de toast dans ce cas).
   const [open, setOpen] = useState(false);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<NotificationItem | null>(null);
+
+  const openDetail = (item: NotificationItem) => {
+    setDetailItem(item);
+    if (!item.read) markRead(item);
+    setOpen(false);
+  };
   const wasOpen = useRef(false);
   useEffect(() => {
     if (open === wasOpen.current) return;
