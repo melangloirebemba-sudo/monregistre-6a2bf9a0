@@ -452,13 +452,66 @@ function NoteDialog({
         });
       }
     },
+    // Mise à jour optimiste : on patche immédiatement les caches `notes`
+    // pour que la liste reflète la modification sans attendre le réseau.
+    onMutate: async (): Promise<{ snapshot: ListSnapshot<NoteRow> } | undefined> => {
+      const valeur = Number(form.valeur);
+      const eleve = eleves.find((e) => e.id === form.eleve_id);
+      const cls = classes.find((c) => c.id === classeId);
+      const ecole_id = eleve?.ecole_id ?? cls?.ecole_id;
+      if (
+        !form.eleve_id ||
+        !form.libelle.trim() ||
+        Number.isNaN(valeur) ||
+        valeur < 0 ||
+        valeur > echelle ||
+        !eleve ||
+        !ecole_id
+      ) {
+        return undefined;
+      }
+      await qc.cancelQueries({ queryKey: ["notes"] });
+      const now = new Date().toISOString();
+      const optimistic: NoteRow = {
+        id: note?.id ?? `tmp-${crypto.randomUUID()}`,
+        user_id: note?.user_id ?? "optimistic",
+        eleve_id: form.eleve_id,
+        libelle: form.libelle.trim(),
+        valeur,
+        coefficient: Number(form.coefficient) || 1,
+        matiere: form.matiere.trim() || null,
+        date: form.date,
+        periode_id: form.periode_id === "none" ? null : form.periode_id,
+        sequence_id: note?.sequence_id ?? null,
+        ecole_id,
+        updated_at: now,
+        eleve: { nom: eleve.nom, prenom: eleve.prenom, classe_id: eleve.classe_id },
+      };
+      const snapshot = upsertInLists<NoteRow>(qc, ["notes"], optimistic, {
+        sort: (a, b) => b.date.localeCompare(a.date),
+        keyMatches: (row, key) => {
+          const [, kClasse, kEleve, kPeriode] = key as string[];
+          if (kClasse && kClasse !== "-" && row.eleve?.classe_id !== kClasse) return false;
+          if (kEleve && kEleve !== "-" && row.eleve_id !== kEleve) return false;
+          if (kPeriode && kPeriode !== "-" && (row.periode_id ?? "-") !== kPeriode) return false;
+          return true;
+        },
+      });
+      // Fermeture immédiate du dialogue pour la sensation d'instantané.
+      onOpenChange(false);
+      return { snapshot };
+    },
+    onError: (e: Error, _vars, ctx) => {
+      if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
+      toast.error(e.message);
+    },
     onSuccess: () => {
       toast.success(note ? "Note modifiée" : "Note ajoutée");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["notes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
-      onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
