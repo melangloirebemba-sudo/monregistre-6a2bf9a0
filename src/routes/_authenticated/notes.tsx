@@ -1300,10 +1300,12 @@ function BulkNoteDialog({
                   <tbody className="divide-y divide-border/50">
                     {visiblePreview.map((p) => {
                       const included = !excludedKeys.has(p.key);
+                      const dupKey = `${p.eleve.id}|${p.periode_id ?? "-"}|${(p.matiere ?? "").toLowerCase()}`;
+                      const isDup = existingExactKeys.has(dupKey);
                       return (
                         <tr
                           key={p.key}
-                          className={`cursor-pointer ${included ? "" : "opacity-40"}`}
+                          className={`cursor-pointer ${included ? "" : "opacity-40"} ${isDup ? "bg-destructive/5" : ""}`}
                           onClick={() =>
                             setExcludedKeys((prev) => {
                               const next = new Set(prev);
@@ -1329,7 +1331,17 @@ function BulkNoteDialog({
                               onClick={(e) => e.stopPropagation()}
                             />
                           </td>
-                          <td className="truncate px-3 py-1.5">{p.eleve.prenom} {p.eleve.nom}</td>
+                          <td className="truncate px-3 py-1.5">
+                            {p.eleve.prenom} {p.eleve.nom}
+                            {isDup && (
+                              <span
+                                className="ml-1.5 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+                                title="Une note avec ce libellé existe déjà pour cet élève"
+                              >
+                                ⚠ doublon
+                              </span>
+                            )}
+                          </td>
                           <td className="px-2 py-1.5 text-muted-foreground">{p.periodeLabel}</td>
                           <td className="px-2 py-1.5 text-muted-foreground">{p.matiereLabel}</td>
                           <td className="px-3 py-1.5 text-right font-semibold">
