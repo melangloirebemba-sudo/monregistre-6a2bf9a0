@@ -759,22 +759,27 @@ function BulkNoteDialog({
     [periodes],
   );
   // Détail complet du produit cartésien pour la prévisualisation.
-  const previewNotes = useMemo(() => {
+  type PlannedNote = {
+    key: string;
+    eleve: (typeof eleves)[number];
+    periode_id: string | null;
+    matiere: string | null;
+    periodeLabel: string;
+    matiereLabel: string;
+    valeur: number;
+  };
+  const previewNotes = useMemo<PlannedNote[]>(() => {
     const periodesToUse: Array<string | null> = periodeIds.length > 0 ? periodeIds : [null];
     const matieresToUse: Array<string | null> = matieresList.length > 0 ? matieresList : [null];
-    const out: Array<{
-      key: string;
-      eleveName: string;
-      periodeLabel: string;
-      matiereLabel: string;
-      valeur: number;
-    }> = [];
+    const out: PlannedNote[] = [];
     for (const r of activeRows) {
       for (const pid of periodesToUse) {
         for (const mat of matieresToUse) {
           out.push({
             key: `${r.eleve.id}|${pid ?? "-"}|${mat ?? "-"}`,
-            eleveName: `${r.eleve.prenom} ${r.eleve.nom}`,
+            eleve: r.eleve,
+            periode_id: pid,
+            matiere: mat,
             periodeLabel: pid ? periodeLabelById[pid] ?? "—" : "—",
             matiereLabel: mat ?? "—",
             valeur: r.num as number,
@@ -784,6 +789,12 @@ function BulkNoteDialog({
     }
     return out;
   }, [activeRows, periodeIds, matieresList, periodeLabelById]);
+
+  const includedPreview = useMemo(
+    () => previewNotes.filter((p) => !excludedKeys.has(p.key)),
+    [previewNotes, excludedKeys],
+  );
+  const includedCount = includedPreview.length;
 
   // Navigation clavier entre les champs élèves.
   const inputRefs = useMemo(() => new Map<string, HTMLInputElement>(), []);
