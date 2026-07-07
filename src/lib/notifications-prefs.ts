@@ -55,12 +55,65 @@ export const REMINDER_FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
 
 export type DefaultFilter = "all" | NotifCategory;
 
+/**
+ * Push categories — types de notifications push mobiles que l'utilisateur
+ * peut activer/désactiver individuellement, indépendamment du canal in-app.
+ * Ces clés sont utilisées côté serveur par `sendPushToUser` pour filtrer.
+ */
+export type PushKind =
+  | "schedule_daily"
+  | "license_expiry"
+  | "billing"
+  | "reactivation"
+  | "admin"
+  | "security"
+  | "account"
+  | "feature"
+  | "fix";
+
+export const ALL_PUSH_KINDS: PushKind[] = [
+  "schedule_daily",
+  "license_expiry",
+  "billing",
+  "reactivation",
+  "admin",
+  "security",
+  "account",
+  "feature",
+  "fix",
+];
+
+export const PUSH_KIND_LABELS: Record<PushKind, string> = {
+  schedule_daily: "Programme du lendemain",
+  license_expiry: "Expiration de licence",
+  billing: "Paiements & facturation",
+  reactivation: "Réactivation de compte",
+  admin: "Actions administratives",
+  security: "Sécurité",
+  account: "Compte & profil",
+  feature: "Nouvelles fonctionnalités",
+  fix: "Améliorations & corrections",
+};
+
+export const PUSH_KIND_DESCRIPTIONS: Record<PushKind, string> = {
+  schedule_daily: "Chaque soir, un résumé des cours du lendemain.",
+  license_expiry: "Rappels J-14, J-7, J-3, J-1 avant expiration.",
+  billing: "Confirmations de paiement et reçus.",
+  reactivation: "Notifications lors d'une réactivation de compte.",
+  admin: "Actions effectuées par un administrateur sur votre compte.",
+  security: "Alertes de sécurité et changements de mot de passe.",
+  account: "Modifications de profil et compte.",
+  feature: "Nouveautés produit et fonctionnalités.",
+  fix: "Corrections et petites améliorations.",
+};
+
 export interface NotificationsPrefs {
   enabled: boolean;
   categories: Record<NotifCategory, boolean>;
   channels: Record<NotifCategory, CategoryChannels>;
   reminderFrequency: ReminderFrequency;
   defaultFilter: DefaultFilter;
+  push: Record<PushKind, boolean>;
 }
 
 const ALL_CATEGORIES: NotifCategory[] = [
