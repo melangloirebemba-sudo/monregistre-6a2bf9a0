@@ -39,6 +39,12 @@ import { EcoleFilter, EcoleGroupHeader } from "@/components/app/ecole-filter";
 
 export const Route = createFileRoute("/_authenticated/rapports")({
   head: () => ({ meta: [{ title: "Rapports — MonRegistre" }] }),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(ecolesQO());
+    void context.queryClient.prefetchQuery(classesQO());
+    void context.queryClient.prefetchQuery(periodesQO());
+    void context.queryClient.prefetchQuery(planCapabilitiesQO());
+  },
   component: RapportsPage,
 });
 
