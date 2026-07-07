@@ -51,7 +51,7 @@ export function LockedEmptyState({
   hint: string;
   lockedHint: string;
   onAdd: () => void;
-  addLabel: string;
+  addLabel: React.ReactNode;
   locked?: boolean;
 }) {
   return (
