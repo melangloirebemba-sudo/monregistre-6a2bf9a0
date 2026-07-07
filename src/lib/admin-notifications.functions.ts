@@ -358,15 +358,18 @@ export const listAllUsers = createServerFn({ method: "GET" })
       }
     }
 
-    return (profils ?? []).map((p) => ({
-      user_id: p.user_id as string,
-      email: (p.email as string | null) ?? null,
-      nom_affiche: (p.nom_affiche as string | null) ?? null,
-      prenom: (p.prenom as string | null) ?? null,
-      nom_famille: (p.nom_famille as string | null) ?? null,
-      plan: (p.plan as string | null) ?? null,
-      statut: (p.statut as string | null) ?? null,
-    }));
+    const admins = await getAdminUserIds(db);
+    return (profils ?? [])
+      .filter((p) => !admins.has(p.user_id as string))
+      .map((p) => ({
+        user_id: p.user_id as string,
+        email: (p.email as string | null) ?? null,
+        nom_affiche: (p.nom_affiche as string | null) ?? null,
+        prenom: (p.prenom as string | null) ?? null,
+        nom_famille: (p.nom_famille as string | null) ?? null,
+        plan: (p.plan as string | null) ?? null,
+        statut: (p.statut as string | null) ?? null,
+      }));
   });
 
 /** List readers of a specific broadcast (matched by title + time window around sent_at). */
@@ -399,7 +402,10 @@ export const listBroadcastReaders = createServerFn({ method: "GET" })
       .lte("created_at", to);
     if (error) throw new Error(error.message);
 
-    const list = notifs ?? [];
+    // Sécurité : on retire toute ligne appartenant à un administrateur (rétro-
+    // compatibilité avec d'anciennes diffusions qui incluaient les admins).
+    const admins = await getAdminUserIds(db);
+    const list = (notifs ?? []).filter((n) => !admins.has(n.user_id as string));
     const ids = list.map((n) => n.user_id as string);
     let profils: Array<{ user_id: string; nom_affiche: string | null; email: string | null }> = [];
     if (ids.length > 0) {
