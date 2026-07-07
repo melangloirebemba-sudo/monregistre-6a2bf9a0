@@ -387,6 +387,21 @@ function EleveDialog({
   defaultClasseId?: string;
 }) {
   const qc = useQueryClient();
+  const isEdit = !!eleve;
+  type PendingEleve = {
+    id: string;
+    nom: string;
+    prenom: string;
+    sexe: string;
+    ecole_id: string;
+    classe_id: string;
+    numero_eleve: string | null;
+    adresse: string | null;
+    tuteur_nom: string | null;
+    tuteur_numero: string | null;
+    chef: boolean;
+  };
+  const [pending, setPending] = useState<PendingEleve[]>([]);
   const [form, setForm] = useState({
     nom: "",
     prenom: "",
@@ -417,6 +432,7 @@ function EleveDialog({
         tuteur_numero: eleve?.tuteur_numero ?? "",
         chef: !!(eleve && cls && cls.chef_id === eleve.id),
       });
+      setPending([]);
     }
   }, [open, eleve, defaultClasseId, classes, ecoles]);
 
@@ -432,69 +448,133 @@ function EleveDialog({
   const classeMismatch =
     !!form.classe_id && !!form.ecole_id && !!selectedClasse && selectedClasse.ecole_id !== form.ecole_id;
 
+  // Valide le formulaire courant et retourne le payload, ou lève une erreur.
+  const buildPending = (): PendingEleve => {
+    if (!form.nom.trim() || !form.prenom.trim()) throw new Error("Nom et prénom obligatoires");
+    if (!form.ecole_id) throw new Error("Sélectionnez une école");
+    if (!form.classe_id) throw new Error("Sélectionnez une classe");
+    const classe = classes.find((c) => c.id === form.classe_id);
+    if (!classe) throw new Error("Classe invalide");
+    if (classe.ecole_id !== form.ecole_id) throw new Error("La classe ne correspond pas à l'école sélectionnée");
+    return {
+      id: crypto.randomUUID(),
+      nom: form.nom.trim(),
+      prenom: form.prenom.trim(),
+      sexe: form.sexe,
+      classe_id: form.classe_id,
+      ecole_id: form.ecole_id,
+      numero_eleve: form.numero_eleve.trim() || null,
+      adresse: form.adresse.trim() || null,
+      tuteur_nom: form.tuteur_nom.trim() || null,
+      tuteur_numero: form.tuteur_numero.trim() || null,
+      chef: form.chef,
+    };
+  };
+
+  const resetFormKeepContext = () => {
+    setForm((f) => ({
+      ...f,
+      nom: "",
+      prenom: "",
+      sexe: "M",
+      numero_eleve: "",
+      adresse: "",
+      tuteur_nom: "",
+      tuteur_numero: "",
+      chef: false,
+    }));
+  };
+
+  const addAnother = () => {
+    try {
+      const p = buildPending();
+      setPending((prev) => [...prev, p]);
+      resetFormKeepContext();
+      toast.success(`${p.prenom} ${p.nom} mis en file (${pending.length + 1})`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const removePending = (id: string) => {
+    setPending((prev) => prev.filter((p) => p.id !== id));
+  };
 
   const save = useMutation({
     mutationFn: async () => {
       const user_id = await requireUserId();
-      if (!form.nom.trim() || !form.prenom.trim()) throw new Error("Nom et prénom obligatoires");
-      if (!form.ecole_id) throw new Error("Sélectionnez une école");
-      if (!form.classe_id) throw new Error("Sélectionnez une classe");
-      const classe = classes.find((c) => c.id === form.classe_id);
-      if (!classe) throw new Error("Classe invalide");
-      if (classe.ecole_id !== form.ecole_id) throw new Error("La classe ne correspond pas à l'école sélectionnée");
-      const payload = {
-        nom: form.nom.trim(),
-        prenom: form.prenom.trim(),
-        sexe: form.sexe,
-        classe_id: form.classe_id,
-        ecole_id: form.ecole_id,
-        numero_eleve: form.numero_eleve.trim() || null,
-        adresse: form.adresse.trim() || null,
-        tuteur_nom: form.tuteur_nom.trim() || null,
-        tuteur_numero: form.tuteur_numero.trim() || null,
-      };
-      let eleveId = eleve?.id;
-      if (eleve) {
+
+      // Mode édition : comportement inchangé (un seul élève).
+      if (isEdit && eleve) {
+        const payload = buildPending();
+        const { chef, id: _newId, ...rest } = payload;
         await enqueueWrite({
           table: "eleves",
           op: "update",
-          payload,
+          payload: rest,
           match: { id: eleve.id },
-          label: `Modifier ${form.prenom} ${form.nom}`,
+          label: `Modifier ${payload.prenom} ${payload.nom}`,
         });
-      } else {
-        // Generate id client-side so a later chef_id update can reference
-        // it even when the insert is queued offline.
-        eleveId = crypto.randomUUID();
+        const classe = classes.find((c) => c.id === payload.classe_id)!;
+        const wasChef = classe.chef_id === eleve.id;
+        if (chef) {
+          await enqueueWrite({
+            table: "classes",
+            op: "update",
+            payload: { chef_id: eleve.id },
+            match: { id: payload.classe_id },
+            label: "Définir chef de classe",
+          });
+        } else if (wasChef) {
+          await enqueueWrite({
+            table: "classes",
+            op: "update",
+            payload: { chef_id: null },
+            match: { id: payload.classe_id },
+            label: "Retirer chef de classe",
+          });
+        }
+        return { count: 1 };
+      }
+
+      // Mode ajout : file d'attente + élève courant (si le formulaire est rempli).
+      const batch: PendingEleve[] = [...pending];
+      const hasCurrent =
+        form.nom.trim() || form.prenom.trim() || form.numero_eleve.trim() ||
+        form.adresse.trim() || form.tuteur_nom.trim() || form.tuteur_numero.trim();
+      if (hasCurrent) {
+        batch.push(buildPending());
+      }
+      if (batch.length === 0) throw new Error("Aucun élève à enregistrer");
+
+      for (const p of batch) {
+        const { chef, ...rest } = p;
         await enqueueWrite({
           table: "eleves",
           op: "insert",
-          payload: { ...payload, id: eleveId, user_id },
-          label: `Ajouter ${form.prenom} ${form.nom}`,
+          payload: { ...rest, user_id },
+          label: `Ajouter ${p.prenom} ${p.nom}`,
         });
+        if (chef) {
+          await enqueueWrite({
+            table: "classes",
+            op: "update",
+            payload: { chef_id: p.id },
+            match: { id: p.classe_id },
+            label: "Définir chef de classe",
+          });
+        }
       }
-      // Chef de classe
-      const wasChef = eleve && classe.chef_id === eleve.id;
-      if (form.chef && eleveId) {
-        await enqueueWrite({
-          table: "classes",
-          op: "update",
-          payload: { chef_id: eleveId },
-          match: { id: form.classe_id },
-          label: "Définir chef de classe",
-        });
-      } else if (wasChef && !form.chef) {
-        await enqueueWrite({
-          table: "classes",
-          op: "update",
-          payload: { chef_id: null },
-          match: { id: form.classe_id },
-          label: "Retirer chef de classe",
-        });
-      }
+      return { count: batch.length };
     },
-    onSuccess: () => {
-      toast.success(eleve ? "Élève modifié" : "Élève ajouté");
+    onSuccess: ({ count }) => {
+      toast.success(
+        isEdit
+          ? "Élève modifié"
+          : count > 1
+            ? `${count} élèves ajoutés`
+            : "Élève ajouté",
+      );
       qc.invalidateQueries({ queryKey: ["eleves"] });
       qc.invalidateQueries({ queryKey: ["classes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
