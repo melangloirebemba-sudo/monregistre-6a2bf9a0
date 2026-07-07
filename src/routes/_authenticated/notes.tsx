@@ -937,7 +937,7 @@ function BulkNoteDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[560px]"
+        className="max-w-[560px] p-4 sm:p-6"
         onKeyDown={(e) => {
           if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
             e.preventDefault();
@@ -956,55 +956,65 @@ function BulkNoteDialog({
             e.preventDefault();
             if (showPreview) save.mutate();
           }}
-          className="space-y-3"
+          className="space-y-4"
         >
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Classe *</Label>
-              <Select value={classeId} onValueChange={setClasseId}>
-                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                <SelectContent>
-                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          {/* Bloc « Contexte » : classe, libellé, coefficient, date */}
+          <fieldset className="space-y-3 rounded-xl border border-border/60 p-3">
+            <legend className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Devoir
+            </legend>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="min-w-0 space-y-1.5">
+                <Label>Classe *</Label>
+                <Select value={classeId} onValueChange={setClasseId}>
+                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="blib">Libellé *</Label>
+                <Input
+                  id="blib"
+                  ref={setLibelleRef}
+                  placeholder="Devoir 1…"
+                  value={libelle}
+                  onChange={(e) => setLibelle(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="blib">Libellé *</Label>
-              <Input
-                id="blib"
-                ref={setLibelleRef}
-                placeholder="Devoir 1…"
-                value={libelle}
-                onChange={(e) => setLibelle(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="bcoef">Coef.</Label>
+                <Input id="bcoef" type="number" min={0.5} step="0.5" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="bdate">Date</Label>
+                <Input id="bdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              </div>
+              <div className="col-span-2 min-w-0 space-y-1.5">
+                <Label htmlFor="bmat">Matière(s)</Label>
+                <Input
+                  id="bmat"
+                  placeholder="Maths, Physique…"
+                  value={matieresText}
+                  onChange={(e) => setMatieresText(e.target.value)}
+                />
+                {matieresList.length > 1 && (
+                  <div className="text-[11px] text-muted-foreground">
+                    {matieresList.length} matières · une note par matière et par élève.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="bcoef">Coef.</Label>
-              <Input id="bcoef" type="number" min={0.5} step="0.5" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
-            </div>
-            <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="bmat">Matière(s)</Label>
-              <Input
-                id="bmat"
-                placeholder="Maths, Physique…"
-                value={matieresText}
-                onChange={(e) => setMatieresText(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="bdate">Date</Label>
-              <Input id="bdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-          </div>
-          {matieresList.length > 1 && (
-            <div className="text-[11px] text-muted-foreground">
-              {matieresList.length} matières · une note par matière et par élève.
-            </div>
-          )}
-          <div className="space-y-1.5">
-            <Label>Période(s)</Label>
+          </fieldset>
+
+          {/* Bloc « Périodes » : sélection multiple sous forme de chips */}
+          <fieldset className="space-y-2 rounded-xl border border-border/60 p-3">
+            <legend className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Période(s)
+            </legend>
             <div className="flex flex-wrap gap-1.5">
               {periodes.length === 0 ? (
                 <span className="text-xs text-muted-foreground">Aucune période définie</span>
@@ -1033,12 +1043,14 @@ function BulkNoteDialog({
                 {periodeIds.length} périodes · une note par période.
               </div>
             )}
-          </div>
+          </fieldset>
 
           <div className="rounded-xl border border-border/60">
-            <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-cream-deep/40 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-              <span>Élèves · {allCheckedCount}/{eleves.length} sélectionné(s)</span>
-              <div className="flex items-center gap-2 normal-case tracking-normal">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border/60 bg-cream-deep/40 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <span className="min-w-0 truncate">
+                Élèves · {allCheckedCount}/{eleves.length}
+              </span>
+              <div className="flex shrink-0 items-center gap-2 normal-case tracking-normal">
                 <button
                   type="button"
                   className="text-[11px] text-foreground underline underline-offset-2"
@@ -1053,11 +1065,12 @@ function BulkNoteDialog({
                 >
                   Aucun
                 </button>
-                <span>·</span>
-                <span>
-                  {totalNotes} à enregistrer
-                  {errorCount > 0 ? ` · ${errorCount} err.` : ""}
-                </span>
+              </div>
+              <div className="col-span-2 flex items-center justify-between border-t border-border/40 pt-1 normal-case tracking-normal">
+                <span>{totalNotes} à enregistrer</span>
+                {errorCount > 0 && (
+                  <span className="text-destructive">{errorCount} erreur(s)</span>
+                )}
               </div>
             </div>
             <div className="max-h-[42vh] overflow-y-auto divide-y divide-border/60">
@@ -1128,14 +1141,14 @@ function BulkNoteDialog({
 
           {showPreview && (
             <div className="rounded-xl border border-teal/40 bg-teal/5">
-              <div className="flex items-center justify-between gap-2 border-b border-teal/30 px-3 py-2">
-                <div className="text-sm font-semibold text-foreground">
-                  Prévisualisation · {includedCount}/{visiblePreview.length} sélectionnée(s)
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-teal/30 px-3 py-2">
+                <div className="min-w-0 truncate text-sm font-semibold text-foreground">
+                  {includedCount}/{visiblePreview.length} sélectionnée(s)
                   {visiblePreview.length !== previewNotes.length && (
                     <span className="text-muted-foreground font-normal"> · {previewNotes.length - visiblePreview.length} masquée(s)</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <button
                     type="button"
                     className="text-[11px] text-foreground underline underline-offset-2"
@@ -1226,8 +1239,8 @@ function BulkNoteDialog({
                   )}
                 </div>
               )}
-              <div className="max-h-[40vh] overflow-y-auto">
-                <table className="w-full text-xs">
+              <div className="max-h-[40vh] overflow-auto">
+                <table className="w-full min-w-[420px] text-xs">
                   <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th className="w-8 px-2 py-1.5"></th>
