@@ -119,13 +119,15 @@ function AdminNotificationsPage() {
     const d = new Date(Date.now() + 60 * 60 * 1000);
     return toLocalInputValue(d);
   });
-  const [mode, setMode] = useState<"now" | "schedule">("now");
-
-  const sendNow = useServerFn(sendAdminBroadcastNow);
   const scheduleFn = useServerFn(scheduleAdminBroadcast);
   const cancelFn = useServerFn(cancelScheduledBroadcast);
   const triggerFn = useServerFn(triggerNotificationHook);
   const listUsersFn = useServerFn(listAllUsers);
+  const listReadersFn = useServerFn(listBroadcastReaders);
+  const deleteBroadcastFn = useServerFn(deleteBroadcast);
+  const clearHistoryFn = useServerFn(clearBroadcastHistory);
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [userSearch, setUserSearch] = useState("");
   const { data: usersList = [], isLoading: usersLoading } = useQuery({
