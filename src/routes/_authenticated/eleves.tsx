@@ -14,7 +14,14 @@ import {
   type Eleve,
 } from "@/lib/queries/data";
 import { moyennePonderee, noteColorClass, formatNote } from "@/lib/format";
-import { profilQueryOptions } from "@/lib/queries/profil";
+import { profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
+import { PLAN_LABEL, type PlanKey } from "@/config/support";
+import {
+  PlanLimitBanner,
+  LockedEmptyState,
+  LockedFloatingAdd,
+  PlanUpgradeDialog,
+} from "@/components/app/plan-limit";
 import { Button } from "@/components/ui/button";
 import { DataPagination } from "@/components/ui/data-pagination";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
