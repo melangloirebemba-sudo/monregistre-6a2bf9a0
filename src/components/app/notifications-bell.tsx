@@ -368,6 +368,67 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!detailItem} onOpenChange={(v) => !v && setDetailItem(null)}>
+        <DialogContent className="max-w-md gap-0 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl">
+          {detailItem && (
+            <>
+              <div className="relative border-b border-border/60 bg-gradient-to-br from-teal/10 via-teal/5 to-transparent px-6 pb-5 pt-6">
+                <div className="absolute inset-x-0 -top-8 h-16 bg-teal/20 blur-3xl" aria-hidden />
+                <div className="relative flex items-start gap-3">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-teal/30 bg-teal/15 text-teal shadow-inner">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <DialogHeader className="flex-1 space-y-1 text-left">
+                    <DialogTitle className="font-display text-lg font-semibold leading-tight">
+                      {detailItem.title}
+                    </DialogTitle>
+                    <DialogDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        {NOTIF_CATEGORY_LABELS[detailItem.category] ?? detailItem.category}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(detailItem.date).toLocaleString("fr-FR")}
+                      </span>
+                    </DialogDescription>
+                  </DialogHeader>
+                </div>
+              </div>
+              <div className="max-h-[50vh] overflow-y-auto px-6 py-5">
+                {detailItem.description ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                    {detailItem.description}
+                  </p>
+                ) : (
+                  <p className="text-sm italic text-muted-foreground">
+                    Aucun détail supplémentaire.
+                  </p>
+                )}
+              </div>
+              <DialogFooter className="gap-2 border-t border-border/60 bg-muted/20 px-5 py-4 sm:justify-end">
+                <Button variant="outline" onClick={() => setDetailItem(null)}>
+                  Fermer
+                </Button>
+                {detailItem.href && (
+                  <Button
+                    onClick={() => {
+                      const href = detailItem.href!;
+                      setDetailItem(null);
+                      router.navigate({ href });
+                    }}
+                    className="bg-teal text-ink-foreground hover:bg-teal/90"
+                  >
+                    <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                    Ouvrir
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Popover>
   );
 }
