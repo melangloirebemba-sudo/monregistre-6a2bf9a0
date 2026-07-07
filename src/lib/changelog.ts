@@ -236,6 +236,35 @@ export function useNotificationCenter() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["user-notifications"] }),
   });
 
+  const clearAll = useMutation({
+    mutationFn: async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      if (!userRes.user) return;
+      const { error } = await supabase
+        .from("user_notifications")
+        .delete()
+        .eq("user_id", userRes.user.id);
+      if (error) throw error;
+      // Marque aussi tous les changelog statiques comme lus.
+      const allStaticIds = CHANGELOG.map((e) => e.id);
+      if (allStaticIds.length > 0) {
+        const rows = allStaticIds.map((notification_id) => ({
+          user_id: userRes.user!.id,
+          notification_id,
+        }));
+        await supabase
+          .from("notification_reads")
+          .upsert(rows, { onConflict: "user_id,notification_id" });
+      }
+      setOptimistic(new Set(allStaticIds));
+      writeLocal(allStaticIds);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user-notifications"] });
+      qc.invalidateQueries({ queryKey: ["notification-reads"] });
+    },
+  });
+
   // Fusion + filtrage par préférences
   const allItems = useMemo<NotificationItem[]>(() => {
     const staticItems: NotificationItem[] = CHANGELOG.map((e) => ({
@@ -310,6 +339,7 @@ export function useNotificationCenter() {
     unreadCount,
     markRead,
     markAllRead,
+    clearAll: () => clearAll.mutate(),
     enabled: prefs.enabled,
   };
 }

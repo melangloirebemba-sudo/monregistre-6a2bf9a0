@@ -93,6 +93,13 @@ Deno.serve(async (req) => {
             : { plan };
         const { error } = await admin.from("profils_enseignant").update(patch).eq("user_id", userId);
         if (error) throw error;
+        await admin.from("user_notifications").insert({
+          user_id: userId,
+          title: "Votre plan a été mis à jour",
+          body: `Un administrateur a défini votre plan sur « ${plan} ».`,
+          category: "billing",
+          href: "/mon-profil",
+        });
         return json({ ok: true });
       }
 
@@ -174,6 +181,15 @@ Deno.serve(async (req) => {
         }
 
 
+        await admin.from("user_notifications").insert({
+          user_id: userId,
+          title: isTrial ? `Essai ${plan} activé` : `Plan ${plan} activé`,
+          body: isTrial
+            ? `Vous bénéficiez d'un essai gratuit de ${days} jour(s). Expire le ${expiresAt.toLocaleDateString("fr-FR")}.`
+            : `Votre plan ${plan} (${periode}) est actif jusqu'au ${expiresAt.toLocaleDateString("fr-FR")}.`,
+          category: "billing",
+          href: "/mon-profil",
+        });
         return json({ ok: true, plan_expires_at: expiresAt.toISOString() });
       }
 
@@ -202,6 +218,16 @@ Deno.serve(async (req) => {
         const { error: e2 } = await admin.from("profils_enseignant")
           .update({ statut: suspendre ? "suspendu" : "actif" }).eq("user_id", userId);
         if (e2) throw e2;
+        // La réactivation est déjà notifiée par un trigger sur profils_enseignant.
+        if (suspendre) {
+          await admin.from("user_notifications").insert({
+            user_id: userId,
+            title: "Votre compte a été suspendu",
+            body: "Un administrateur a suspendu votre compte. Contactez le support pour plus d'informations.",
+            category: "account",
+            href: "/parametres",
+          });
+        }
         return json({ ok: true });
       }
 
@@ -218,6 +244,13 @@ Deno.serve(async (req) => {
           changed_by: uid,
           changed_by_email: userRes.user.email ?? null,
           source: "admin-reset",
+        });
+        await admin.from("user_notifications").insert({
+          user_id: userId,
+          title: "Votre mot de passe a été réinitialisé",
+          body: "Un administrateur a défini un nouveau mot de passe pour votre compte.",
+          category: "account",
+          href: "/mon-profil",
         });
         return json({ ok: true });
       }
