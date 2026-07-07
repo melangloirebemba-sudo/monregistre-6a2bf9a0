@@ -77,16 +77,19 @@ async function resolveUserByEmailOrId(
   return match.id;
 }
 
-/** Send a broadcast immediately (writes user_notifications rows). */
-export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
+/** Resolve the recipient audience without sending (used for preview). */
+export const previewBroadcastRecipients = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw) => composeSchema.parse(raw))
+  .inputValidator((raw) =>
+    z
+      .object({
+        target_type: targetTypeSchema.default("all"),
+        target_value: z.string().trim().max(200).optional().nullable(),
+      })
+      .parse(raw),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
-
-    // Utilise le client authentifié (RLS admin autorise l'accès à tous les
-    // profils/notifications). Le client service_role peut échouer sur Lovable
-    // Cloud avec les nouvelles clés `sb_secret_*` sur les endpoints Data API.
     const db = context.supabase;
 
     let userIds: string[] = [];
@@ -109,8 +112,63 @@ export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
       userIds = [await resolveUserByEmailOrId(db, data.target_value)];
     }
 
+    if (userIds.length === 0) return { total: 0, recipients: [] };
+
+    const sampleIds = userIds.slice(0, 200);
+    const { data: profils } = await db
+      .from("profils_enseignant")
+      .select("user_id, nom_affiche, email, plan")
+      .in("user_id", sampleIds);
+
+    const list = ((profils ?? []) as Array<{
+      user_id: string;
+      nom_affiche: string | null;
+      email: string | null;
+      plan: string | null;
+    }>).sort((a, b) =>
+      (a.nom_affiche ?? a.email ?? "").localeCompare(b.nom_affiche ?? b.email ?? ""),
+    );
+
+    return { total: userIds.length, recipients: list };
+  });
+
+/** Send a broadcast immediately (writes user_notifications rows). */
+export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw) => composeSchema.parse(raw))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const db = context.supabase;
+
+    let userIds: string[] = [];
+    if (data.target_type === "all") {
+      const { data: rows, error } = await db
+        .from("profils_enseignant")
+        .select("user_id");
+      if (error) throw new Error(`Lecture des profils impossible: ${error.message}`);
+      userIds = (rows ?? []).map((r) => r.user_id as string);
+    } else if (data.target_type === "plan") {
+      const plan = planSchema.parse(data.target_value);
+      const { data: rows, error } = await db
+        .from("profils_enseignant")
+        .select("user_id")
+        .eq("plan", plan);
+      if (error) throw new Error(`Lecture des profils impossible: ${error.message}`);
+      userIds = (rows ?? []).map((r) => r.user_id as string);
+    } else if (data.target_type === "user") {
+      if (!data.target_value) throw new Error("Destinataire manquant");
+      userIds = [await resolveUserByEmailOrId(db, data.target_value)];
+    }
+
+    type Detail = {
+      user_id: string;
+      nom_affiche: string | null;
+      email: string | null;
+      status: "sent" | "failed";
+      error?: string;
+    };
+
     if (userIds.length === 0) {
-      // Journalise quand même la tentative pour que l'admin voie 0 destinataire.
       await db.from("scheduled_notifications").insert({
         title: data.title,
         body: data.body ?? null,
@@ -124,10 +182,25 @@ export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
         status: "sent",
         created_by: context.userId,
       });
-      return { ok: true, recipients: 0 };
+      return { ok: true, recipients: 0, sent: 0, failed: 0, details: [] as Detail[] };
     }
 
-    // Insertion par lots de 500 pour rester bien en deçà des limites de requête.
+    // Charge les profils pour construire le détail par destinataire.
+    const { data: profils } = await db
+      .from("profils_enseignant")
+      .select("user_id, nom_affiche, email")
+      .in("user_id", userIds);
+    const byId = new Map(
+      ((profils ?? []) as Array<{ user_id: string; nom_affiche: string | null; email: string | null }>).map(
+        (p) => [p.user_id, p],
+      ),
+    );
+
+    const details: Detail[] = [];
+    let sentCount = 0;
+    let failedCount = 0;
+
+    // Insertion par lots de 500 ; on trace le résultat par lot au niveau destinataire.
     const rows = userIds.map((uid) => ({
       user_id: uid,
       title: data.title,
@@ -138,7 +211,27 @@ export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
     for (let i = 0; i < rows.length; i += 500) {
       const chunk = rows.slice(i, i + 500);
       const { error } = await db.from("user_notifications").insert(chunk);
-      if (error) throw new Error(`Envoi impossible: ${error.message}`);
+      for (const r of chunk) {
+        const p = byId.get(r.user_id);
+        if (error) {
+          failedCount++;
+          details.push({
+            user_id: r.user_id,
+            nom_affiche: p?.nom_affiche ?? null,
+            email: p?.email ?? null,
+            status: "failed",
+            error: error.message,
+          });
+        } else {
+          sentCount++;
+          details.push({
+            user_id: r.user_id,
+            nom_affiche: p?.nom_affiche ?? null,
+            email: p?.email ?? null,
+            status: "sent",
+          });
+        }
+      }
     }
 
     // Trace la diffusion pour audit.
@@ -151,12 +244,19 @@ export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
       target_value: data.target_value ?? null,
       send_at: new Date().toISOString(),
       sent_at: new Date().toISOString(),
-      recipients_count: userIds.length,
-      status: "sent",
+      recipients_count: sentCount,
+      status: failedCount === 0 ? "sent" : sentCount === 0 ? "failed" : "sent",
+      error: failedCount > 0 ? `${failedCount} destinataire(s) en échec` : null,
       created_by: context.userId,
     });
 
-    return { ok: true, recipients: userIds.length };
+    return {
+      ok: failedCount === 0,
+      recipients: userIds.length,
+      sent: sentCount,
+      failed: failedCount,
+      details,
+    };
   });
 
 /** Create a scheduled broadcast (dispatched by the cron endpoint). */
