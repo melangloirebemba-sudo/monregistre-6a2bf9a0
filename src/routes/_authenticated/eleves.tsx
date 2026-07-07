@@ -610,14 +610,25 @@ function EleveDialog({
       }
 
       // Mode ajout : file d'attente + élève courant (si le formulaire est rempli).
-      const batch: PendingEleve[] = [...pending];
+      const raw: PendingEleve[] = [...pending];
       const hasCurrent =
         form.nom.trim() || form.prenom.trim() || form.numero_eleve.trim() ||
         form.adresse.trim() || form.tuteur_nom.trim() || form.tuteur_numero.trim();
       if (hasCurrent) {
-        batch.push(buildPending());
+        raw.push(buildPending());
       }
-      if (batch.length === 0) throw new Error("Aucun élève à enregistrer");
+      if (raw.length === 0) throw new Error("Aucun élève à enregistrer");
+
+      // Filtre les doublons contre la base existante ; on les remet dans la file.
+      const batch: PendingEleve[] = [];
+      const skipped: PendingEleve[] = [];
+      for (const p of raw) {
+        if (existingKeys.has(dedupKey(p.nom, p.prenom, p.classe_id))) skipped.push(p);
+        else batch.push(p);
+      }
+      if (batch.length === 0) {
+        throw new Error("Tous les élèves sont des doublons — aucun enregistrement.");
+      }
 
       for (const p of batch) {
         const { chef, ...rest } = p;
@@ -637,9 +648,9 @@ function EleveDialog({
           });
         }
       }
-      return { count: batch.length };
+      return { count: batch.length, skipped };
     },
-    onSuccess: ({ count }) => {
+    onSuccess: ({ count, skipped }) => {
       toast.success(
         isEdit
           ? "Élève modifié"
@@ -647,10 +658,15 @@ function EleveDialog({
             ? `${count} élèves ajoutés`
             : "Élève ajouté",
       );
+      if (skipped && skipped.length > 0) {
+        toast.warning(`${skipped.length} doublon(s) ignoré(s)`);
+        // Conserve les doublons dans la file pour permettre la correction.
+        setPending(skipped);
+      }
       qc.invalidateQueries({ queryKey: ["eleves"] });
       qc.invalidateQueries({ queryKey: ["classes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
-      onOpenChange(false);
+      if (!skipped || skipped.length === 0) onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -802,10 +818,15 @@ function EleveDialog({
                 {pending.map((p) => {
                   const cls = classes.find((c) => c.id === p.classe_id);
                   const ecoleNom = ecoles.find((e) => e.id === p.ecole_id)?.nom;
+                  const dupExisting = existingKeys.has(dedupKey(p.nom, p.prenom, p.classe_id));
                   return (
                     <li
                       key={p.id}
-                      className="flex items-start justify-between gap-2 rounded-md bg-background/60 px-2 py-1.5 text-xs"
+                      className={`flex items-start justify-between gap-2 rounded-md px-2 py-1.5 text-xs ${
+                        dupExisting
+                          ? "border border-destructive/40 bg-destructive/10"
+                          : "bg-background/60"
+                      }`}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-semibold">
@@ -821,6 +842,11 @@ function EleveDialog({
                           {p.tuteur_numero ? ` (${p.tuteur_numero})` : ""}
                           {p.chef ? " · Chef" : ""}
                         </div>
+                        {dupExisting && (
+                          <div className="mt-0.5 text-[10px] font-semibold text-destructive">
+                            ⚠ Doublon : un élève avec ce nom/prénom existe déjà dans cette classe.
+                          </div>
+                        )}
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
                         <button
