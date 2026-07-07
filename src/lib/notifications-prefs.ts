@@ -1,19 +1,48 @@
-// Préférences de la cloche de notifications : catégories activées et
-// fréquence des rappels. Persistées dans Supabase (profils_enseignant.
-// notifications_prefs) et mises en cache dans localStorage pour un
-// démarrage instantané et un fonctionnement hors ligne.
+// Préférences de la cloche de notifications : catégories activées, canaux
+// de diffusion (in-app / email / SMS) et fréquence des rappels. Persistées
+// dans Supabase (profils_enseignant.notifications_prefs) et mises en cache
+// dans localStorage pour un démarrage instantané et un fonctionnement hors
+// ligne.
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type NotifCategory = "feature" | "fix" | "account" | "billing";
+export type NotifCategory =
+  | "feature"
+  | "fix"
+  | "account"
+  | "billing"
+  | "admin"
+  | "security"
+  | "reactivation";
 
 export const NOTIF_CATEGORY_LABELS: Record<NotifCategory, string> = {
   feature: "Nouvelles fonctionnalités",
   fix: "Améliorations & corrections",
   account: "Compte & profil",
   billing: "Facturation & plans",
+  admin: "Actions administratives",
+  security: "Sécurité",
+  reactivation: "Réactivation de compte",
 };
+
+export const NOTIF_CATEGORY_DESCRIPTIONS: Record<NotifCategory, string> = {
+  feature: "Nouveautés produit et fonctionnalités.",
+  fix: "Corrections et petites améliorations.",
+  account: "Modifications de profil et compte.",
+  billing: "Plan, essais, paiements et reçus.",
+  admin: "Actions effectuées par un administrateur sur votre compte.",
+  security: "Mots de passe, connexions et alertes de sécurité.",
+  reactivation: "Réactivation ou suspension de votre compte.",
+};
+
+export type NotifChannel = "inApp" | "email" | "sms";
+
+export interface CategoryChannels {
+  inApp: boolean;
+  email: boolean;
+  sms: boolean;
+}
 
 export type ReminderFrequency = "off" | "immediate" | "daily" | "weekly";
 
@@ -29,38 +58,102 @@ export type DefaultFilter = "all" | NotifCategory;
 export interface NotificationsPrefs {
   enabled: boolean;
   categories: Record<NotifCategory, boolean>;
+  channels: Record<NotifCategory, CategoryChannels>;
   reminderFrequency: ReminderFrequency;
   defaultFilter: DefaultFilter;
 }
 
+const ALL_CATEGORIES: NotifCategory[] = [
+  "feature",
+  "fix",
+  "account",
+  "billing",
+  "admin",
+  "security",
+  "reactivation",
+];
+
+function defaultChannelsFor(cat: NotifCategory): CategoryChannels {
+  // Par défaut : tout en in-app. Email activé pour compte/facturation/sécurité/
+  // réactivation/admin (canaux critiques). SMS désactivé partout (opt-in).
+  const criticalEmail: NotifCategory[] = [
+    "account",
+    "billing",
+    "admin",
+    "security",
+    "reactivation",
+  ];
+  return {
+    inApp: true,
+    email: criticalEmail.includes(cat),
+    sms: false,
+  };
+}
+
+function defaultChannels(): Record<NotifCategory, CategoryChannels> {
+  const out = {} as Record<NotifCategory, CategoryChannels>;
+  for (const c of ALL_CATEGORIES) out[c] = defaultChannelsFor(c);
+  return out;
+}
+
+function defaultCategories(): Record<NotifCategory, boolean> {
+  const out = {} as Record<NotifCategory, boolean>;
+  for (const c of ALL_CATEGORIES) out[c] = true;
+  return out;
+}
+
 export const DEFAULT_NOTIFICATIONS_PREFS: NotificationsPrefs = {
   enabled: true,
-  categories: { feature: true, fix: true, account: true, billing: true },
+  categories: defaultCategories(),
+  channels: defaultChannels(),
   reminderFrequency: "daily",
   defaultFilter: "all",
 };
 
+/** Catégories pour lesquelles email et SMS peuvent être proposés. */
+export const CATEGORIES_WITH_EMAIL_SMS: NotifCategory[] = [
+  "account",
+  "billing",
+  "admin",
+  "security",
+  "reactivation",
+];
+
 const STORAGE_KEY = "monregistre.notificationsPrefs";
 const CHANGE_EVENT = "monregistre:notifications-prefs-change";
+
+function coerceChannels(raw: unknown, cat: NotifCategory): CategoryChannels {
+  const fallback = defaultChannelsFor(cat);
+  if (!raw || typeof raw !== "object") return fallback;
+  const r = raw as Partial<CategoryChannels>;
+  return {
+    inApp: typeof r.inApp === "boolean" ? r.inApp : fallback.inApp,
+    email: typeof r.email === "boolean" ? r.email : fallback.email,
+    sms: typeof r.sms === "boolean" ? r.sms : fallback.sms,
+  };
+}
 
 function coerce(raw: unknown): NotificationsPrefs {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_NOTIFICATIONS_PREFS };
   const r = raw as Partial<NotificationsPrefs>;
   const cats = (r.categories ?? {}) as Partial<Record<NotifCategory, boolean>>;
+  const chans = (r.channels ?? {}) as Partial<Record<NotifCategory, unknown>>;
+  const categories = {} as Record<NotifCategory, boolean>;
+  const channels = {} as Record<NotifCategory, CategoryChannels>;
+  for (const c of ALL_CATEGORIES) {
+    categories[c] = typeof cats[c] === "boolean" ? (cats[c] as boolean) : true;
+    channels[c] = coerceChannels(chans[c], c);
+  }
   return {
     enabled: typeof r.enabled === "boolean" ? r.enabled : DEFAULT_NOTIFICATIONS_PREFS.enabled,
-    categories: {
-      feature: typeof cats.feature === "boolean" ? cats.feature : true,
-      fix: typeof cats.fix === "boolean" ? cats.fix : true,
-      account: typeof cats.account === "boolean" ? cats.account : true,
-      billing: typeof cats.billing === "boolean" ? cats.billing : true,
-    },
+    categories,
+    channels,
     reminderFrequency: (["off", "immediate", "daily", "weekly"] as ReminderFrequency[]).includes(
       r.reminderFrequency as ReminderFrequency,
     )
       ? (r.reminderFrequency as ReminderFrequency)
       : DEFAULT_NOTIFICATIONS_PREFS.reminderFrequency,
-    defaultFilter: (["all", "feature", "fix", "account", "billing"] as DefaultFilter[]).includes(
+    defaultFilter: (["all", ...ALL_CATEGORIES] as DefaultFilter[]).includes(
       r.defaultFilter as DefaultFilter,
     )
       ? (r.defaultFilter as DefaultFilter)
@@ -121,10 +214,18 @@ async function pushRemotePrefs(prefs: NotificationsPrefs) {
 
 export function setNotificationsPrefs(patch: Partial<NotificationsPrefs>) {
   const current = readCache();
+  const mergedChannels = { ...current.channels };
+  if (patch.channels) {
+    for (const [k, v] of Object.entries(patch.channels)) {
+      const cat = k as NotifCategory;
+      mergedChannels[cat] = { ...current.channels[cat], ...(v as Partial<CategoryChannels>) };
+    }
+  }
   const merged: NotificationsPrefs = coerce({
     ...current,
     ...patch,
     categories: { ...current.categories, ...(patch.categories ?? {}) },
+    channels: mergedChannels,
   });
   writeCache(merged);
   emitChange();
