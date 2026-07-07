@@ -63,11 +63,25 @@ export const Route = createFileRoute("/_authenticated/notes")({
 type NoteRow = Note & { eleve: { nom: string; prenom: string; classe_id: string } | null };
 
 function NotesPage() {
+  const queryClient = useQueryClient();
   const { data: profil } = useQuery(profilQueryOptions());
   const { data: classes = [] } = useQuery(classesQO());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
   const echelle = profil?.echelle_notation ?? 20;
+
+  // Précharge silencieusement les combinaisons de filtres voisines dès que
+  // les classes/périodes sont connues → changement de filtre = instantané.
+  useEffect(() => {
+    for (const c of classes.slice(0, 6)) {
+      void queryClient.prefetchQuery(notesQO({ classeId: c.id }));
+      void queryClient.prefetchQuery(elevesQO(c.id));
+    }
+    for (const p of periodes.slice(0, 4)) {
+      void queryClient.prefetchQuery(notesQO({ periodeId: p.id }));
+    }
+  }, [classes, periodes, queryClient]);
+
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [classeFilter, setClasseFilter] = useState<string>("all");
