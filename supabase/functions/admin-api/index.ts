@@ -245,6 +245,13 @@ Deno.serve(async (req) => {
           changed_by_email: userRes.user.email ?? null,
           source: "admin-reset",
         });
+        await admin.from("user_notifications").insert({
+          user_id: userId,
+          title: "Votre mot de passe a été réinitialisé",
+          body: "Un administrateur a défini un nouveau mot de passe pour votre compte.",
+          category: "account",
+          href: "/mon-profil",
+        });
         return json({ ok: true });
       }
 
