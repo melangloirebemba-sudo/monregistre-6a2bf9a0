@@ -33,6 +33,7 @@ interface AdminShellProps {
 const adminNav = [
   { to: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
+  { to: "/admin/notifications", label: "Notifications", icon: BellRing },
   { to: "/admin/facturation", label: "Facturation", icon: Receipt },
   { to: "/admin/annees-scolaires", label: "Années", icon: CalendarClock },
   { to: "/admin/plans", label: "Plans", icon: Crown },
