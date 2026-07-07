@@ -430,6 +430,6 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
           )}
         </DialogContent>
       </Dialog>
-    </Popover>
+    </>
   );
 }
