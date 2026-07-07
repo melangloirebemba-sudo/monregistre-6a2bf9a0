@@ -345,6 +345,7 @@ function ElevesPage() {
         eleve={editing}
         classes={classes}
         ecoles={ecoles}
+        existingEleves={allEleves}
         defaultClasseId={classeFilter !== "all" ? classeFilter : classes[0]?.id}
       />
       <DeleteEleveDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)} eleve={toDelete} onDone={() => setToDelete(null)} />
@@ -377,13 +378,14 @@ function ElevesPage() {
 }
 
 function EleveDialog({
-  open, onOpenChange, eleve, classes, ecoles, defaultClasseId,
+  open, onOpenChange, eleve, classes, ecoles, existingEleves, defaultClasseId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eleve: Eleve | null;
   classes: Array<{ id: string; nom: string; ecole_id: string; chef_id: string | null }>;
   ecoles: Array<{ id: string; nom: string }>;
+  existingEleves: Eleve[];
   defaultClasseId?: string;
 }) {
   const qc = useQueryClient();
@@ -401,7 +403,16 @@ function EleveDialog({
     tuteur_numero: string | null;
     chef: boolean;
   };
-  const [pending, setPending] = useState<PendingEleve[]>([]);
+  const PENDING_STORAGE_KEY = "eleves-pending-v1";
+  const [pending, setPending] = useState<PendingEleve[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = localStorage.getItem(PENDING_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as PendingEleve[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [form, setForm] = useState({
     nom: "",
     prenom: "",
@@ -414,6 +425,17 @@ function EleveDialog({
     tuteur_numero: "",
     chef: false,
   });
+
+  // Persistance de la file « en attente » — survit rechargement / navigation.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (pending.length === 0) localStorage.removeItem(PENDING_STORAGE_KEY);
+      else localStorage.setItem(PENDING_STORAGE_KEY, JSON.stringify(pending));
+    } catch {
+      // ignore quota errors
+    }
+  }, [pending]);
 
   useEffect(() => {
     if (open) {
@@ -432,7 +454,8 @@ function EleveDialog({
         tuteur_numero: eleve?.tuteur_numero ?? "",
         chef: !!(eleve && cls && cls.chef_id === eleve.id),
       });
-      setPending([]);
+      // Ne pas vider `pending` : on conserve la file entre ouvertures / navigation.
+      // En mode édition, on masque simplement la file dans l'UI.
     }
   }, [open, eleve, defaultClasseId, classes, ecoles]);
 
@@ -448,6 +471,24 @@ function EleveDialog({
   const classeMismatch =
     !!form.classe_id && !!form.ecole_id && !!selectedClasse && selectedClasse.ecole_id !== form.ecole_id;
 
+  // Clé de dédoublonnage : nom+prénom+classe (insensible à la casse/espaces).
+  const dedupKey = (nom: string, prenom: string, classe_id: string) =>
+    `${nom.trim().toLowerCase()}|${prenom.trim().toLowerCase()}|${classe_id}`;
+
+  const existingKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const e of existingEleves) s.add(dedupKey(e.nom, e.prenom, e.classe_id));
+    return s;
+  }, [existingEleves]);
+
+  const currentDuplicate = useMemo(() => {
+    if (!form.nom.trim() || !form.prenom.trim() || !form.classe_id) return null as null | "existing" | "pending";
+    const k = dedupKey(form.nom, form.prenom, form.classe_id);
+    if (existingKeys.has(k)) return "existing";
+    if (pending.some((p) => dedupKey(p.nom, p.prenom, p.classe_id) === k)) return "pending";
+    return null;
+  }, [form.nom, form.prenom, form.classe_id, existingKeys, pending]);
+
   // Valide le formulaire courant et retourne le payload, ou lève une erreur.
   const buildPending = (): PendingEleve => {
     if (!form.nom.trim() || !form.prenom.trim()) throw new Error("Nom et prénom obligatoires");
@@ -456,6 +497,13 @@ function EleveDialog({
     const classe = classes.find((c) => c.id === form.classe_id);
     if (!classe) throw new Error("Classe invalide");
     if (classe.ecole_id !== form.ecole_id) throw new Error("La classe ne correspond pas à l'école sélectionnée");
+    const k = dedupKey(form.nom, form.prenom, form.classe_id);
+    if (existingKeys.has(k)) {
+      throw new Error(`${form.prenom} ${form.nom} existe déjà dans cette classe`);
+    }
+    if (pending.some((p) => dedupKey(p.nom, p.prenom, p.classe_id) === k)) {
+      throw new Error(`${form.prenom} ${form.nom} est déjà dans la file d'attente`);
+    }
     return {
       id: crypto.randomUUID(),
       nom: form.nom.trim(),
@@ -495,6 +543,8 @@ function EleveDialog({
       toast.error((e as Error).message);
     }
   };
+
+
 
   const removePending = (id: string) => {
     setPending((prev) => prev.filter((p) => p.id !== id));
@@ -704,30 +754,63 @@ function EleveDialog({
             </span>
           </label>
 
+          {!isEdit && currentDuplicate && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {currentDuplicate === "existing"
+                ? "Un élève avec ce nom, prénom et cette classe existe déjà."
+                : "Cet élève est déjà présent dans la file d'attente."}
+            </div>
+          )}
+
           {!isEdit && pending.length > 0 && (
             <div className="rounded-xl border border-teal/40 bg-teal/5 p-2">
-              <div className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                En attente ({pending.length})
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  En attente · récapitulatif ({pending.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPending([])}
+                  className="text-[10px] uppercase tracking-wider text-muted-foreground underline underline-offset-2 hover:text-destructive"
+                >
+                  Vider
+                </button>
               </div>
-              <ul className="max-h-32 space-y-1 overflow-y-auto">
-                {pending.map((p) => (
-                  <li
-                    key={p.id}
-                    className="flex items-center justify-between rounded-md bg-background/60 px-2 py-1 text-xs"
-                  >
-                    <span className="truncate">
-                      <span className="uppercase">{p.nom}</span> {p.prenom}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removePending(p.id)}
-                      aria-label="Retirer de la file"
-                      className="ml-2 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              <ul className="max-h-56 space-y-1 overflow-y-auto">
+                {pending.map((p) => {
+                  const cls = classes.find((c) => c.id === p.classe_id);
+                  const ecoleNom = ecoles.find((e) => e.id === p.ecole_id)?.nom;
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex items-start justify-between gap-2 rounded-md bg-background/60 px-2 py-1.5 text-xs"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                ))}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-semibold">
+                          <span className="uppercase">{p.nom}</span> {p.prenom}
+                          <span className="ml-1 text-[10px] font-normal text-muted-foreground">
+                            ({p.sexe === "F" ? "F" : "M"})
+                          </span>
+                        </div>
+                        <div className="truncate text-[10px] text-muted-foreground">
+                          {ecoleNom ?? "École ?"} · {cls?.nom ?? "Classe ?"}
+                          {p.numero_eleve ? ` · ${p.numero_eleve}` : ""}
+                          {p.tuteur_nom ? ` · Tuteur ${p.tuteur_nom}` : ""}
+                          {p.tuteur_numero ? ` (${p.tuteur_numero})` : ""}
+                          {p.chef ? " · Chef" : ""}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePending(p.id)}
+                        aria-label="Retirer de la file"
+                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -739,12 +822,19 @@ function EleveDialog({
                 type="button"
                 variant="secondary"
                 onClick={addAnother}
-                disabled={save.isPending || classeMismatch}
+                disabled={save.isPending || classeMismatch || !!currentDuplicate}
               >
                 <Plus className="mr-1 h-4 w-4" /> Ajouter un autre
               </Button>
             )}
-            <Button type="submit" disabled={save.isPending || classeMismatch}>
+            <Button
+              type="submit"
+              disabled={
+                save.isPending ||
+                classeMismatch ||
+                (!isEdit && !!currentDuplicate && (!!form.nom.trim() || !!form.prenom.trim()))
+              }
+            >
               {save.isPending
                 ? "…"
                 : isEdit
