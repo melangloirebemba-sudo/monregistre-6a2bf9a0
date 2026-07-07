@@ -136,6 +136,14 @@ function ClassesPage() {
         </div>
       </div>
 
+      {canAdd && atLimit && (
+        <PlanLimitBanner
+          planLabel={planLabel}
+          message={bannerMessage}
+          onUpgrade={() => setUpgradeOpen(true)}
+        />
+      )}
+
       {!canAdd ? (
         <div className="card-elevated p-6 text-center">
           <p className="text-sm text-muted-foreground">
@@ -146,18 +154,15 @@ function ClassesPage() {
         <ListSkeleton rows={4} />
       ) : pq.isEmpty ? (
         classes.length === 0 ? (
-          <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
-              <GraduationCap className="h-6 w-6" />
-            </span>
-            <div>
-              <div className="font-display text-lg font-semibold">Aucune classe</div>
-              <p className="mt-1 text-sm text-muted-foreground">Créez votre première classe.</p>
-            </div>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}>
-              <Plus className="mr-1 h-4 w-4" /> Ajouter une classe
-            </Button>
-          </div>
+          <LockedEmptyState
+            icon={<GraduationCap className="h-6 w-6" />}
+            title="Aucune classe"
+            hint="Créez votre première classe."
+            lockedHint="Ajout de classe bloqué : la limite de votre plan est atteinte pour cette école."
+            onAdd={handleAdd}
+            addLabel={<><Plus className="mr-1 h-4 w-4" /> Ajouter une classe</> as unknown as string}
+            locked={atLimit}
+          />
         ) : (
           <NoResults
             query={q}
