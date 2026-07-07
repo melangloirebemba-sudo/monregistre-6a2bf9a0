@@ -186,12 +186,10 @@ export function AdminShell({ children }: AdminShellProps) {
 
         {/* Bottom nav mobile */}
         <nav aria-label="Navigation admin mobile" className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
-          <ul className="mx-auto grid max-w-2xl grid-cols-6">
-            {adminNav.map((t) => {
+          <ul className="mx-auto grid max-w-2xl grid-cols-4">
+            {mobileNav.map((t) => {
               const active = isActive(pathname, t.to);
               const Icon = t.icon;
-              const short =
-                t.label === "Tableau de bord" ? "Accueil" : t.label;
               return (
                 <li key={t.to}>
                   <Link
@@ -205,7 +203,7 @@ export function AdminShell({ children }: AdminShellProps) {
                     ].join(" ")}
                   >
                     <Icon className={["h-5 w-5", active ? "scale-110" : ""].join(" ")} aria-hidden="true" />
-                    <span className="truncate">{short}</span>
+                    <span className="truncate">{t.label}</span>
                   </Link>
                 </li>
               );
