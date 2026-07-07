@@ -96,9 +96,8 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
   const [detailItem, setDetailItem] = useState<NotificationItem | null>(null);
 
   const openDetail = (item: NotificationItem) => {
-    setDetailItem(item);
     if (!item.read) markRead(item);
-    setOpen(false);
+    setDetailItem(item);
   };
   const wasOpen = useRef(false);
   useEffect(() => {
