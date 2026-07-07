@@ -126,8 +126,7 @@ export const scheduleAdminBroadcast = createServerFn({ method: "POST" })
       throw new Error("La date doit être dans le futur");
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("scheduled_notifications").insert({
+    const { error } = await context.supabase.from("scheduled_notifications").insert({
       title: data.title,
       body: data.body ?? null,
       category: data.category,
