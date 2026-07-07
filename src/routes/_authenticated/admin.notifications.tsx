@@ -192,19 +192,47 @@ function AdminNotificationsPage() {
     },
     onSuccess: (res) => {
       if (mode === "now") {
-        const r = res as { recipients?: number };
-        toast.success(`Notification envoyée à ${r.recipients ?? 0} destinataire(s)`);
+        const r = res as {
+          recipients?: number;
+          sent?: number;
+          failed?: number;
+          details?: Array<{
+            user_id: string;
+            nom_affiche: string | null;
+            email: string | null;
+            status: "sent" | "failed";
+            error?: string;
+          }>;
+        };
+        const sent = r.sent ?? r.recipients ?? 0;
+        const failed = r.failed ?? 0;
+        setLastResult({
+          sent,
+          failed,
+          total: r.recipients ?? 0,
+          details: r.details ?? [],
+        });
+        if (failed === 0) {
+          toast.success(`Notification envoyée à ${sent} destinataire(s)`);
+        } else {
+          toast.error(`Envoi partiel : ${sent} succès, ${failed} échec(s)`);
+        }
       } else {
         toast.success("Notification programmée");
       }
+      setShowPreview(false);
       setTitle("");
       setBody("");
       setHref("");
       setTargetValue("");
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      setShowPreview(false);
+      toast.error(e.message);
+    },
   });
+
 
 
   const removeBroadcast = useMutation({
