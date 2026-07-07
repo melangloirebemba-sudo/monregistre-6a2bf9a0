@@ -21,6 +21,12 @@ import {
   type Absence,
 } from "@/lib/queries/data";
 import { enqueueWrite, flushQueue, subscribeOfflineConflicts } from "@/lib/offline-queue";
+import {
+  rollbackLists,
+  upsertInLists,
+  removeFromLists,
+  type ListSnapshot,
+} from "@/lib/optimistic";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
