@@ -41,6 +41,7 @@ import { Route as AuthenticatedAdminAnneesScolairesRouteImport } from './routes/
 import { Route as ApiPublicHooksScheduleDailyRemindersRouteImport } from './routes/api/public/hooks/schedule-daily-reminders'
 import { Route as ApiPublicHooksRelayInappNotificationsRouteImport } from './routes/api/public/hooks/relay-inapp-notifications'
 import { Route as ApiPublicHooksLicenseExpiryRemindersRouteImport } from './routes/api/public/hooks/license-expiry-reminders'
+import { Route as ApiPublicHooksDispatchScheduledNotificationsRouteImport } from './routes/api/public/hooks/dispatch-scheduled-notifications'
 import { Route as AuthenticatedFacturationIdPdfRouteImport } from './routes/_authenticated/facturation.$id.pdf'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -216,6 +217,12 @@ const ApiPublicHooksLicenseExpiryRemindersRoute =
     path: '/api/public/hooks/license-expiry-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksDispatchScheduledNotificationsRoute =
+  ApiPublicHooksDispatchScheduledNotificationsRouteImport.update({
+    id: '/api/public/hooks/dispatch-scheduled-notifications',
+    path: '/api/public/hooks/dispatch-scheduled-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedFacturationIdPdfRoute =
   AuthenticatedFacturationIdPdfRouteImport.update({
     id: '/pdf',
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/dispatch-scheduled-notifications': typeof ApiPublicHooksDispatchScheduledNotificationsRoute
   '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
   '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
   '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
@@ -286,6 +294,7 @@ export interface FileRoutesByTo {
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/dispatch-scheduled-notifications': typeof ApiPublicHooksDispatchScheduledNotificationsRoute
   '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
   '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
   '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
@@ -322,6 +331,7 @@ export interface FileRoutesById {
   '/_authenticated/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/dispatch-scheduled-notifications': typeof ApiPublicHooksDispatchScheduledNotificationsRoute
   '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
   '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
   '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/parametres/rappels'
     | '/admin/'
     | '/facturation/$id/pdf'
+    | '/api/public/hooks/dispatch-scheduled-notifications'
     | '/api/public/hooks/license-expiry-reminders'
     | '/api/public/hooks/relay-inapp-notifications'
     | '/api/public/hooks/schedule-daily-reminders'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/parametres/rappels'
     | '/admin'
     | '/facturation/$id/pdf'
+    | '/api/public/hooks/dispatch-scheduled-notifications'
     | '/api/public/hooks/license-expiry-reminders'
     | '/api/public/hooks/relay-inapp-notifications'
     | '/api/public/hooks/schedule-daily-reminders'
@@ -426,6 +438,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parametres/rappels'
     | '/_authenticated/admin/'
     | '/_authenticated/facturation/$id/pdf'
+    | '/api/public/hooks/dispatch-scheduled-notifications'
     | '/api/public/hooks/license-expiry-reminders'
     | '/api/public/hooks/relay-inapp-notifications'
     | '/api/public/hooks/schedule-daily-reminders'
@@ -436,6 +449,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicHooksDispatchScheduledNotificationsRoute: typeof ApiPublicHooksDispatchScheduledNotificationsRoute
   ApiPublicHooksLicenseExpiryRemindersRoute: typeof ApiPublicHooksLicenseExpiryRemindersRoute
   ApiPublicHooksRelayInappNotificationsRoute: typeof ApiPublicHooksRelayInappNotificationsRoute
   ApiPublicHooksScheduleDailyRemindersRoute: typeof ApiPublicHooksScheduleDailyRemindersRoute
@@ -667,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksLicenseExpiryRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/dispatch-scheduled-notifications': {
+      id: '/api/public/hooks/dispatch-scheduled-notifications'
+      path: '/api/public/hooks/dispatch-scheduled-notifications'
+      fullPath: '/api/public/hooks/dispatch-scheduled-notifications'
+      preLoaderRoute: typeof ApiPublicHooksDispatchScheduledNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/facturation/$id/pdf': {
       id: '/_authenticated/facturation/$id/pdf'
       path: '/pdf'
@@ -791,6 +812,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicHooksDispatchScheduledNotificationsRoute:
+    ApiPublicHooksDispatchScheduledNotificationsRoute,
   ApiPublicHooksLicenseExpiryRemindersRoute:
     ApiPublicHooksLicenseExpiryRemindersRoute,
   ApiPublicHooksRelayInappNotificationsRoute:
