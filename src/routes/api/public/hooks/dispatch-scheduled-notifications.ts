@@ -37,6 +37,16 @@ export const Route = createFileRoute("/api/public/hooks/dispatch-scheduled-notif
         let dispatched = 0;
         let totalRecipients = 0;
 
+        // Charge la liste des administrateurs une seule fois pour les exclure
+        // des diffusions "all" et "plan" (les admins ne se reçoivent pas eux-mêmes).
+        const { data: adminRows } = await supabaseAdmin
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+        const adminIds = new Set(
+          ((adminRows ?? []) as Array<{ user_id: string }>).map((r) => r.user_id),
+        );
+
         for (const row of rows) {
           try {
             let userIds: string[] = [];
@@ -44,13 +54,17 @@ export const Route = createFileRoute("/api/public/hooks/dispatch-scheduled-notif
               const { data: users } = await supabaseAdmin
                 .from("profils_enseignant")
                 .select("user_id");
-              userIds = (users ?? []).map((u) => u.user_id as string);
+              userIds = (users ?? [])
+                .map((u) => u.user_id as string)
+                .filter((id) => !adminIds.has(id));
             } else if (row.target_type === "plan" && row.target_value) {
               const { data: users } = await supabaseAdmin
                 .from("profils_enseignant")
                 .select("user_id")
                 .eq("plan", row.target_value as "gratuit" | "lite" | "premium");
-              userIds = (users ?? []).map((u) => u.user_id as string);
+              userIds = (users ?? [])
+                .map((u) => u.user_id as string)
+                .filter((id) => !adminIds.has(id));
             } else if (row.target_type === "user" && row.target_value) {
               userIds = [row.target_value];
             }
