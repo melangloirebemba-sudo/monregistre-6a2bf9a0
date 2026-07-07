@@ -287,6 +287,11 @@ function ClassesPage() {
         ressource="Classes"
         limitDescription={limitDescription}
       />
+      <ClasseElevesDialog
+        classe={viewing}
+        ecoleNom={viewing ? ecoleById[viewing.ecole_id] : undefined}
+        onOpenChange={(v) => !v && setViewing(null)}
+      />
     </div>
   );
 }
