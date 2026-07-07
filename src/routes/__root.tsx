@@ -111,8 +111,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // Préconnecte à l'API backend pour réduire la latence des premières requêtes.
       ...(import.meta.env.VITE_SUPABASE_URL
         ? [
-            { rel: "preconnect", href: import.meta.env.VITE_SUPABASE_URL, crossOrigin: "anonymous" },
-            { rel: "dns-prefetch", href: import.meta.env.VITE_SUPABASE_URL },
+            { rel: "preconnect", href: import.meta.env.VITE_SUPABASE_URL as string, crossOrigin: "anonymous" as const },
+            { rel: "dns-prefetch", href: import.meta.env.VITE_SUPABASE_URL as string },
           ]
         : []),
       {
