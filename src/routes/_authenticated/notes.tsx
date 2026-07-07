@@ -6,6 +6,12 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { ClipboardList, Plus, Pencil, Trash2, Search, Download } from "lucide-react";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
+import {
+  rollbackLists,
+  upsertInLists,
+  removeFromLists,
+  type ListSnapshot,
+} from "@/lib/optimistic";
 import { downloadCsv } from "@/lib/csv";
 import {
   classesQO,
