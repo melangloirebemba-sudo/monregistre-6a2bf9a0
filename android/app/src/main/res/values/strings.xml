@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MonRegistre</string>
+    <string name="title_activity_main">MonRegistre</string>
+    <string name="package_name">com.monregistre.app</string>
+    <string name="custom_url_scheme">com.monregistre.app</string>
+</resources>
