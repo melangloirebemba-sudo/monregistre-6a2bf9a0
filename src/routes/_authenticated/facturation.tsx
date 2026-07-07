@@ -40,8 +40,8 @@ const PLAN_LABEL: Record<PaiementRow["plan"], string> = {
 };
 const PLAN_BADGE: Record<PaiementRow["plan"], string> = {
   gratuit: "bg-muted text-muted-foreground",
-  lite: "bg-gold/25 text-ink",
-  premium: "bg-teal text-cream",
+  lite: "bg-gold/25 text-foreground",
+  premium: "bg-teal text-ink-foreground",
 };
 const PERIODE_LABEL: Record<NonNullable<PaiementRow["periode"]>, string> = {
   mensuelle: "Mensuelle",
@@ -123,7 +123,7 @@ function FacturationPage() {
       <header className="mb-5">
         <Link
           to="/parametres"
-          className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-ink"
+          className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Retour aux paramètres
         </Link>
@@ -151,7 +151,7 @@ function FacturationPage() {
           </div>
         </div>
         <div className="card-elevated flex items-center gap-3 p-4">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-gold/20 text-ink">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-gold/20 text-foreground">
             <CalendarClock className="h-5 w-5" />
           </span>
           <div>
@@ -212,7 +212,7 @@ function FacturationPage() {
                         {PLAN_LABEL[r.plan]}
                       </span>
                       {r.periode && (
-                        <span className="text-xs text-ink/80">{PERIODE_LABEL[r.periode]}</span>
+                        <span className="text-xs text-foreground/80">{PERIODE_LABEL[r.periode]}</span>
                       )}
                       <span className="font-mono text-[10px] text-muted-foreground">
                         {r.numero_recu}

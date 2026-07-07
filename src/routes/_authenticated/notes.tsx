@@ -179,7 +179,7 @@ function NotesPage() {
       </div>
 
       {periodes.length === 0 && (
-        <div className="mb-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-ink">
+        <div className="mb-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-foreground">
           Astuce : définissez vos périodes (trimestres/semestres) dans <Link to="/parametres" className="underline">Paramètres</Link>.
         </div>
       )}
@@ -193,7 +193,7 @@ function NotesPage() {
       ) : filtered.length === 0 ? (
         notes.length === 0 ? (
           <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-foreground">
               <ClipboardList className="h-6 w-6" />
             </span>
             <div>

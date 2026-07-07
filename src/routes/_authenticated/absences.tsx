@@ -194,7 +194,7 @@ function AbsencesPage() {
         <p className="text-sm text-muted-foreground">Chargement…</p>
       ) : filtered.length === 0 ? (
         <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-foreground">
             <CalendarX className="h-6 w-6" />
           </span>
           <div>

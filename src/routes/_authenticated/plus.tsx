@@ -66,7 +66,7 @@ function PlusPage() {
                 to={it.to}
                 className="card-elevated flex items-center gap-3 p-4 transition-colors hover:bg-cream-deep/40"
               >
-                <span className={`grid h-10 w-10 place-items-center rounded-xl ${isAdminLink ? "bg-teal text-cream" : "bg-gold/15 text-ink"}`}>
+                <span className={`grid h-10 w-10 place-items-center rounded-xl ${isAdminLink ? "bg-teal text-ink-foreground" : "bg-gold/15 text-foreground"}`}>
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="flex-1">

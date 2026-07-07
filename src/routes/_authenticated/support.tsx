@@ -160,7 +160,7 @@ function SupportPage() {
         </a>
 
         <div className="card-elevated flex items-start gap-3 p-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gold/20 text-ink">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gold/20 text-foreground">
             <Mail className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
@@ -188,7 +188,7 @@ function SupportPage() {
 
       {/* Current context recap */}
       {caps && (
-        <div className="mt-4 rounded-lg border border-border bg-background/60 p-3 text-xs text-ink/80">
+        <div className="mt-4 rounded-lg border border-border bg-background/60 p-3 text-xs text-foreground/80">
           <p>
             Votre message inclura automatiquement :
             <span className="ml-1">
@@ -230,7 +230,7 @@ function SupportPage() {
                     href={upgradeWaHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-teal px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-teal px-3 py-2 text-xs font-semibold text-ink-foreground shadow-sm transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
                   >
                     <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                     Mettre à niveau
@@ -269,7 +269,7 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         />
       </button>
       {open && (
-        <div className="border-t border-border/60 px-4 py-3 text-sm text-ink/80">{answer}</div>
+        <div className="border-t border-border/60 px-4 py-3 text-sm text-foreground/80">{answer}</div>
       )}
     </li>
   );

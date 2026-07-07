@@ -19,7 +19,7 @@ export function ComingSoon({ title, description, icon: Icon, eta = "Bientôt" }:
         </h1>
       </div>
       <div className="card-elevated flex flex-col items-center gap-4 p-8 text-center">
-        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-ink">
+        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-foreground">
           <Icon className="h-6 w-6" />
         </div>
         <p className="max-w-xs text-sm text-muted-foreground">{description}</p>

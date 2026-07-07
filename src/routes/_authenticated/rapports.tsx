@@ -158,8 +158,8 @@ function RapportsPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-2xl sm:text-3xl font-serif text-ink">Rapports</h1>
-        <p className="text-sm text-ink/60">Moyennes, statistiques et bulletins PDF.</p>
+        <h1 className="text-2xl sm:text-3xl font-serif text-foreground">Rapports</h1>
+        <p className="text-sm text-foreground/60">Moyennes, statistiques et bulletins PDF.</p>
         {ecole && (
           <div className="mt-2">
             <EcoleGroupHeader name={ecole.nom} count={classes.length} />
@@ -206,12 +206,12 @@ function RapportsPage() {
       </div>
 
       {!ecoleId ? (
-        <div className="card-elevated p-8 text-center text-ink/60">
+        <div className="card-elevated p-8 text-center text-foreground/60">
           <BarChart3 className="mx-auto mb-3 h-10 w-10 text-teal/60" />
           Sélectionne d'abord une école pour afficher les statistiques.
         </div>
       ) : !classeId ? (
-        <div className="card-elevated p-8 text-center text-ink/60">
+        <div className="card-elevated p-8 text-center text-foreground/60">
           <BarChart3 className="mx-auto mb-3 h-10 w-10 text-teal/60" />
           Sélectionne une classe de <strong>{ecole?.nom ?? "l'école"}</strong> pour afficher les statistiques.
         </div>
@@ -320,21 +320,21 @@ function RapportsPage() {
 
           <div className="card-elevated p-4">
             <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-              <h2 className="font-serif text-lg text-ink">Bulletins PDF</h2>
+              <h2 className="font-serif text-lg text-foreground">Bulletins PDF</h2>
               <Button
                 size="sm"
                 onClick={handleExportAll}
                 disabled={!canPdf}
                 aria-disabled={!canPdf}
                 title={!canPdf ? "Export PDF réservé aux plans Lite et Premium" : undefined}
-                className="bg-teal text-cream hover:bg-teal/90 disabled:opacity-60"
+                className="bg-teal text-ink-foreground hover:bg-teal/90 disabled:opacity-60"
               >
                 <FileDown className="h-4 w-4 mr-1.5" />
                 Tout exporter
               </Button>
             </div>
             {!canPdf && (
-              <p className="mb-3 rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-ink/80">
+              <p className="mb-3 rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-xs text-foreground/80">
                 L'export PDF des bulletins est disponible à partir du plan <strong>Lite</strong>. Votre plan actuel est <strong>{caps?.plan ?? "gratuit"}</strong>.
               </p>
             )}
@@ -366,12 +366,12 @@ function KpiCard({
   accent?: boolean;
 }) {
   return (
-    <div className={`card-elevated p-4 ${accent ? "bg-teal text-cream" : ""}`}>
-      <div className={`flex items-center gap-2 text-xs ${accent ? "text-cream/80" : "text-ink/60"}`}>
+    <div className={`card-elevated p-4 ${accent ? "bg-teal text-ink-foreground" : ""}`}>
+      <div className={`flex items-center gap-2 text-xs ${accent ? "text-ink-foreground/80" : "text-foreground/60"}`}>
         {icon}
         {label}
       </div>
-      <p className={`mt-2 text-2xl font-serif ${accent ? "text-cream" : "text-ink"}`}>{value}</p>
+      <p className={`mt-2 text-2xl font-serif ${accent ? "text-ink-foreground" : "text-foreground"}`}>{value}</p>
     </div>
   );
 }
@@ -389,12 +389,12 @@ function RankList({
 }) {
   return (
     <div className="card-elevated p-4">
-      <h3 className="font-serif text-base text-ink mb-2 flex items-center gap-2">{icon}{title}</h3>
+      <h3 className="font-serif text-base text-foreground mb-2 flex items-center gap-2">{icon}{title}</h3>
       <ul className="space-y-1.5">
         {items.map((m, i) => (
           <li key={m.eleve.id} className="flex items-center justify-between text-sm">
-            <span className="text-ink truncate">
-              <span className="text-ink/50 mr-1.5">#{i + 1}</span>
+            <span className="text-foreground truncate">
+              <span className="text-foreground/50 mr-1.5">#{i + 1}</span>
               {m.eleve.prenom} {m.eleve.nom}
             </span>
             <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${noteColorClass(m.moyenne, echelle)}`}>
@@ -402,7 +402,7 @@ function RankList({
             </span>
           </li>
         ))}
-        {!items.length && <li className="text-sm text-ink/50">—</li>}
+        {!items.length && <li className="text-sm text-foreground/50">—</li>}
       </ul>
     </div>
   );
@@ -447,8 +447,8 @@ function BulletinsList({
         {paged.map(({ eleve, moyenne, nbNotes }) => (
           <li key={eleve.id} className="py-2.5 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-medium text-ink truncate">{eleve.prenom} {eleve.nom}</p>
-              <p className="text-xs text-ink/60">{nbNotes} note{nbNotes > 1 ? "s" : ""}</p>
+              <p className="font-medium text-foreground truncate">{eleve.prenom} {eleve.nom}</p>
+              <p className="text-xs text-foreground/60">{nbNotes} note{nbNotes > 1 ? "s" : ""}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={`px-2 py-1 rounded-md text-xs font-semibold ${noteColorClass(moyenne, echelle)}`}>

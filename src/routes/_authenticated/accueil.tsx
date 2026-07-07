@@ -159,42 +159,42 @@ function AccueilPage() {
       label: "Écoles",
       count: counts?.ecoles ?? 0,
       icon: "🏫",
-      tint: "bg-gold/15 text-ink",
+      tint: "bg-gold/15 text-foreground",
     },
     {
       to: "/classes",
       label: "Classes",
       count: counts?.classes ?? 0,
       icon: "🎓",
-      tint: "bg-teal/15 text-ink",
+      tint: "bg-teal/15 text-foreground",
     },
     {
       to: "/eleves",
       label: "Élèves",
       count: counts?.eleves ?? 0,
       icon: "🧑‍🎓",
-      tint: "bg-cream-deep text-ink",
+      tint: "bg-cream-deep text-foreground",
     },
     {
       to: "/notes",
       label: "Notes",
       count: counts?.notes ?? 0,
       icon: "📝",
-      tint: "bg-gold-soft/50 text-ink",
+      tint: "bg-gold-soft/50 text-foreground",
     },
     {
       to: "/rapports",
       label: "Rapports",
       count: null,
       icon: "📊",
-      tint: "bg-teal-soft/25 text-ink",
+      tint: "bg-teal-soft/25 text-foreground",
     },
     {
       to: "/emploi-du-temps",
       label: "Emploi du temps",
       count: null,
       icon: "📅",
-      tint: "bg-cream-deep text-ink",
+      tint: "bg-cream-deep text-foreground",
     },
   ] as const;
 
@@ -287,7 +287,7 @@ function AccueilPage() {
                 to={a.to}
                 className="group flex min-w-[92px] snap-start flex-col items-center gap-2 rounded-2xl border border-border bg-card px-3 py-3 text-center text-xs font-medium shadow-soft transition-transform hover:-translate-y-0.5"
               >
-                <span className="relative grid h-10 w-10 place-items-center rounded-xl bg-gold/15 text-ink">
+                <span className="relative grid h-10 w-10 place-items-center rounded-xl bg-gold/15 text-foreground">
                   <Icon className="h-5 w-5" />
                   <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-teal text-[10px] text-teal-foreground">
                     <Plus className="h-3 w-3" />
@@ -347,21 +347,21 @@ function AccueilPage() {
                   }`}
                 >
                   <div className="shrink-0 w-14 text-center">
-                    <div className="text-sm font-semibold text-ink">
+                    <div className="text-sm font-semibold text-foreground">
                       {c.heure_debut.slice(0, 5)}
                     </div>
-                    <div className="text-[10px] text-ink/50">
+                    <div className="text-[10px] text-foreground/50">
                       {c.heure_fin.slice(0, 5)}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink truncate">
+                    <p className="text-sm font-semibold text-foreground truncate">
                       {c.classe?.nom ?? "—"}
                       {c.matiere && (
-                        <span className="text-ink/60 font-normal"> · {c.matiere}</span>
+                        <span className="text-foreground/60 font-normal"> · {c.matiere}</span>
                       )}
                     </p>
-                    <p className="text-xs text-ink/60 truncate flex items-center gap-1.5 flex-wrap">
+                    <p className="text-xs text-foreground/60 truncate flex items-center gap-1.5 flex-wrap">
                       <EcoleBadge name={c.ecole?.nom} />
                       {c.salle && (
                         <span className="inline-flex items-center gap-0.5">
@@ -372,7 +372,7 @@ function AccueilPage() {
                     </p>
                   </div>
                   {isNow && (
-                    <span className="shrink-0 rounded-full bg-teal px-2 py-0.5 text-[10px] font-semibold text-cream">
+                    <span className="shrink-0 rounded-full bg-teal px-2 py-0.5 text-[10px] font-semibold text-ink-foreground">
                       En cours
                     </span>
                   )}

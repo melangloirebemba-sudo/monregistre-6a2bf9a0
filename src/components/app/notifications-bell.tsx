@@ -235,7 +235,7 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
               className={cn(
                 chipBase,
                 filter === "all"
-                  ? "border-teal bg-teal text-cream"
+                  ? "border-teal bg-teal text-ink-foreground"
                   : "border-border bg-background text-muted-foreground hover:text-foreground",
               )}
             >
@@ -248,7 +248,7 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
                 className={cn(
                   chipBase,
                   filter === cat
-                    ? "border-teal bg-teal text-cream"
+                    ? "border-teal bg-teal text-ink-foreground"
                     : "border-border bg-background text-muted-foreground hover:text-foreground",
                 )}
               >

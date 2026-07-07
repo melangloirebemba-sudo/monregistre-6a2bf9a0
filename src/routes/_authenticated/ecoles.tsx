@@ -90,13 +90,13 @@ function EcolesPage() {
       </div>
 
       {atLimit && (
-        <div className="mb-4 flex items-start gap-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-ink">
-          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-ink/70" aria-hidden="true" />
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-foreground">
+          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <div className="font-semibold">
               Limite atteinte — plan {planLabel}
             </div>
-            <p className="mt-0.5 text-ink/80">
+            <p className="mt-0.5 text-foreground/80">
               Le plan {planLabel} autorise {maxEcoles} école{maxEcoles > 1 ? "s" : ""}. Passez à un plan supérieur pour en ajouter davantage.
             </p>
             <button
@@ -126,7 +126,7 @@ function EcolesPage() {
             {paged.map((e) => (
               <li key={e.id} className="card-elevated p-4">
                 <div className="flex items-start gap-3">
-                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold/15 text-ink">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold/15 text-foreground">
                     <SchoolIcon className="h-5 w-5" />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -221,7 +221,7 @@ function EcolesPage() {
 function EmptyState({ onAdd, locked }: { onAdd: () => void; locked?: boolean }) {
   return (
     <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-ink">
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-foreground">
         {locked ? <Lock className="h-6 w-6" /> : <SchoolIcon className="h-6 w-6" />}
       </span>
       <div>

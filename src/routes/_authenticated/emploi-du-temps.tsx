@@ -176,16 +176,16 @@ function EmploiDuTempsPage() {
   const renderCreneauItem = (c: CreneauRow) => (
     <li key={c.id} className="p-3 flex items-start gap-3">
       <div className="shrink-0 w-16 text-center">
-        <div className="text-sm font-semibold text-ink">{c.heure_debut.slice(0, 5)}</div>
-        <div className="text-[10px] text-ink/50">↓</div>
-        <div className="text-sm text-ink/70">{c.heure_fin.slice(0, 5)}</div>
+        <div className="text-sm font-semibold text-foreground">{c.heure_debut.slice(0, 5)}</div>
+        <div className="text-[10px] text-foreground/50">↓</div>
+        <div className="text-sm text-foreground/70">{c.heure_fin.slice(0, 5)}</div>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-ink truncate">
+        <p className="font-semibold text-foreground truncate">
           {c.classe?.nom ?? "—"}
-          {c.matiere && <span className="text-ink/60 font-normal"> · {c.matiere}</span>}
+          {c.matiere && <span className="text-foreground/60 font-normal"> · {c.matiere}</span>}
         </p>
-        <p className="text-xs text-ink/60 truncate flex items-center gap-1.5 flex-wrap">
+        <p className="text-xs text-foreground/60 truncate flex items-center gap-1.5 flex-wrap">
           <EcoleBadge name={c.ecole?.nom ?? ecoleById[c.ecole_id]} />
           {c.salle && (
             <span className="inline-flex items-center gap-0.5">
@@ -215,7 +215,7 @@ function EmploiDuTempsPage() {
       <div className="space-y-4">
         {days.map((j) => (
           <section key={j.v} className="card-elevated overflow-hidden">
-            <div className="bg-ink text-cream px-4 py-2 font-serif text-sm tracking-wide">
+            <div className="bg-ink text-ink-foreground px-4 py-2 font-serif text-sm tracking-wide">
               {j.label}
             </div>
             <ul className="divide-y divide-ink/10">{j.items.map(renderCreneauItem)}</ul>
@@ -229,10 +229,10 @@ function EmploiDuTempsPage() {
     <div className="space-y-5">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-serif text-ink">Emploi du temps</h1>
-          <p className="text-sm text-ink/60">Créneaux hebdomadaires par classe.</p>
+          <h1 className="text-2xl sm:text-3xl font-serif text-foreground">Emploi du temps</h1>
+          <p className="text-sm text-foreground/60">Créneaux hebdomadaires par classe.</p>
         </div>
-        <Button onClick={openCreate} className="bg-teal text-cream hover:bg-teal/90">
+        <Button onClick={openCreate} className="bg-teal text-ink-foreground hover:bg-teal/90">
           <Plus className="h-4 w-4 mr-1.5" />
           Créneau
         </Button>
@@ -243,12 +243,12 @@ function EmploiDuTempsPage() {
       {!creneaux.length ? (
         <div className="card-elevated p-8 text-center">
           <CalendarDays className="mx-auto mb-3 h-10 w-10 text-teal/60" />
-          <p className="text-ink/70">Aucun créneau. Ajoutes-en un pour construire ton emploi du temps.</p>
+          <p className="text-foreground/70">Aucun créneau. Ajoutes-en un pour construire ton emploi du temps.</p>
         </div>
       ) : !filteredCreneaux.length ? (
         <div className="card-elevated p-8 text-center">
           <CalendarDays className="mx-auto mb-3 h-10 w-10 text-teal/60" />
-          <p className="text-ink/70">Aucun créneau pour cette école.</p>
+          <p className="text-foreground/70">Aucun créneau pour cette école.</p>
         </div>
       ) : groupedByEcole ? (
         <div className="space-y-5">
@@ -320,7 +320,7 @@ function EmploiDuTempsPage() {
             <Button
               onClick={() => save.mutate()}
               disabled={save.isPending}
-              className="bg-teal text-cream hover:bg-teal/90"
+              className="bg-teal text-ink-foreground hover:bg-teal/90"
             >
               {save.isPending ? "..." : edit ? "Enregistrer" : "Ajouter"}
             </Button>

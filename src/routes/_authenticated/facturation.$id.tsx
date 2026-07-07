@@ -55,8 +55,8 @@ const PLAN_LABEL: Record<Paiement["plan"], string> = {
 };
 const PLAN_BADGE: Record<Paiement["plan"], string> = {
   gratuit: "bg-muted text-muted-foreground",
-  lite: "bg-gold/25 text-ink",
-  premium: "bg-teal text-cream",
+  lite: "bg-gold/25 text-foreground",
+  premium: "bg-teal text-ink-foreground",
 };
 const PERIODE_LABEL: Record<NonNullable<Paiement["periode"]>, string> = {
   mensuelle: "Mensuelle",
@@ -152,7 +152,7 @@ function RecuDetailsPage() {
       <header className="mb-5">
         <Link
           to="/facturation"
-          className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-ink"
+          className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Retour à la facturation
         </Link>
@@ -185,7 +185,7 @@ function RecuDetailsPage() {
                   Plan {PLAN_LABEL[paiement.plan]}
                 </span>
                 {paiement.periode && (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink/80">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground/80">
                     {PERIODE_LABEL[paiement.periode]}
                   </span>
                 )}
@@ -214,7 +214,7 @@ function RecuDetailsPage() {
                 <div className="mb-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
                   <FileText className="h-3.5 w-3.5" /> Note
                 </div>
-                <p className="text-sm italic text-ink/80">{paiement.note}</p>
+                <p className="text-sm italic text-foreground/80">{paiement.note}</p>
               </div>
             )}
           </div>

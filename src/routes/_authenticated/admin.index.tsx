@@ -234,7 +234,7 @@ function Kpi({
       : tone === "teal"
         ? "bg-teal/15 text-teal"
         : tone === "gold"
-          ? "bg-gold/20 text-ink"
+          ? "bg-gold/20 text-foreground"
           : "bg-muted text-muted-foreground";
   return (
     <div className={`card-elevated p-4 ${toneCls}`}>
@@ -269,7 +269,7 @@ function PlanCard({
     accent === "teal"
       ? "bg-teal/15 text-teal"
       : accent === "gold"
-        ? "bg-gold/20 text-ink"
+        ? "bg-gold/20 text-foreground"
         : "bg-muted text-muted-foreground";
   return (
     <div className="card-elevated p-4">
@@ -438,7 +438,7 @@ function PlanList({
   const chip =
     tone === "warn"
       ? "bg-destructive/10 text-destructive"
-      : "bg-gold/20 text-ink";
+      : "bg-gold/20 text-foreground";
   return (
     <div className="card-elevated p-4">
       <div className="mb-3 flex items-center gap-2">
@@ -487,7 +487,7 @@ function PlanList({
                     {reminderTone === "expire" ? "Expiré le " : "Expire le "}
                     <span className="font-medium text-foreground">{fmtDate(p.plan_expires_at)}</span>
                     {diff !== null && (
-                      <span className={tone === "warn" ? "ml-1 text-destructive" : "ml-1 text-ink"}>
+                      <span className={tone === "warn" ? "ml-1 text-destructive" : "ml-1 text-foreground"}>
                         ({diff >= 0 ? `dans ${diff} j` : `il y a ${Math.abs(diff)} j`})
                       </span>
                     )}
@@ -677,7 +677,7 @@ function DeletionRequestsSection() {
                   En attente
                 </span>
               </div>
-              <div className="mt-3 rounded-md border border-border bg-background/60 p-3 text-sm text-ink/90 whitespace-pre-wrap">
+              <div className="mt-3 rounded-md border border-border bg-background/60 p-3 text-sm text-foreground/90 whitespace-pre-wrap">
                 {r.raison}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -756,7 +756,7 @@ function DeletionRequestsSection() {
                   {r.statut === "reactive" ? "Réactivé" : "Traité"}
                 </span>
               </div>
-              <div className="mt-1.5 text-ink/80 whitespace-pre-wrap">{r.raison}</div>
+              <div className="mt-1.5 text-foreground/80 whitespace-pre-wrap">{r.raison}</div>
             </li>
           ))}
         </ul>

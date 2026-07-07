@@ -307,7 +307,7 @@ function AdminContent() {
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="truncate font-medium text-foreground">{displayName}</span>
                           {isAdmin && (
-                            <Badge className="bg-teal text-cream">
+                            <Badge className="bg-teal text-ink-foreground">
                               <Crown aria-hidden="true" className="mr-1 h-3 w-3" /> Admin
                             </Badge>
                           )}
@@ -455,7 +455,7 @@ function AdminContent() {
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="truncate font-medium">{displayName}</span>
                             {isAdmin && (
-                              <Badge className="bg-teal text-cream">
+                              <Badge className="bg-teal text-ink-foreground">
                                 <Crown aria-hidden="true" className="mr-1 h-3 w-3" /> Admin
                               </Badge>
                             )}
@@ -654,7 +654,7 @@ function AdminContent() {
               )}
             </div>
 
-            <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-ink/80">
+            <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-foreground/80">
               {(() => {
                 const days = activateTrial
                   ? Math.max(1, Math.floor(Number(activateTrialDays) || 0))

@@ -28,11 +28,11 @@ export function PlanLimitBanner({
   onUpgrade: () => void;
 }) {
   return (
-    <div className="mb-4 flex items-start gap-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-ink">
-      <Lock className="mt-0.5 h-4 w-4 shrink-0 text-ink/70" aria-hidden="true" />
+    <div className="mb-4 flex items-start gap-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs text-foreground">
+      <Lock className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <div className="font-semibold">Limite atteinte — plan {planLabel}</div>
-        <p className="mt-0.5 text-ink/80">{message}</p>
+        <p className="mt-0.5 text-foreground/80">{message}</p>
         <button
           type="button"
           onClick={onUpgrade}
@@ -65,7 +65,7 @@ export function LockedEmptyState({
 }) {
   return (
     <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-ink">
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-gold/15 text-foreground">
         {locked ? <Lock className="h-6 w-6" /> : icon}
       </span>
       <div>
@@ -199,7 +199,7 @@ export function PlanUpgradeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[380px]">
         <DialogHeader>
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gold/20 text-ink">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gold/20 text-foreground">
             <Sparkles className="h-6 w-6" />
           </div>
           <DialogTitle className="text-center font-display">
@@ -207,7 +207,7 @@ export function PlanUpgradeDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3 text-sm text-ink/80">
+        <div className="space-y-3 text-sm text-foreground/80">
           <p className="text-center">
             Le plan <strong>{currentLabel}</strong> autorise{" "}
             <strong>{limitDescription}</strong>. Vous avez atteint cette limite.
@@ -249,7 +249,7 @@ export function PlanUpgradeDialog({
               waClicked.current = true;
               onOpenChange(false);
             }}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-teal px-4 py-2.5 text-sm font-semibold text-ink-foreground shadow-sm transition-colors hover:bg-teal/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
           >
             <MessageCircle className="h-4 w-4" aria-hidden="true" />
             {nextLabel ? `Demander le plan ${nextLabel}` : "Contacter le support"}
@@ -260,7 +260,7 @@ export function PlanUpgradeDialog({
               aria-live="polite"
             >
               Redirection vers WhatsApp :{" "}
-              <span className="font-mono tabular-nums text-ink/80">
+              <span className="font-mono tabular-nums text-foreground/80">
                 +{normalizedNumber}
               </span>
             </p>
