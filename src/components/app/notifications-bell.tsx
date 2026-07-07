@@ -210,9 +210,7 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
             )}
             {enabled && items.length > 0 && (
               <button
-                onClick={() => {
-                  if (confirm("Effacer toutes les notifications ?")) clearAll();
-                }}
+                onClick={() => setConfirmClearOpen(true)}
                 aria-label="Effacer tout"
                 className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive/10"
               >
