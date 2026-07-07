@@ -52,6 +52,11 @@ import { SyncStatusInline } from "@/components/app/sync-status-inline";
 
 export const Route = createFileRoute("/_authenticated/absences")({
   head: () => ({ meta: [{ title: "Absences — MonRegistre" }] }),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(classesQO());
+    void context.queryClient.prefetchQuery(ecolesQO());
+    void context.queryClient.prefetchQuery(absencesQO());
+  },
   component: AbsencesPage,
 });
 
