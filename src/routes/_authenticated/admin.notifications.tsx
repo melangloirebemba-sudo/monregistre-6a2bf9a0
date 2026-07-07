@@ -10,7 +10,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   BellRing,
-  Send,
   CalendarClock,
   Trash2,
   RefreshCw,
@@ -21,6 +20,11 @@ import {
   Users,
   Crown,
   User,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronRight,
+  Eraser,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,11 +39,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  sendAdminBroadcastNow,
   scheduleAdminBroadcast,
   cancelScheduledBroadcast,
   triggerNotificationHook,
   listAllUsers,
+  listBroadcastReaders,
+  deleteBroadcast,
+  clearBroadcastHistory,
 } from "@/lib/admin-notifications.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/notifications")({
@@ -113,13 +119,15 @@ function AdminNotificationsPage() {
     const d = new Date(Date.now() + 60 * 60 * 1000);
     return toLocalInputValue(d);
   });
-  const [mode, setMode] = useState<"now" | "schedule">("now");
-
-  const sendNow = useServerFn(sendAdminBroadcastNow);
   const scheduleFn = useServerFn(scheduleAdminBroadcast);
   const cancelFn = useServerFn(cancelScheduledBroadcast);
   const triggerFn = useServerFn(triggerNotificationHook);
   const listUsersFn = useServerFn(listAllUsers);
+  const listReadersFn = useServerFn(listBroadcastReaders);
+  const deleteBroadcastFn = useServerFn(deleteBroadcast);
+  const clearHistoryFn = useServerFn(clearBroadcastHistory);
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [userSearch, setUserSearch] = useState("");
   const { data: usersList = [], isLoading: usersLoading } = useQuery({
@@ -153,27 +161,34 @@ function AdminNotificationsPage() {
         href: href.trim() || null,
         target_type: targetType,
         target_value: targetType === "all" ? null : targetValue.trim() || null,
-        send_at:
-          mode === "schedule" ? new Date(sendAt).toISOString() : null,
+        send_at: new Date(sendAt).toISOString(),
       };
-      if (mode === "now") {
-        return sendNow({ data: payload });
-      }
       return scheduleFn({ data: payload });
     },
-    onSuccess: (res) => {
-      if (mode === "now") {
-        const r = res as { recipients?: number };
-        toast.success(
-          `Notification envoyée à ${r.recipients ?? 0} destinataire(s)`,
-        );
-      } else {
-        toast.success("Notification programmée");
-      }
+    onSuccess: () => {
+      toast.success("Notification programmée");
       setTitle("");
       setBody("");
       setHref("");
       setTargetValue("");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeBroadcast = useMutation({
+    mutationFn: async (id: string) => deleteBroadcastFn({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Notification supprimée");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const clearHistory = useMutation({
+    mutationFn: async () => clearHistoryFn({ data: { include_pending: false } }),
+    onSuccess: () => {
+      toast.success("Historique effacé");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -403,51 +418,28 @@ function AdminNotificationsPage() {
         </div>
 
         <div className="rounded-xl border border-border/60 bg-background/50 p-3">
-          <div className="mb-3 flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "now" ? "default" : "outline"}
-              onClick={() => setMode("now")}
-            >
-              <Send className="mr-1.5 h-3.5 w-3.5" />
-              Envoyer maintenant
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "schedule" ? "default" : "outline"}
-              onClick={() => setMode("schedule")}
-            >
-              <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
-              Programmer
-            </Button>
+          <div className="mb-3">
+            <Label htmlFor="notif-when" className="flex items-center gap-1.5">
+              <CalendarClock className="h-3.5 w-3.5" />
+              Date & heure d'envoi
+            </Label>
+            <Input
+              id="notif-when"
+              type="datetime-local"
+              value={sendAt}
+              onChange={(e) => setSendAt(e.target.value)}
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Le service dispatch vérifie les notifications programmées toutes les 5 minutes.
+            </p>
           </div>
-          {mode === "schedule" && (
-            <div className="mb-3">
-              <Label htmlFor="notif-when">Date & heure d'envoi</Label>
-              <Input
-                id="notif-when"
-                type="datetime-local"
-                value={sendAt}
-                onChange={(e) => setSendAt(e.target.value)}
-              />
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Le service dispatch vérifie les notifications programmées toutes les 5 minutes.
-              </p>
-            </div>
-          )}
           <Button
             type="button"
             className="w-full"
             disabled={!canSubmit || submitting.isPending}
             onClick={() => submitting.mutate()}
           >
-            {submitting.isPending
-              ? "Envoi…"
-              : mode === "now"
-                ? "Envoyer immédiatement"
-                : "Programmer l'envoi"}
+            {submitting.isPending ? "Envoi…" : "Programmer l'envoi"}
           </Button>
         </div>
       </section>
@@ -497,13 +489,30 @@ function AdminNotificationsPage() {
 
       {/* History */}
       <section className="card-elevated p-4 sm:p-5">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-foreground">Historique & programmées</h2>
-          <div className="flex gap-2 text-[11px] text-muted-foreground">
-            <span>En attente : <b className="text-foreground">{stats.pending}</b></span>
-            <span>Envoyées : <b className="text-foreground">{stats.sent}</b></span>
-            {stats.failed > 0 && (
-              <span className="text-destructive">Échecs : <b>{stats.failed}</b></span>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-2 text-[11px] text-muted-foreground">
+              <span>En attente : <b className="text-foreground">{stats.pending}</b></span>
+              <span>Envoyées : <b className="text-foreground">{stats.sent}</b></span>
+              {stats.failed > 0 && (
+                <span className="text-destructive">Échecs : <b>{stats.failed}</b></span>
+              )}
+            </div>
+            {(stats.sent > 0 || stats.failed > 0) && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={clearHistory.isPending}
+                onClick={() => {
+                  if (confirm("Effacer tout l'historique (envoyées et échecs) ? Les notifications programmées sont conservées.")) {
+                    clearHistory.mutate();
+                  }
+                }}
+              >
+                <Eraser className="mr-1.5 h-3.5 w-3.5" />
+                Vider
+              </Button>
             )}
           </div>
         </div>
@@ -516,13 +525,15 @@ function AdminNotificationsPage() {
             {scheduled.map((row) => {
               const meta = STATUS_META[row.status] ?? STATUS_META.pending;
               const StatusIcon = meta.Icon;
+              const isExpanded = expandedId === row.id;
+              const canShowReaders = row.status === "sent";
               return (
                 <li
                   key={row.id}
                   className="rounded-xl border border-border/60 bg-background/50 p-3"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.className}`}
@@ -553,22 +564,58 @@ function AdminNotificationsPage() {
                         )}
                       </div>
                     </div>
-                    {row.status === "pending" && (
+                    <div className="flex shrink-0 items-center gap-1">
+                      {canShowReaders && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setExpandedId(isExpanded ? null : row.id)}
+                          aria-label="Voir les lecteurs"
+                          title="Voir les lecteurs"
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      )}
+                      {row.status === "pending" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => cancel.mutate(row.id)}
+                          disabled={cancel.isPending}
+                          aria-label="Annuler"
+                          title="Annuler"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => cancel.mutate(row.id)}
-                        disabled={cancel.isPending}
-                        aria-label="Annuler"
+                        onClick={() => {
+                          if (confirm("Supprimer cette notification ?")) {
+                            removeBroadcast.mutate(row.id);
+                          }
+                        }}
+                        disabled={removeBroadcast.isPending}
+                        aria-label="Supprimer"
+                        title="Supprimer"
+                        className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
-                    )}
+                    </div>
                   </div>
                   {row.error && (
                     <div className="mt-2 rounded-md bg-destructive/10 p-2 text-[11px] text-destructive">
                       {row.error}
                     </div>
+                  )}
+                  {isExpanded && canShowReaders && (
+                    <ReadersPanel id={row.id} loader={listReadersFn} />
                   )}
                 </li>
               );
@@ -580,5 +627,79 @@ function AdminNotificationsPage() {
   );
 }
 
-// Silence unused import warning when useQuery not used
+type ReadersLoader = (args: { data: { id: string } }) => Promise<{
+  total: number;
+  read: number;
+  readers: Array<{ user_id: string; nom_affiche: string | null; email: string | null; read_at: string | null }>;
+}>;
+
+function ReadersPanel({ id, loader }: { id: string; loader: ReadersLoader }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["broadcast-readers", id],
+    queryFn: () => loader({ data: { id } }),
+    staleTime: 15_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="mt-3 rounded-lg border border-border/60 bg-background/40 p-3 text-xs text-muted-foreground">
+        Chargement des destinataires…
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+        {(error as Error).message}
+      </div>
+    );
+  }
+  if (!data || data.total === 0) {
+    return (
+      <div className="mt-3 rounded-lg border border-dashed border-border/60 p-3 text-center text-xs text-muted-foreground">
+        Aucun destinataire retrouvé pour cette diffusion.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 rounded-lg border border-border/60 bg-background/40 p-3">
+      <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>
+          Lecture : <b className="text-foreground">{data.read}</b> / {data.total}
+        </span>
+        <span>{Math.round((data.read / data.total) * 100)}%</span>
+      </div>
+      <ul className="max-h-56 space-y-1 overflow-y-auto">
+        {data.readers.map((r) => (
+          <li
+            key={r.user_id}
+            className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/40"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium text-foreground">
+                {r.nom_affiche || r.email || r.user_id}
+              </div>
+              {r.email && r.nom_affiche && (
+                <div className="truncate text-[10px] text-muted-foreground">{r.email}</div>
+              )}
+            </div>
+            {r.read_at ? (
+              <span className="inline-flex items-center gap-1 text-[10px] text-teal">
+                <Eye className="h-3 w-3" />
+                {new Date(r.read_at).toLocaleString("fr-FR")}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                <EyeOff className="h-3 w-3" />
+                Non lue
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Silence unused import warning
 void useQuery;

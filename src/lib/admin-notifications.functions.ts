@@ -240,6 +240,125 @@ export const listAllUsers = createServerFn({ method: "GET" })
     }));
   });
 
+/** List readers of a specific broadcast (matched by title + time window around sent_at). */
+export const listBroadcastReaders = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw) => z.object({ id: z.string().uuid() }).parse(raw))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const db = context.supabase;
+
+    const { data: bc, error: bcErr } = await db
+      .from("scheduled_notifications")
+      .select("id, title, category, sent_at, send_at")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (bcErr) throw new Error(bcErr.message);
+    if (!bc) throw new Error("Notification introuvable");
+    const anchor = bc.sent_at ?? bc.send_at;
+    if (!anchor) return { total: 0, read: 0, readers: [] };
+
+    const t = new Date(anchor).getTime();
+    const from = new Date(t - 60_000).toISOString();
+    const to = new Date(t + 60_000).toISOString();
+
+    const { data: notifs, error } = await db
+      .from("user_notifications")
+      .select("id, user_id, read_at, created_at")
+      .eq("title", bc.title)
+      .gte("created_at", from)
+      .lte("created_at", to);
+    if (error) throw new Error(error.message);
+
+    const list = notifs ?? [];
+    const ids = list.map((n) => n.user_id as string);
+    let profils: Array<{ user_id: string; nom_affiche: string | null; email: string | null }> = [];
+    if (ids.length > 0) {
+      const { data: p } = await db
+        .from("profils_enseignant")
+        .select("user_id, nom_affiche, email")
+        .in("user_id", ids);
+      profils = (p ?? []) as typeof profils;
+    }
+    const byId = new Map(profils.map((p) => [p.user_id, p]));
+
+    const readers = list
+      .map((n) => {
+        const p = byId.get(n.user_id as string);
+        return {
+          user_id: n.user_id as string,
+          nom_affiche: p?.nom_affiche ?? null,
+          email: p?.email ?? null,
+          read_at: (n.read_at as string | null) ?? null,
+        };
+      })
+      .sort((a, b) => {
+        if (!a.read_at && b.read_at) return 1;
+        if (a.read_at && !b.read_at) return -1;
+        if (a.read_at && b.read_at) return b.read_at.localeCompare(a.read_at);
+        return (a.nom_affiche ?? "").localeCompare(b.nom_affiche ?? "");
+      });
+
+    return {
+      total: readers.length,
+      read: readers.filter((r) => r.read_at).length,
+      readers,
+    };
+  });
+
+/** Delete a single broadcast row and its distributed user_notifications. */
+export const deleteBroadcast = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw) => z.object({ id: z.string().uuid() }).parse(raw))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const db = context.supabase;
+
+    const { data: bc } = await db
+      .from("scheduled_notifications")
+      .select("id, title, sent_at, send_at")
+      .eq("id", data.id)
+      .maybeSingle();
+
+    if (bc) {
+      const anchor = bc.sent_at ?? bc.send_at;
+      if (anchor) {
+        const t = new Date(anchor).getTime();
+        await db
+          .from("user_notifications")
+          .delete()
+          .eq("title", bc.title)
+          .gte("created_at", new Date(t - 60_000).toISOString())
+          .lte("created_at", new Date(t + 60_000).toISOString());
+      }
+    }
+
+    const { error } = await db.from("scheduled_notifications").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Delete all broadcast history (keeps pending scheduled ones by default). */
+export const clearBroadcastHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw) =>
+    z.object({ include_pending: z.boolean().optional().default(false) }).parse(raw ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase as never, context.userId);
+    const db = context.supabase;
+    let q = db.from("scheduled_notifications").delete();
+    if (!data.include_pending) {
+      q = q.neq("status", "pending");
+    } else {
+      // delete-all needs a filter for PostgREST
+      q = q.not("id", "is", null);
+    }
+    const { error } = await q;
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Trigger a cron hook manually (schedule daily, license expiry, relay, dispatch). */
 export const triggerNotificationHook = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
