@@ -9,7 +9,8 @@ export type UserStatut = "actif" | "suspendu";
 export function currentUserRolesQO() {
   return queryOptions({
     queryKey: ["current-user-roles"],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async (): Promise<AppRole[]> => {
       const { data: userRes } = await supabase.auth.getUser();
       if (!userRes.user) return [];

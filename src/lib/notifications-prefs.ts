@@ -368,7 +368,10 @@ export function useNotificationsPrefs(): NotificationsPrefs {
     void hydrate();
     void setupRealtime();
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
+      // On ne réhydrate que lors d'un vrai changement d'identité. INITIAL_SESSION
+      // et TOKEN_REFRESHED se déclenchent à chaque montage / focus d'onglet /
+      // rotation de token et générait ~2000 requêtes inutiles vers `profils_enseignant`.
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
         void hydrate();
       }
     });
