@@ -1046,9 +1046,11 @@ function BulkNoteDialog({
           </fieldset>
 
           <div className="rounded-xl border border-border/60">
-            <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-cream-deep/40 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-              <span>Élèves · {allCheckedCount}/{eleves.length} sélectionné(s)</span>
-              <div className="flex items-center gap-2 normal-case tracking-normal">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border/60 bg-cream-deep/40 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <span className="min-w-0 truncate">
+                Élèves · {allCheckedCount}/{eleves.length}
+              </span>
+              <div className="flex shrink-0 items-center gap-2 normal-case tracking-normal">
                 <button
                   type="button"
                   className="text-[11px] text-foreground underline underline-offset-2"
@@ -1063,11 +1065,12 @@ function BulkNoteDialog({
                 >
                   Aucun
                 </button>
-                <span>·</span>
-                <span>
-                  {totalNotes} à enregistrer
-                  {errorCount > 0 ? ` · ${errorCount} err.` : ""}
-                </span>
+              </div>
+              <div className="col-span-2 flex items-center justify-between border-t border-border/40 pt-1 normal-case tracking-normal">
+                <span>{totalNotes} à enregistrer</span>
+                {errorCount > 0 && (
+                  <span className="text-destructive">{errorCount} erreur(s)</span>
+                )}
               </div>
             </div>
             <div className="max-h-[42vh] overflow-y-auto divide-y divide-border/60">
