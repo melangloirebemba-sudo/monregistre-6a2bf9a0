@@ -38,6 +38,9 @@ import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
 import { Route as AuthenticatedAdminFacturationRouteImport } from './routes/_authenticated/admin.facturation'
 import { Route as AuthenticatedAdminAnneesScolairesRouteImport } from './routes/_authenticated/admin.annees-scolaires'
+import { Route as ApiPublicHooksScheduleDailyRemindersRouteImport } from './routes/api/public/hooks/schedule-daily-reminders'
+import { Route as ApiPublicHooksRelayInappNotificationsRouteImport } from './routes/api/public/hooks/relay-inapp-notifications'
+import { Route as ApiPublicHooksLicenseExpiryRemindersRouteImport } from './routes/api/public/hooks/license-expiry-reminders'
 import { Route as AuthenticatedFacturationIdPdfRouteImport } from './routes/_authenticated/facturation.$id.pdf'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -195,6 +198,24 @@ const AuthenticatedAdminAnneesScolairesRoute =
     path: '/annees-scolaires',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiPublicHooksScheduleDailyRemindersRoute =
+  ApiPublicHooksScheduleDailyRemindersRouteImport.update({
+    id: '/api/public/hooks/schedule-daily-reminders',
+    path: '/api/public/hooks/schedule-daily-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksRelayInappNotificationsRoute =
+  ApiPublicHooksRelayInappNotificationsRouteImport.update({
+    id: '/api/public/hooks/relay-inapp-notifications',
+    path: '/api/public/hooks/relay-inapp-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksLicenseExpiryRemindersRoute =
+  ApiPublicHooksLicenseExpiryRemindersRouteImport.update({
+    id: '/api/public/hooks/license-expiry-reminders',
+    path: '/api/public/hooks/license-expiry-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedFacturationIdPdfRoute =
   AuthenticatedFacturationIdPdfRouteImport.update({
     id: '/pdf',
@@ -232,6 +253,9 @@ export interface FileRoutesByFullPath {
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
+  '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
+  '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -262,6 +286,9 @@ export interface FileRoutesByTo {
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
+  '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
+  '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -295,6 +322,9 @@ export interface FileRoutesById {
   '/_authenticated/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
+  '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
+  '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -328,6 +358,9 @@ export interface FileRouteTypes {
     | '/parametres/rappels'
     | '/admin/'
     | '/facturation/$id/pdf'
+    | '/api/public/hooks/license-expiry-reminders'
+    | '/api/public/hooks/relay-inapp-notifications'
+    | '/api/public/hooks/schedule-daily-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -358,6 +391,9 @@ export interface FileRouteTypes {
     | '/parametres/rappels'
     | '/admin'
     | '/facturation/$id/pdf'
+    | '/api/public/hooks/license-expiry-reminders'
+    | '/api/public/hooks/relay-inapp-notifications'
+    | '/api/public/hooks/schedule-daily-reminders'
   id:
     | '__root__'
     | '/'
@@ -390,6 +426,9 @@ export interface FileRouteTypes {
     | '/_authenticated/parametres/rappels'
     | '/_authenticated/admin/'
     | '/_authenticated/facturation/$id/pdf'
+    | '/api/public/hooks/license-expiry-reminders'
+    | '/api/public/hooks/relay-inapp-notifications'
+    | '/api/public/hooks/schedule-daily-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -397,6 +436,9 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicHooksLicenseExpiryRemindersRoute: typeof ApiPublicHooksLicenseExpiryRemindersRoute
+  ApiPublicHooksRelayInappNotificationsRoute: typeof ApiPublicHooksRelayInappNotificationsRoute
+  ApiPublicHooksScheduleDailyRemindersRoute: typeof ApiPublicHooksScheduleDailyRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -604,6 +646,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAnneesScolairesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/public/hooks/schedule-daily-reminders': {
+      id: '/api/public/hooks/schedule-daily-reminders'
+      path: '/api/public/hooks/schedule-daily-reminders'
+      fullPath: '/api/public/hooks/schedule-daily-reminders'
+      preLoaderRoute: typeof ApiPublicHooksScheduleDailyRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/relay-inapp-notifications': {
+      id: '/api/public/hooks/relay-inapp-notifications'
+      path: '/api/public/hooks/relay-inapp-notifications'
+      fullPath: '/api/public/hooks/relay-inapp-notifications'
+      preLoaderRoute: typeof ApiPublicHooksRelayInappNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/license-expiry-reminders': {
+      id: '/api/public/hooks/license-expiry-reminders'
+      path: '/api/public/hooks/license-expiry-reminders'
+      fullPath: '/api/public/hooks/license-expiry-reminders'
+      preLoaderRoute: typeof ApiPublicHooksLicenseExpiryRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/facturation/$id/pdf': {
       id: '/_authenticated/facturation/$id/pdf'
       path: '/pdf'
@@ -728,6 +791,12 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicHooksLicenseExpiryRemindersRoute:
+    ApiPublicHooksLicenseExpiryRemindersRoute,
+  ApiPublicHooksRelayInappNotificationsRoute:
+    ApiPublicHooksRelayInappNotificationsRoute,
+  ApiPublicHooksScheduleDailyRemindersRoute:
+    ApiPublicHooksScheduleDailyRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

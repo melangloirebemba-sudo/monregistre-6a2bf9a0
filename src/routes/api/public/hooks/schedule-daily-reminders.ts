@@ -6,7 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 interface CreneauRow {
   id: string;
-  jour: number;
+  jour_semaine: number;
   heure_debut: string;
   heure_fin: string;
   classe_id: string;
@@ -21,7 +21,7 @@ interface ClasseRow {
 }
 
 // Map JS Date.getUTCDay (0=Sun) into local Congo weekday (UTC+1),
-// then to the `creneaux.jour` domain (1=lundi..7=dimanche).
+// then to the `creneaux.jour_semaine` domain (1=lundi..7=dimanche).
 function tomorrowLocalWeekday(now: Date): { weekday: number; ymd: string } {
   // Local Congo = UTC + 1h
   const local = new Date(now.getTime() + 60 * 60 * 1000);
@@ -46,8 +46,8 @@ export const Route = createFileRoute("/api/public/hooks/schedule-daily-reminders
         // Fetch all creneaux for tomorrow's weekday.
         const { data: creneaux, error } = await supabaseAdmin
           .from("creneaux")
-          .select("id, jour, heure_debut, heure_fin, classe_id, matiere")
-          .eq("jour", weekday);
+          .select("id, jour_semaine, heure_debut, heure_fin, classe_id, matiere")
+          .eq("jour_semaine", weekday);
 
         if (error) {
           return Response.json({ ok: false, error: error.message }, { status: 500 });
