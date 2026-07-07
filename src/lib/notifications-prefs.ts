@@ -280,7 +280,12 @@ async function pushRemotePrefs(prefs: NotificationsPrefs) {
     .eq("user_id", user.id);
 }
 
-export function setNotificationsPrefs(patch: Partial<NotificationsPrefs>) {
+type PrefsPatch = Partial<Omit<NotificationsPrefs, "categories" | "push">> & {
+  categories?: Partial<Record<NotifCategory, boolean>>;
+  push?: Partial<Record<PushKind, boolean>>;
+};
+
+export function setNotificationsPrefs(patch: PrefsPatch) {
   const current = readCache();
   const mergedChannels = { ...current.channels };
   if (patch.channels) {
