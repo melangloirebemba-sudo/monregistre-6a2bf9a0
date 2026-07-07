@@ -5,7 +5,7 @@ import { GraduationCap, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { enqueueWrite } from "@/lib/offline-queue";
-import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
+import { classesQO, ecolesQO, elevesQO, requireUserId, type Classe } from "@/lib/queries/data";
 import { planCapabilitiesQO } from "@/lib/queries/profil";
 import { PLAN_LABEL, type PlanKey } from "@/config/support";
 import {
