@@ -227,7 +227,7 @@ function NotesPage() {
           const renderItem = (n: NoteRow) => {
             const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
             return (
-              <li key={n.id} className="card-elevated p-3">
+              <div key={n.id} className="card-elevated p-3 mb-2">
                 <div className="flex items-center gap-3">
                   <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl font-display text-sm font-semibold ${noteColorClass(n.valeur, echelle)}`}>
                     {formatNote(n.valeur)}
@@ -252,7 +252,7 @@ function NotesPage() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-              </li>
+              </div>
             );
           };
           const listView = (() => {
@@ -273,13 +273,22 @@ function NotesPage() {
                   {grouped.map(([ecoleId, list]) => (
                     <section key={ecoleId}>
                       <EcoleGroupHeader name={ecoleById[ecoleId]} count={list.length} />
-                      <ul className="space-y-2">{list.map(renderItem)}</ul>
+                      <div>{list.map((n) => renderItem(n))}</div>
                     </section>
                   ))}
                 </div>
               );
             }
-            return <ul className="space-y-2">{paged.map(renderItem)}</ul>;
+            return (
+              <VirtualList
+                items={paged}
+                estimateSize={78}
+                overscan={6}
+                className="max-h-[70vh]"
+                getItemKey={(n) => n.id}
+                renderItem={renderItem}
+              />
+            );
           })();
           return (
             <div className="space-y-3">
