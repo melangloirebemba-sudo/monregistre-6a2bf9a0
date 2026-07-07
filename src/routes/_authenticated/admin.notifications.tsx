@@ -934,12 +934,14 @@ function ReadersPanel({ id, loader }: { id: string; loader: ReadersLoader }) {
         </span>
         <span>{Math.round((data.read / data.total) * 100)}%</span>
       </div>
-      <ul className="max-h-56 space-y-1 overflow-y-auto">
-        {data.readers.map((r) => (
-          <li
-            key={r.user_id}
-            className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/40"
-          >
+      <VirtualList
+        items={data.readers}
+        estimateSize={44}
+        overscan={8}
+        className="max-h-56"
+        getItemKey={(r) => r.user_id}
+        renderItem={(r) => (
+          <div className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/40">
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium text-foreground">
                 {r.nom_affiche || r.email || r.user_id}
@@ -959,9 +961,10 @@ function ReadersPanel({ id, loader }: { id: string; loader: ReadersLoader }) {
                 Non lue
               </span>
             )}
-          </li>
-        ))}
-      </ul>
+          </div>
+        )}
+      />
+
     </div>
   );
 }
