@@ -597,13 +597,22 @@ function DeleteNoteDialog({ open, onOpenChange, note, onDone }: { open: boolean;
         conflictStrategy: "merge",
       });
     },
-    onSuccess: () => {
-      toast.success("Note supprimée");
+    onMutate: async (): Promise<{ snapshot: ListSnapshot<NoteRow> } | undefined> => {
+      if (!note) return undefined;
+      await qc.cancelQueries({ queryKey: ["notes"] });
+      const snapshot = removeFromLists<NoteRow>(qc, ["notes"], note.id);
+      onDone();
+      return { snapshot };
+    },
+    onError: (e: Error, _v, ctx) => {
+      if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
+      toast.error(e.message);
+    },
+    onSuccess: () => toast.success("Note supprimée"),
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["notes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
-      onDone();
     },
-    onError: (e: Error) => toast.error(e.message),
   });
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
