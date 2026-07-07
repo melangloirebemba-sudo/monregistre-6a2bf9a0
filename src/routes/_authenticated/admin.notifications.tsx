@@ -712,19 +712,44 @@ function AdminNotificationsPage() {
               )}
             </div>
             {(stats.sent > 0 || stats.failed > 0) && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={clearHistory.isPending}
-                onClick={() => {
-                  if (confirm("Effacer tout l'historique (envoyées et échecs) ? Les notifications programmées sont conservées.")) {
-                    clearHistory.mutate();
-                  }
-                }}
-              >
-                <Eraser className="mr-1.5 h-3.5 w-3.5" />
-                Vider
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={clearHistory.isPending}
+                    className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Eraser className="mr-1.5 h-3.5 w-3.5" />
+                    Vider
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="border-destructive/20">
+                  <AlertDialogHeader>
+                    <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 ring-4 ring-destructive/5">
+                      <Eraser className="h-6 w-6 text-destructive" />
+                    </div>
+                    <AlertDialogTitle className="text-center">
+                      Vider l'historique des notifications ?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-center">
+                      Cette action effacera <b className="text-foreground">{stats.sent + stats.failed}</b> entrée(s)
+                      (envoyées et échecs). Les notifications <b className="text-foreground">programmées</b> seront
+                      conservées. Cette opération est irréversible.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => clearHistory.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      <Eraser className="mr-1.5 h-3.5 w-3.5" />
+                      Vider l'historique
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </div>
