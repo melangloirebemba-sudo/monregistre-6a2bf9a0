@@ -61,7 +61,8 @@ export interface PlanLimitsRow {
 export function planLimitsQO(plan: "gratuit" | "lite" | "premium") {
   return queryOptions({
     queryKey: ["plan-limits", plan],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async (): Promise<PlanLimitsRow | null> => {
       const { data } = await supabase
         .from("plan_limits")
@@ -77,7 +78,8 @@ export function planLimitsQO(plan: "gratuit" | "lite" | "premium") {
 export function planCapabilitiesQO() {
   return queryOptions({
     queryKey: ["plan-capabilities"],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async (): Promise<PlanCapabilities> => {
       const fallback: PlanCapabilities = {
         plan: "gratuit", storedPlan: "gratuit", isAdmin: false,
@@ -150,7 +152,8 @@ export function planCapabilitiesQO() {
 export function profilQueryOptions() {
   return queryOptions({
     queryKey: ["profil"],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async (): Promise<Profil | null> => {
       const { data: userRes } = await supabase.auth.getUser();
       if (!userRes.user) return null;
