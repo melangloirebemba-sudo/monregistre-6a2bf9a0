@@ -732,6 +732,42 @@ function BulkNoteDialog({
     return Array.from(new Set(parts));
   }, [matieresText]);
 
+  // Résumé par élève des notes déjà saisies dans le contexte courant
+  // (mêmes périodes / matières / libellé si renseignés). Sert à afficher un
+  // aperçu à côté du nom et à signaler les doublons potentiels.
+  const libelleTrim = libelle.trim().toLowerCase();
+  const existingByEleve = useMemo(() => {
+    const periodeSet = periodeIds.length > 0 ? new Set(periodeIds) : null;
+    const matiereSet = matieresList.length > 0
+      ? new Set(matieresList.map((m) => m.toLowerCase()))
+      : null;
+    const map = new Map<string, { total: number; sameLibelle: number; lastLibelle: string | null }>();
+    for (const n of existingNotes) {
+      if (periodeSet && !periodeSet.has(n.periode_id ?? "")) continue;
+      if (matiereSet && !matiereSet.has((n.matiere ?? "").toLowerCase())) continue;
+      const cur = map.get(n.eleve_id) ?? { total: 0, sameLibelle: 0, lastLibelle: null as string | null };
+      cur.total += 1;
+      if (libelleTrim && (n.libelle ?? "").trim().toLowerCase() === libelleTrim) {
+        cur.sameLibelle += 1;
+      }
+      if (!cur.lastLibelle) cur.lastLibelle = n.libelle;
+      map.set(n.eleve_id, cur);
+    }
+    return map;
+  }, [existingNotes, periodeIds, matieresList, libelleTrim]);
+
+  // Clés « déjà noté » exactes (eleve+periode+matiere+libellé) pour marquer
+  // les doublons dans la prévisualisation.
+  const existingExactKeys = useMemo(() => {
+    const s = new Set<string>();
+    if (!libelleTrim) return s;
+    for (const n of existingNotes) {
+      if ((n.libelle ?? "").trim().toLowerCase() !== libelleTrim) continue;
+      s.add(`${n.eleve_id}|${n.periode_id ?? "-"}|${(n.matiere ?? "").toLowerCase()}`);
+    }
+    return s;
+  }, [existingNotes, libelleTrim]);
+
   const parsedRows = useMemo(() => {
     return eleves.map((e) => {
       const raw = (values[e.id] ?? "").trim().replace(",", ".");
