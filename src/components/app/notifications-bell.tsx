@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, CheckCheck, Settings2, ChevronRight, Trash2 } from "lucide-react";
+import { Bell, CheckCheck, Settings2, ChevronRight, Trash2, AlertTriangle } from "lucide-react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -7,6 +7,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useNotificationCenter, type NotificationItem } from "@/lib/changelog";
 import {
   useNotificationsPrefs,
