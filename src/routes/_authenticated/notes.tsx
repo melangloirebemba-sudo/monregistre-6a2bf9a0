@@ -956,55 +956,65 @@ function BulkNoteDialog({
             e.preventDefault();
             if (showPreview) save.mutate();
           }}
-          className="space-y-3"
+          className="space-y-4"
         >
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Classe *</Label>
-              <Select value={classeId} onValueChange={setClasseId}>
-                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                <SelectContent>
-                  {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          {/* Bloc « Contexte » : classe, libellé, coefficient, date */}
+          <fieldset className="space-y-3 rounded-xl border border-border/60 p-3">
+            <legend className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Devoir
+            </legend>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="min-w-0 space-y-1.5">
+                <Label>Classe *</Label>
+                <Select value={classeId} onValueChange={setClasseId}>
+                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="blib">Libellé *</Label>
+                <Input
+                  id="blib"
+                  ref={setLibelleRef}
+                  placeholder="Devoir 1…"
+                  value={libelle}
+                  onChange={(e) => setLibelle(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="blib">Libellé *</Label>
-              <Input
-                id="blib"
-                ref={setLibelleRef}
-                placeholder="Devoir 1…"
-                value={libelle}
-                onChange={(e) => setLibelle(e.target.value)}
-              />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="bcoef">Coef.</Label>
+                <Input id="bcoef" type="number" min={0.5} step="0.5" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
+              </div>
+              <div className="min-w-0 space-y-1.5">
+                <Label htmlFor="bdate">Date</Label>
+                <Input id="bdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              </div>
+              <div className="col-span-2 min-w-0 space-y-1.5">
+                <Label htmlFor="bmat">Matière(s)</Label>
+                <Input
+                  id="bmat"
+                  placeholder="Maths, Physique…"
+                  value={matieresText}
+                  onChange={(e) => setMatieresText(e.target.value)}
+                />
+                {matieresList.length > 1 && (
+                  <div className="text-[11px] text-muted-foreground">
+                    {matieresList.length} matières · une note par matière et par élève.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="bcoef">Coef.</Label>
-              <Input id="bcoef" type="number" min={0.5} step="0.5" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
-            </div>
-            <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="bmat">Matière(s)</Label>
-              <Input
-                id="bmat"
-                placeholder="Maths, Physique…"
-                value={matieresText}
-                onChange={(e) => setMatieresText(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="bdate">Date</Label>
-              <Input id="bdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
-          </div>
-          {matieresList.length > 1 && (
-            <div className="text-[11px] text-muted-foreground">
-              {matieresList.length} matières · une note par matière et par élève.
-            </div>
-          )}
-          <div className="space-y-1.5">
-            <Label>Période(s)</Label>
+          </fieldset>
+
+          {/* Bloc « Périodes » : sélection multiple sous forme de chips */}
+          <fieldset className="space-y-2 rounded-xl border border-border/60 p-3">
+            <legend className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Période(s)
+            </legend>
             <div className="flex flex-wrap gap-1.5">
               {periodes.length === 0 ? (
                 <span className="text-xs text-muted-foreground">Aucune période définie</span>
@@ -1033,7 +1043,7 @@ function BulkNoteDialog({
                 {periodeIds.length} périodes · une note par période.
               </div>
             )}
-          </div>
+          </fieldset>
 
           <div className="rounded-xl border border-border/60">
             <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-cream-deep/40 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
