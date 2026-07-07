@@ -93,6 +93,13 @@ Deno.serve(async (req) => {
             : { plan };
         const { error } = await admin.from("profils_enseignant").update(patch).eq("user_id", userId);
         if (error) throw error;
+        await admin.from("user_notifications").insert({
+          user_id: userId,
+          title: "Votre plan a été mis à jour",
+          body: `Un administrateur a défini votre plan sur « ${plan} ».`,
+          category: "billing",
+          href: "/mon-profil",
+        });
         return json({ ok: true });
       }
 
