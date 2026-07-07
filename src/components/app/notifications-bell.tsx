@@ -83,6 +83,7 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
   // Contrôle l'ouverture pour savoir si l'utilisateur voit déjà la liste
   // (on n'affiche pas de toast dans ce cas).
   const [open, setOpen] = useState(false);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const wasOpen = useRef(false);
   useEffect(() => {
     if (open === wasOpen.current) return;
