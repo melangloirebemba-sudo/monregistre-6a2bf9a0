@@ -294,6 +294,7 @@ export function setNotificationsPrefs(patch: Partial<NotificationsPrefs>) {
     ...patch,
     categories: { ...current.categories, ...(patch.categories ?? {}) },
     channels: mergedChannels,
+    push: { ...current.push, ...(patch.push ?? {}) },
   });
   writeCache(merged);
   emitChange();
