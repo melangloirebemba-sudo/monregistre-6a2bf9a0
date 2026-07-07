@@ -824,67 +824,54 @@ function BulkNoteDialog({
       if (!libelle.trim()) throw new Error("Libellé obligatoire");
       if (!classeId) throw new Error("Classe obligatoire");
       if (errorCount > 0) throw new Error("Corrigez les notes invalides");
-      if (activeRows.length === 0) throw new Error("Aucune note à enregistrer");
+      if (includedPreview.length === 0) throw new Error("Aucune note à enregistrer");
       const cls = classes.find((c) => c.id === classeId);
       const coef = Number(coefficient) || 1;
-      const periodesToUse = periodeIds.length > 0 ? periodeIds : [null];
-      const matieresToUse = matieresList.length > 0 ? matieresList : [null];
-      for (const r of activeRows) {
-        const ecole_id = r.eleve.ecole_id ?? cls?.ecole_id;
+      for (const p of includedPreview) {
+        const ecole_id = p.eleve.ecole_id ?? cls?.ecole_id;
         if (!ecole_id) continue;
-        for (const pid of periodesToUse) {
-          for (const mat of matieresToUse) {
-            await enqueueWrite({
-              table: "notes",
-              op: "insert",
-              payload: {
-                id: crypto.randomUUID(),
-                user_id,
-                eleve_id: r.eleve.id,
-                libelle: libelle.trim(),
-                valeur: r.num as number,
-                coefficient: coef,
-                matiere: mat,
-                date,
-                periode_id: pid,
-                ecole_id,
-              },
-              label: `Note ${libelle} · ${r.eleve.prenom} ${r.eleve.nom}`,
-            });
-          }
-        }
+        await enqueueWrite({
+          table: "notes",
+          op: "insert",
+          payload: {
+            id: crypto.randomUUID(),
+            user_id,
+            eleve_id: p.eleve.id,
+            libelle: libelle.trim(),
+            valeur: p.valeur,
+            coefficient: coef,
+            matiere: p.matiere,
+            date,
+            periode_id: p.periode_id,
+            ecole_id,
+          },
+          label: `Note ${libelle} · ${p.eleve.prenom} ${p.eleve.nom}`,
+        });
       }
     },
     onMutate: async (): Promise<{ snapshot: ListSnapshot<NoteRow> } | undefined> => {
-      if (!libelle.trim() || !classeId || errorCount > 0 || activeRows.length === 0) return undefined;
+      if (!libelle.trim() || !classeId || errorCount > 0 || includedPreview.length === 0) {
+        return undefined;
+      }
       const cls = classes.find((c) => c.id === classeId);
       const coef = Number(coefficient) || 1;
-      const periodesToUse = periodeIds.length > 0 ? periodeIds : [null];
-      const matieresToUse = matieresList.length > 0 ? matieresList : [null];
       await qc.cancelQueries({ queryKey: ["notes"] });
       const now = new Date().toISOString();
-      const optimistic: NoteRow[] = [];
-      for (const r of activeRows) {
-        for (const pid of periodesToUse) {
-          for (const mat of matieresToUse) {
-            optimistic.push({
-              id: `tmp-${crypto.randomUUID()}`,
-              user_id: "optimistic",
-              eleve_id: r.eleve.id,
-              libelle: libelle.trim(),
-              valeur: r.num as number,
-              coefficient: coef,
-              matiere: mat,
-              date,
-              periode_id: pid,
-              sequence_id: null,
-              ecole_id: r.eleve.ecole_id ?? cls?.ecole_id ?? "",
-              updated_at: now,
-              eleve: { nom: r.eleve.nom, prenom: r.eleve.prenom, classe_id: r.eleve.classe_id },
-            });
-          }
-        }
-      }
+      const optimistic: NoteRow[] = includedPreview.map((p) => ({
+        id: `tmp-${crypto.randomUUID()}`,
+        user_id: "optimistic",
+        eleve_id: p.eleve.id,
+        libelle: libelle.trim(),
+        valeur: p.valeur,
+        coefficient: coef,
+        matiere: p.matiere,
+        date,
+        periode_id: p.periode_id,
+        sequence_id: null,
+        ecole_id: p.eleve.ecole_id ?? cls?.ecole_id ?? "",
+        updated_at: now,
+        eleve: { nom: p.eleve.nom, prenom: p.eleve.prenom, classe_id: p.eleve.classe_id },
+      }));
       const snapshot = upsertManyInLists<NoteRow>(qc, ["notes"], optimistic, {
         sort: (a, b) => b.date.localeCompare(a.date),
         keyMatches: (row, key) => {
@@ -902,7 +889,7 @@ function BulkNoteDialog({
       if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
       toast.error(e.message);
     },
-    onSuccess: () => toast.success(`${totalNotes} note(s) ajoutée(s)`),
+    onSuccess: () => toast.success(`${includedCount} note(s) ajoutée(s)`),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["notes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
