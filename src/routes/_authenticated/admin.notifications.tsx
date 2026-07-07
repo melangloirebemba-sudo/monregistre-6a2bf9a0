@@ -1000,5 +1000,5 @@ function SendResultPanel({
 
 // Silence unused import warning
 void useQuery;
-void partial;
+
 
