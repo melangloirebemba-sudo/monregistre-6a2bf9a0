@@ -38,6 +38,14 @@ export const Route = createFileRoute("/_authenticated/accueil")({
       { name: "description", content: "Tableau de bord de votre registre enseignant." },
     ],
   }),
+  loader: ({ context }) => {
+    // Précharge en parallèle les données les plus visibles du tableau de bord.
+    void context.queryClient.prefetchQuery(profilQueryOptions());
+    void context.queryClient.prefetchQuery(countsQueryOptions());
+    void context.queryClient.prefetchQuery(planCapabilitiesQO());
+    void context.queryClient.prefetchQuery(ecolesQO());
+    void context.queryClient.prefetchQuery(classesQO());
+  },
   component: AccueilPage,
 });
 
