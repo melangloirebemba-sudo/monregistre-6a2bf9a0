@@ -649,8 +649,11 @@ function DeleteNoteDialog({ open, onOpenChange, note, onDone }: { open: boolean;
   );
 }
 
-// Dialogue de saisie rapide : une entrée par élève avec validation par ligne
+// Dialogue de saisie rapide : lignes par élève, sélection multiple d'élèves,
+// multi-période et multi-matière (produit cartésien), validation par ligne
 // et patch optimiste par lot (upsertManyInLists) pour zéro latence perçue.
+// Navigation clavier : autofocus libellé, ↑/↓/Entrée pour naviguer entre les
+// champs élèves, Ctrl+Entrée pour valider.
 function BulkNoteDialog({
   open,
   onOpenChange,
@@ -671,11 +674,16 @@ function BulkNoteDialog({
   const qc = useQueryClient();
   const [classeId, setClasseId] = useState<string>("");
   const [libelle, setLibelle] = useState("");
-  const [matiere, setMatiere] = useState("");
+  const [matieresText, setMatieresText] = useState("");
   const [coefficient, setCoefficient] = useState("1");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [periodeId, setPeriodeId] = useState<string>("none");
+  const [periodeIds, setPeriodeIds] = useState<string[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+
+  const libelleRef = useState<HTMLInputElement | null>(null as unknown as HTMLInputElement | null);
+  // Simple ref via useState to avoid extra import; we only need the DOM node.
+  const setLibelleRef = (el: HTMLInputElement | null) => libelleRef[1](el);
 
   const { data: eleves = [] } = useQuery({
     ...elevesQO(classeId || undefined),
@@ -688,34 +696,81 @@ function BulkNoteDialog({
       setClasseId(initial);
       const cls = classes.find((c) => c.id === initial);
       setLibelle("");
-      setMatiere(cls?.matiere ?? "");
+      setMatieresText(cls?.matiere ?? "");
       setCoefficient("1");
       setDate(new Date().toISOString().slice(0, 10));
-      setPeriodeId(defaultPeriodeId ?? "none");
+      setPeriodeIds(defaultPeriodeId ? [defaultPeriodeId] : []);
       setValues({});
+      setChecked({});
+      // Autofocus sur le libellé au prochain tick.
+      setTimeout(() => libelleRef[0]?.focus(), 30);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, defaultClasseId, defaultPeriodeId, classes]);
 
   useEffect(() => {
     setValues({});
-    const cls = classes.find((c) => c.id === classeId);
-    if (cls?.matiere && !matiere) setMatiere(cls.matiere);
+    setChecked({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classeId]);
+
+  // Toutes les cases cochées par défaut dès qu'on connaît les élèves.
+  useEffect(() => {
+    if (!open || eleves.length === 0) return;
+    setChecked((prev) => {
+      if (Object.keys(prev).length > 0) return prev;
+      const next: Record<string, boolean> = {};
+      for (const e of eleves) next[e.id] = true;
+      return next;
+    });
+  }, [open, eleves]);
+
+  const matieresList = useMemo(() => {
+    const parts = matieresText
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return Array.from(new Set(parts));
+  }, [matieresText]);
 
   const parsedRows = useMemo(() => {
     return eleves.map((e) => {
       const raw = (values[e.id] ?? "").trim().replace(",", ".");
-      if (!raw) return { eleve: e, raw, num: null as number | null, error: null as string | null };
+      const isChecked = checked[e.id] !== false;
+      if (!raw) return { eleve: e, raw, num: null as number | null, error: null as string | null, checked: isChecked };
       const num = Number(raw);
-      if (Number.isNaN(num)) return { eleve: e, raw, num: null, error: "Nombre invalide" };
-      if (num < 0 || num > echelle) return { eleve: e, raw, num: null, error: `0–${echelle}` };
-      return { eleve: e, raw, num, error: null };
+      if (Number.isNaN(num)) return { eleve: e, raw, num: null, error: "Nombre invalide", checked: isChecked };
+      if (num < 0 || num > echelle) return { eleve: e, raw, num: null, error: `0–${echelle}`, checked: isChecked };
+      return { eleve: e, raw, num, error: null, checked: isChecked };
     });
-  }, [eleves, values, echelle]);
+  }, [eleves, values, checked, echelle]);
 
-  const validCount = parsedRows.filter((r) => r.num !== null).length;
-  const errorCount = parsedRows.filter((r) => r.error).length;
+  const activeRows = parsedRows.filter((r) => r.checked && r.num !== null);
+  const errorCount = parsedRows.filter((r) => r.checked && r.error).length;
+  const multiplier = Math.max(1, periodeIds.length) * Math.max(1, matieresList.length);
+  const totalNotes = activeRows.length * multiplier;
+
+  // Navigation clavier entre les champs élèves.
+  const inputRefs = useMemo(() => new Map<string, HTMLInputElement>(), []);
+  const setInputRef = (id: string) => (el: HTMLInputElement | null) => {
+    if (el) inputRefs.set(id, el);
+    else inputRefs.delete(id);
+  };
+  const focusOffset = (currentId: string, offset: number) => {
+    const list = eleves.map((e) => e.id);
+    const idx = list.indexOf(currentId);
+    if (idx === -1) return;
+    let i = idx + offset;
+    while (i >= 0 && i < list.length) {
+      const el = inputRefs.get(list[i]);
+      if (el) {
+        el.focus();
+        el.select();
+        return;
+      }
+      i += offset;
+    }
+  };
 
   const save = useMutation({
     mutationFn: async () => {
@@ -723,55 +778,67 @@ function BulkNoteDialog({
       if (!libelle.trim()) throw new Error("Libellé obligatoire");
       if (!classeId) throw new Error("Classe obligatoire");
       if (errorCount > 0) throw new Error("Corrigez les notes invalides");
-      if (validCount === 0) throw new Error("Aucune note à enregistrer");
+      if (activeRows.length === 0) throw new Error("Aucune note à enregistrer");
       const cls = classes.find((c) => c.id === classeId);
       const coef = Number(coefficient) || 1;
-      const rows = parsedRows.filter((r) => r.num !== null);
-      for (const r of rows) {
+      const periodesToUse = periodeIds.length > 0 ? periodeIds : [null];
+      const matieresToUse = matieresList.length > 0 ? matieresList : [null];
+      for (const r of activeRows) {
         const ecole_id = r.eleve.ecole_id ?? cls?.ecole_id;
         if (!ecole_id) continue;
-        await enqueueWrite({
-          table: "notes",
-          op: "insert",
-          payload: {
-            id: crypto.randomUUID(),
-            user_id,
-            eleve_id: r.eleve.id,
-            libelle: libelle.trim(),
-            valeur: r.num as number,
-            coefficient: coef,
-            matiere: matiere.trim() || null,
-            date,
-            periode_id: periodeId === "none" ? null : periodeId,
-            ecole_id,
-          },
-          label: `Note ${libelle} · ${r.eleve.prenom} ${r.eleve.nom}`,
-        });
+        for (const pid of periodesToUse) {
+          for (const mat of matieresToUse) {
+            await enqueueWrite({
+              table: "notes",
+              op: "insert",
+              payload: {
+                id: crypto.randomUUID(),
+                user_id,
+                eleve_id: r.eleve.id,
+                libelle: libelle.trim(),
+                valeur: r.num as number,
+                coefficient: coef,
+                matiere: mat,
+                date,
+                periode_id: pid,
+                ecole_id,
+              },
+              label: `Note ${libelle} · ${r.eleve.prenom} ${r.eleve.nom}`,
+            });
+          }
+        }
       }
     },
     onMutate: async (): Promise<{ snapshot: ListSnapshot<NoteRow> } | undefined> => {
-      if (!libelle.trim() || !classeId || errorCount > 0 || validCount === 0) return undefined;
+      if (!libelle.trim() || !classeId || errorCount > 0 || activeRows.length === 0) return undefined;
       const cls = classes.find((c) => c.id === classeId);
       const coef = Number(coefficient) || 1;
+      const periodesToUse = periodeIds.length > 0 ? periodeIds : [null];
+      const matieresToUse = matieresList.length > 0 ? matieresList : [null];
       await qc.cancelQueries({ queryKey: ["notes"] });
       const now = new Date().toISOString();
-      const optimistic: NoteRow[] = parsedRows
-        .filter((r) => r.num !== null)
-        .map((r) => ({
-          id: `tmp-${crypto.randomUUID()}`,
-          user_id: "optimistic",
-          eleve_id: r.eleve.id,
-          libelle: libelle.trim(),
-          valeur: r.num as number,
-          coefficient: coef,
-          matiere: matiere.trim() || null,
-          date,
-          periode_id: periodeId === "none" ? null : periodeId,
-          sequence_id: null,
-          ecole_id: r.eleve.ecole_id ?? cls?.ecole_id ?? "",
-          updated_at: now,
-          eleve: { nom: r.eleve.nom, prenom: r.eleve.prenom, classe_id: r.eleve.classe_id },
-        }));
+      const optimistic: NoteRow[] = [];
+      for (const r of activeRows) {
+        for (const pid of periodesToUse) {
+          for (const mat of matieresToUse) {
+            optimistic.push({
+              id: `tmp-${crypto.randomUUID()}`,
+              user_id: "optimistic",
+              eleve_id: r.eleve.id,
+              libelle: libelle.trim(),
+              valeur: r.num as number,
+              coefficient: coef,
+              matiere: mat,
+              date,
+              periode_id: pid,
+              sequence_id: null,
+              ecole_id: r.eleve.ecole_id ?? cls?.ecole_id ?? "",
+              updated_at: now,
+              eleve: { nom: r.eleve.nom, prenom: r.eleve.prenom, classe_id: r.eleve.classe_id },
+            });
+          }
+        }
+      }
       const snapshot = upsertManyInLists<NoteRow>(qc, ["notes"], optimistic, {
         sort: (a, b) => b.date.localeCompare(a.date),
         keyMatches: (row, key) => {
@@ -789,16 +856,29 @@ function BulkNoteDialog({
       if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
       toast.error(e.message);
     },
-    onSuccess: () => toast.success(`${validCount} note(s) ajoutée(s)`),
+    onSuccess: () => toast.success(`${totalNotes} note(s) ajoutée(s)`),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["notes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
     },
   });
 
+  const allCheckedCount = parsedRows.filter((r) => r.checked).length;
+  const togglePeriode = (id: string) => {
+    setPeriodeIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[520px]">
+      <DialogContent
+        className="max-w-[560px]"
+        onKeyDown={(e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            e.preventDefault();
+            save.mutate();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="font-display">Saisie rapide de notes</DialogTitle>
         </DialogHeader>
@@ -815,7 +895,13 @@ function BulkNoteDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="blib">Libellé *</Label>
-              <Input id="blib" placeholder="Devoir 1…" value={libelle} onChange={(e) => setLibelle(e.target.value)} />
+              <Input
+                id="blib"
+                ref={setLibelleRef}
+                placeholder="Devoir 1…"
+                value={libelle}
+                onChange={(e) => setLibelle(e.target.value)}
+              />
             </div>
           </div>
           <div className="grid grid-cols-4 gap-3">
@@ -824,72 +910,154 @@ function BulkNoteDialog({
               <Input id="bcoef" type="number" min={0.5} step="0.5" value={coefficient} onChange={(e) => setCoefficient(e.target.value)} />
             </div>
             <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="bmat">Matière</Label>
-              <Input id="bmat" value={matiere} onChange={(e) => setMatiere(e.target.value)} />
+              <Label htmlFor="bmat">Matière(s)</Label>
+              <Input
+                id="bmat"
+                placeholder="Maths, Physique…"
+                value={matieresText}
+                onChange={(e) => setMatieresText(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="bdate">Date</Label>
               <Input id="bdate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
           </div>
+          {matieresList.length > 1 && (
+            <div className="text-[11px] text-muted-foreground">
+              {matieresList.length} matières · une note par matière et par élève.
+            </div>
+          )}
           <div className="space-y-1.5">
-            <Label>Période</Label>
-            <Select value={periodeId} onValueChange={setPeriodeId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">—</SelectItem>
-                {periodes.map((p) => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label>Période(s)</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {periodes.length === 0 ? (
+                <span className="text-xs text-muted-foreground">Aucune période définie</span>
+              ) : (
+                periodes.map((p) => {
+                  const on = periodeIds.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => togglePeriode(p.id)}
+                      className={`rounded-full border px-3 py-1 text-xs transition ${
+                        on
+                          ? "border-teal bg-teal text-teal-foreground"
+                          : "border-border bg-background text-foreground hover:bg-cream-deep"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            {periodeIds.length > 1 && (
+              <div className="text-[11px] text-muted-foreground">
+                {periodeIds.length} périodes · une note par période.
+              </div>
+            )}
           </div>
 
           <div className="rounded-xl border border-border/60">
-            <div className="flex items-center justify-between border-b border-border/60 bg-cream-deep/40 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-              <span>Élèves ({eleves.length})</span>
-              <span>
-                {validCount} à enregistrer
-                {errorCount > 0 ? ` · ${errorCount} erreur(s)` : ""}
-              </span>
+            <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-cream-deep/40 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <span>Élèves · {allCheckedCount}/{eleves.length} sélectionné(s)</span>
+              <div className="flex items-center gap-2 normal-case tracking-normal">
+                <button
+                  type="button"
+                  className="text-[11px] text-foreground underline underline-offset-2"
+                  onClick={() => setChecked(Object.fromEntries(eleves.map((e) => [e.id, true])))}
+                >
+                  Tout
+                </button>
+                <button
+                  type="button"
+                  className="text-[11px] text-foreground underline underline-offset-2"
+                  onClick={() => setChecked(Object.fromEntries(eleves.map((e) => [e.id, false])))}
+                >
+                  Aucun
+                </button>
+                <span>·</span>
+                <span>
+                  {totalNotes} à enregistrer
+                  {errorCount > 0 ? ` · ${errorCount} err.` : ""}
+                </span>
+              </div>
             </div>
-            <div className="max-h-[45vh] overflow-y-auto divide-y divide-border/60">
+            <div className="max-h-[42vh] overflow-y-auto divide-y divide-border/60">
               {eleves.length === 0 ? (
                 <div className="p-4 text-center text-sm text-muted-foreground">
                   {classeId ? "Aucun élève dans cette classe" : "Choisissez une classe"}
                 </div>
               ) : (
                 parsedRows.map((r) => (
-                  <div key={r.eleve.id} className="flex items-center gap-2 px-3 py-2">
+                  <label
+                    key={r.eleve.id}
+                    className={`flex cursor-pointer items-center gap-2 px-3 py-2 ${
+                      r.checked ? "" : "opacity-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 shrink-0 accent-teal"
+                      checked={r.checked}
+                      onChange={(e) =>
+                        setChecked((c) => ({ ...c, [r.eleve.id]: e.target.checked }))
+                      }
+                    />
                     <div className="min-w-0 flex-1 truncate text-sm">
                       {r.eleve.prenom} {r.eleve.nom}
                     </div>
                     <div className="flex flex-col items-end">
                       <Input
+                        ref={setInputRef(r.eleve.id)}
                         type="text"
                         inputMode="decimal"
                         placeholder={`/${echelle}`}
+                        disabled={!r.checked}
                         className={`h-9 w-20 text-right ${r.error ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         value={values[r.eleve.id] ?? ""}
                         onChange={(e) =>
                           setValues((v) => ({ ...v, [r.eleve.id]: e.target.value }))
                         }
+                        onFocus={(e) => {
+                          if (!r.checked) {
+                            setChecked((c) => ({ ...c, [r.eleve.id]: true }));
+                          }
+                          e.currentTarget.select();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === "ArrowDown") {
+                            e.preventDefault();
+                            focusOffset(r.eleve.id, 1);
+                          } else if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            focusOffset(r.eleve.id, -1);
+                          }
+                        }}
                       />
                       {r.error ? (
                         <span className="mt-0.5 text-[10px] text-destructive">{r.error}</span>
                       ) : null}
                     </div>
-                  </div>
+                  </label>
                 ))
               )}
             </div>
+          </div>
+
+          <div className="text-[11px] text-muted-foreground">
+            Astuce : ↑/↓ ou Entrée pour naviguer entre les élèves · Ctrl+Entrée pour valider.
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
             <Button
               type="submit"
-              disabled={save.isPending || validCount === 0 || errorCount > 0 || !libelle.trim()}
+              disabled={save.isPending || totalNotes === 0 || errorCount > 0 || !libelle.trim()}
             >
-              {save.isPending ? "…" : `Enregistrer (${validCount})`}
+              {save.isPending ? "…" : `Enregistrer (${totalNotes})`}
             </Button>
           </DialogFooter>
         </form>
