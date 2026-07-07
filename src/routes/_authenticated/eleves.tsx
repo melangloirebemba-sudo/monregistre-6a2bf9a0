@@ -53,6 +53,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
+import { VirtualList } from "@/components/ui/virtual-list";
 
 export const Route = createFileRoute("/_authenticated/eleves")({
   head: () => ({ meta: [{ title: "Élèves — MonRegistre" }] }),
