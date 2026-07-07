@@ -106,9 +106,10 @@ function NotesPage() {
   const [open, setOpen] = useState(false);
   const [toDelete, setToDelete] = useState<NoteRow | null>(null);
 
+  const deferredQ = useDeferredValue(q);
   const pq = usePaginatedQuery({
     data: notes,
-    search: q,
+    search: deferredQ,
     searchFields: (n) => [n.eleve?.prenom, n.eleve?.nom, n.libelle, n.matiere],
     filters: [
       (n) => {
