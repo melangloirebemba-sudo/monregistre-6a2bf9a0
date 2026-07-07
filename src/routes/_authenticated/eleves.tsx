@@ -550,6 +550,28 @@ function EleveDialog({
     setPending((prev) => prev.filter((p) => p.id !== id));
   };
 
+  // Charge un élève en attente dans le formulaire pour édition.
+  // Il sort de la file ; « Ajouter un autre » le remettra en fin de file
+  // (ou « Enregistrer » l'inclura via le formulaire courant).
+  const editPending = (id: string) => {
+    const p = pending.find((x) => x.id === id);
+    if (!p) return;
+    setForm({
+      nom: p.nom,
+      prenom: p.prenom,
+      sexe: p.sexe,
+      ecole_id: p.ecole_id,
+      classe_id: p.classe_id,
+      numero_eleve: p.numero_eleve ?? "",
+      adresse: p.adresse ?? "",
+      tuteur_nom: p.tuteur_nom ?? "",
+      tuteur_numero: p.tuteur_numero ?? "",
+      chef: p.chef,
+    });
+    setPending((prev) => prev.filter((x) => x.id !== id));
+  };
+
+
   const save = useMutation({
     mutationFn: async () => {
       const user_id = await requireUserId();
@@ -800,14 +822,24 @@ function EleveDialog({
                           {p.chef ? " · Chef" : ""}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removePending(p.id)}
-                        aria-label="Retirer de la file"
-                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => editPending(p.id)}
+                          aria-label="Modifier cet élève en attente"
+                          className="rounded p-0.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePending(p.id)}
+                          aria-label="Retirer de la file"
+                          className="rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
