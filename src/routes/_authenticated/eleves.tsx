@@ -63,6 +63,8 @@ function ElevesPage() {
   const { data: classes = [] } = useQuery(classesQO());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: caps } = useQuery(planCapabilitiesQO());
+  const { data: allEleves = [] } = useQuery(elevesQO());
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const { data: eleves = [], isLoading } = useQuery(
@@ -74,7 +76,16 @@ function ElevesPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Eleve | null>(null);
   const [open, setOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Eleve | null>(null);
+
+  const maxEleves = caps?.max_eleves ?? 0;
+  const isAdmin = !!caps?.isAdmin;
+  const atLimit = !isAdmin && maxEleves > 0 && allEleves.length >= maxEleves;
+  const currentPlan: PlanKey = caps?.plan ?? "gratuit";
+  const planLabel = PLAN_LABEL[currentPlan];
+  const limitDescription = `${maxEleves} élève${maxEleves > 1 ? "s" : ""}`;
+  const bannerMessage = `Le plan ${planLabel} autorise ${limitDescription}. Passez à un plan supérieur pour en ajouter davantage.`;
 
   const classesForEcole = useMemo(
     () => (ecoleFilter === "all" ? classes : classes.filter((c) => c.ecole_id === ecoleFilter)),
