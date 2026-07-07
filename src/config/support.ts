@@ -40,16 +40,13 @@ export function updateSupportConfig(patch: Partial<SupportConfig>) {
 }
 
 /**
- * Normalise un numéro WhatsApp pour wa.me : uniquement des chiffres, sans
- * espace ni « + », et sans le zéro national après l'indicatif pays (ex.
- * « 242069… » → « 24269… »). Sans cette étape, WhatsApp renvoie
- * « API WhatsApp bloquée / numéro invalide ».
+ * Normalise un numéro WhatsApp pour wa.me : uniquement des chiffres,
+ * sans espace ni « + ». On conserve tous les chiffres (y compris un
+ * éventuel 0 après l'indicatif pays qui fait partie du numéro opérateur
+ * local, ex. Congo : +242 06 …).
  */
 export function normalizeWhatsAppNumber(raw: string): string {
-  const digits = (raw || "").replace(/\D/g, "");
-  // Retire un « 0 » trunk après un indicatif pays (1 à 3 chiffres).
-  const m = digits.match(/^(\d{1,3})0(\d{6,})$/);
-  return m ? `${m[1]}${m[2]}` : digits;
+  return (raw || "").replace(/\D/g, "");
 }
 
 function waLink(message: string): string {
