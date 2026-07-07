@@ -1095,22 +1095,40 @@ function BulkNoteDialog({
 
           {showPreview && (
             <div className="rounded-xl border border-teal/40 bg-teal/5">
-              <div className="flex items-center justify-between border-b border-teal/30 px-3 py-2">
+              <div className="flex items-center justify-between gap-2 border-b border-teal/30 px-3 py-2">
                 <div className="text-sm font-semibold text-foreground">
-                  Prévisualisation · {previewNotes.length} note(s)
+                  Prévisualisation · {includedCount}/{previewNotes.length} sélectionnée(s)
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowPreview(false)}
-                  className="text-[11px] text-foreground underline underline-offset-2"
-                >
-                  Modifier
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="text-[11px] text-foreground underline underline-offset-2"
+                    onClick={() => setExcludedKeys(new Set())}
+                  >
+                    Tout
+                  </button>
+                  <button
+                    type="button"
+                    className="text-[11px] text-foreground underline underline-offset-2"
+                    onClick={() => setExcludedKeys(new Set(previewNotes.map((p) => p.key)))}
+                  >
+                    Aucun
+                  </button>
+                  <span className="text-muted-foreground">·</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(false)}
+                    className="text-[11px] text-foreground underline underline-offset-2"
+                  >
+                    Modifier
+                  </button>
+                </div>
               </div>
               <div className="max-h-[40vh] overflow-y-auto">
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
                     <tr>
+                      <th className="w-8 px-2 py-1.5"></th>
                       <th className="px-3 py-1.5 text-left">Élève</th>
                       <th className="px-2 py-1.5 text-left">Période</th>
                       <th className="px-2 py-1.5 text-left">Matière</th>
@@ -1118,16 +1136,46 @@ function BulkNoteDialog({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {previewNotes.map((p) => (
-                      <tr key={p.key}>
-                        <td className="truncate px-3 py-1.5">{p.eleveName}</td>
-                        <td className="px-2 py-1.5 text-muted-foreground">{p.periodeLabel}</td>
-                        <td className="px-2 py-1.5 text-muted-foreground">{p.matiereLabel}</td>
-                        <td className="px-3 py-1.5 text-right font-semibold">
-                          {formatNote(p.valeur)}/{echelle}
-                        </td>
-                      </tr>
-                    ))}
+                    {previewNotes.map((p) => {
+                      const included = !excludedKeys.has(p.key);
+                      return (
+                        <tr
+                          key={p.key}
+                          className={`cursor-pointer ${included ? "" : "opacity-40"}`}
+                          onClick={() =>
+                            setExcludedKeys((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(p.key)) next.delete(p.key);
+                              else next.add(p.key);
+                              return next;
+                            })
+                          }
+                        >
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 accent-teal"
+                              checked={included}
+                              onChange={(e) =>
+                                setExcludedKeys((prev) => {
+                                  const next = new Set(prev);
+                                  if (e.target.checked) next.delete(p.key);
+                                  else next.add(p.key);
+                                  return next;
+                                })
+                              }
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+                          <td className="truncate px-3 py-1.5">{p.eleve.prenom} {p.eleve.nom}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground">{p.periodeLabel}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground">{p.matiereLabel}</td>
+                          <td className="px-3 py-1.5 text-right font-semibold">
+                            {formatNote(p.valeur)}/{echelle}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1155,6 +1203,7 @@ function BulkNoteDialog({
                     toast.error("Aucune note à enregistrer");
                     return;
                   }
+                  setExcludedKeys(new Set());
                   setShowPreview(true);
                 }}
                 disabled={totalNotes === 0 || errorCount > 0 || !libelle.trim()}
@@ -1164,10 +1213,11 @@ function BulkNoteDialog({
             ) : (
               <Button
                 type="submit"
-                disabled={save.isPending || totalNotes === 0 || errorCount > 0 || !libelle.trim()}
+                disabled={save.isPending || includedCount === 0 || errorCount > 0 || !libelle.trim()}
               >
-                {save.isPending ? "…" : `Confirmer (${totalNotes})`}
+                {save.isPending ? "…" : `Confirmer (${includedCount})`}
               </Button>
+            )}
             )}
           </DialogFooter>
         </form>
