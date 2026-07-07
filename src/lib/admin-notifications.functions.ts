@@ -168,11 +168,5 @@ export const triggerNotificationHook = createServerFn({ method: "POST" })
       body: "{}",
     });
     const text = await res.text();
-    let parsed: unknown = text;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      // ignore
-    }
-    return { ok: res.ok, status: res.status, response: parsed };
+    return { ok: res.ok, status: res.status, response: text };
   });
