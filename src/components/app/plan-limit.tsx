@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   PLAN_LABEL,
+  normalizeWhatsAppNumber,
+  supportConfig,
   upgradeWhatsAppHref,
   type PlanKey,
   type UpgradeContext,
@@ -167,7 +169,9 @@ export function PlanUpgradeDialog({
     telephone,
   };
   const waHref = upgradeWhatsAppHref(upgradeContext);
+  const normalizedNumber = normalizeWhatsAppNumber(supportConfig.whatsappNumber);
   const highlights = nextPlan ? PLAN_HIGHLIGHTS[nextPlan] : [];
+
 
   // Après retour de WhatsApp (retour du focus / onglet redevient visible),
   // on rafraîchit les capacités du plan pour refléter un éventuel upgrade.
@@ -250,6 +254,22 @@ export function PlanUpgradeDialog({
             <MessageCircle className="h-4 w-4" aria-hidden="true" />
             {nextLabel ? `Demander le plan ${nextLabel}` : "Contacter le support"}
           </a>
+          {normalizedNumber ? (
+            <p
+              className="text-center text-[11px] text-muted-foreground"
+              aria-live="polite"
+            >
+              Redirection vers WhatsApp :{" "}
+              <span className="font-mono tabular-nums text-ink/80">
+                +{normalizedNumber}
+              </span>
+            </p>
+          ) : (
+            <p className="text-center text-[11px] text-destructive">
+              Numéro WhatsApp invalide — vérifiez les réglages.
+            </p>
+          )}
+
           <Button
             type="button"
             variant="outline"
