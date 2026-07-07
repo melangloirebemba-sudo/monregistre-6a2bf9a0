@@ -39,8 +39,22 @@ export function updateSupportConfig(patch: Partial<SupportConfig>) {
   if (patch.supportEmail) supportConfig.supportEmail = patch.supportEmail;
 }
 
+/**
+ * Normalise un numéro WhatsApp pour wa.me : uniquement des chiffres, sans
+ * espace ni « + », et sans le zéro national après l'indicatif pays (ex.
+ * « 242069… » → « 24269… »). Sans cette étape, WhatsApp renvoie
+ * « API WhatsApp bloquée / numéro invalide ».
+ */
+export function normalizeWhatsAppNumber(raw: string): string {
+  const digits = (raw || "").replace(/\D/g, "");
+  // Retire un « 0 » trunk après un indicatif pays (1 à 3 chiffres).
+  const m = digits.match(/^(\d{1,3})0(\d{6,})$/);
+  return m ? `${m[1]}${m[2]}` : digits;
+}
+
 function waLink(message: string): string {
-  return `https://wa.me/${supportConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
+  const number = normalizeWhatsAppNumber(supportConfig.whatsappNumber);
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 
 /** Message d'aide générique (contact support). */
