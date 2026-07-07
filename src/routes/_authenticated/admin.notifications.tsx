@@ -256,6 +256,19 @@ function AdminNotificationsPage() {
   const canSubmit = title.trim().length > 0 &&
     (targetType === "all" || targetValue.trim().length > 0);
 
+  const previewQuery = useQuery({
+    queryKey: ["admin-broadcast-preview", targetType, targetValue],
+    queryFn: () =>
+      previewFn({
+        data: {
+          target_type: targetType,
+          target_value: targetType === "all" ? null : targetValue.trim() || null,
+        },
+      }),
+    enabled: showPreview && canSubmit,
+    staleTime: 15_000,
+  });
+
   const cancel = useMutation({
     mutationFn: async (id: string) => cancelFn({ data: { id } }),
     onSuccess: () => {
