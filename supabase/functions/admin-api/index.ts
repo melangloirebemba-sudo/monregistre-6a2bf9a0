@@ -218,6 +218,16 @@ Deno.serve(async (req) => {
         const { error: e2 } = await admin.from("profils_enseignant")
           .update({ statut: suspendre ? "suspendu" : "actif" }).eq("user_id", userId);
         if (e2) throw e2;
+        // La réactivation est déjà notifiée par un trigger sur profils_enseignant.
+        if (suspendre) {
+          await admin.from("user_notifications").insert({
+            user_id: userId,
+            title: "Votre compte a été suspendu",
+            body: "Un administrateur a suspendu votre compte. Contactez le support pour plus d'informations.",
+            category: "account",
+            href: "/parametres",
+          });
+        }
         return json({ ok: true });
       }
 
