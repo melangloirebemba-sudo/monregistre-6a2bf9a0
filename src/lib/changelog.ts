@@ -339,6 +339,7 @@ export function useNotificationCenter() {
     unreadCount,
     markRead,
     markAllRead,
+    clearAll: () => clearAll.mutate(),
     enabled: prefs.enabled,
   };
 }
