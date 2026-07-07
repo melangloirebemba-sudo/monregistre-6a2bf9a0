@@ -682,6 +682,9 @@ function BulkNoteDialog({
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [showPreview, setShowPreview] = useState(false);
   const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
+  // Filtres actifs dans la prévisualisation. `null` représente « pas de période » ou « pas de matière ».
+  const [previewPeriodeFilter, setPreviewPeriodeFilter] = useState<Set<string | null> | null>(null);
+  const [previewMatiereFilter, setPreviewMatiereFilter] = useState<Set<string | null> | null>(null);
 
   const libelleRef = useState<HTMLInputElement | null>(null as unknown as HTMLInputElement | null);
   // Simple ref via useState to avoid extra import; we only need the DOM node.
@@ -706,6 +709,8 @@ function BulkNoteDialog({
       setChecked({});
       setShowPreview(false);
       setExcludedKeys(new Set());
+      setPreviewPeriodeFilter(null);
+      setPreviewMatiereFilter(null);
       // Autofocus sur le libellé au prochain tick.
       setTimeout(() => libelleRef[0]?.focus(), 30);
     }
@@ -790,9 +795,37 @@ function BulkNoteDialog({
     return out;
   }, [activeRows, periodeIds, matieresList, periodeLabelById]);
 
+  // Périodes / matières distinctes présentes dans le plan (pour les chips de filtre).
+  const previewPeriodes = useMemo(() => {
+    const seen = new Map<string, { id: string | null; label: string }>();
+    for (const p of previewNotes) {
+      const k = p.periode_id ?? "__none__";
+      if (!seen.has(k)) seen.set(k, { id: p.periode_id, label: p.periodeLabel });
+    }
+    return Array.from(seen.values());
+  }, [previewNotes]);
+  const previewMatieres = useMemo(() => {
+    const seen = new Map<string, { id: string | null; label: string }>();
+    for (const p of previewNotes) {
+      const k = p.matiere ?? "__none__";
+      if (!seen.has(k)) seen.set(k, { id: p.matiere, label: p.matiereLabel });
+    }
+    return Array.from(seen.values());
+  }, [previewNotes]);
+
+  // Application des filtres (null = tous).
+  const visiblePreview = useMemo(() => {
+    return previewNotes.filter((p) => {
+      if (previewPeriodeFilter && !previewPeriodeFilter.has(p.periode_id)) return false;
+      if (previewMatiereFilter && !previewMatiereFilter.has(p.matiere)) return false;
+      return true;
+    });
+  }, [previewNotes, previewPeriodeFilter, previewMatiereFilter]);
+
+  // Seules les lignes visibles ET non exclues sont confirmées.
   const includedPreview = useMemo(
-    () => previewNotes.filter((p) => !excludedKeys.has(p.key)),
-    [previewNotes, excludedKeys],
+    () => visiblePreview.filter((p) => !excludedKeys.has(p.key)),
+    [visiblePreview, excludedKeys],
   );
   const includedCount = includedPreview.length;
 
@@ -1097,7 +1130,10 @@ function BulkNoteDialog({
             <div className="rounded-xl border border-teal/40 bg-teal/5">
               <div className="flex items-center justify-between gap-2 border-b border-teal/30 px-3 py-2">
                 <div className="text-sm font-semibold text-foreground">
-                  Prévisualisation · {includedCount}/{previewNotes.length} sélectionnée(s)
+                  Prévisualisation · {includedCount}/{visiblePreview.length} sélectionnée(s)
+                  {visiblePreview.length !== previewNotes.length && (
+                    <span className="text-muted-foreground font-normal"> · {previewNotes.length - visiblePreview.length} masquée(s)</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -1110,7 +1146,7 @@ function BulkNoteDialog({
                   <button
                     type="button"
                     className="text-[11px] text-foreground underline underline-offset-2"
-                    onClick={() => setExcludedKeys(new Set(previewNotes.map((p) => p.key)))}
+                    onClick={() => setExcludedKeys(new Set(visiblePreview.map((p) => p.key)))}
                   >
                     Aucun
                   </button>
@@ -1124,6 +1160,72 @@ function BulkNoteDialog({
                   </button>
                 </div>
               </div>
+              {(previewPeriodes.length > 1 || previewMatieres.length > 1) && (
+                <div className="space-y-1.5 border-b border-teal/20 px-3 py-2">
+                  {previewPeriodes.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Périodes ·</span>
+                      {previewPeriodes.map((pp) => {
+                        const on = !previewPeriodeFilter || previewPeriodeFilter.has(pp.id);
+                        return (
+                          <button
+                            key={pp.id ?? "__none__"}
+                            type="button"
+                            onClick={() => {
+                              setPreviewPeriodeFilter((prev) => {
+                                const base = prev ?? new Set(previewPeriodes.map((x) => x.id));
+                                const next = new Set(base);
+                                if (next.has(pp.id)) next.delete(pp.id);
+                                else next.add(pp.id);
+                                if (next.size === previewPeriodes.length) return null;
+                                return next;
+                              });
+                            }}
+                            className={`rounded-full border px-2 py-0.5 text-[11px] transition ${
+                              on
+                                ? "border-teal bg-teal text-teal-foreground"
+                                : "border-border bg-background text-muted-foreground"
+                            }`}
+                          >
+                            {pp.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {previewMatieres.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Matières ·</span>
+                      {previewMatieres.map((pm) => {
+                        const on = !previewMatiereFilter || previewMatiereFilter.has(pm.id);
+                        return (
+                          <button
+                            key={pm.id ?? "__none__"}
+                            type="button"
+                            onClick={() => {
+                              setPreviewMatiereFilter((prev) => {
+                                const base = prev ?? new Set(previewMatieres.map((x) => x.id));
+                                const next = new Set(base);
+                                if (next.has(pm.id)) next.delete(pm.id);
+                                else next.add(pm.id);
+                                if (next.size === previewMatieres.length) return null;
+                                return next;
+                              });
+                            }}
+                            className={`rounded-full border px-2 py-0.5 text-[11px] transition ${
+                              on
+                                ? "border-teal bg-teal text-teal-foreground"
+                                : "border-border bg-background text-muted-foreground"
+                            }`}
+                          >
+                            {pm.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="max-h-[40vh] overflow-y-auto">
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -1136,7 +1238,7 @@ function BulkNoteDialog({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {previewNotes.map((p) => {
+                    {visiblePreview.map((p) => {
                       const included = !excludedKeys.has(p.key);
                       return (
                         <tr
@@ -1204,6 +1306,8 @@ function BulkNoteDialog({
                     return;
                   }
                   setExcludedKeys(new Set());
+                  setPreviewPeriodeFilter(null);
+                  setPreviewMatiereFilter(null);
                   setShowPreview(true);
                 }}
                 disabled={totalNotes === 0 || errorCount > 0 || !libelle.trim()}
