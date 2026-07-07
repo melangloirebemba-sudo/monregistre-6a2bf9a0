@@ -470,24 +470,63 @@ function ClasseElevesDialog({
     enabled: !!classe?.id,
   });
   const [periodeId, setPeriodeId] = useState<string>("all");
+  const [matiere, setMatiere] = useState<string>("all");
+  const [filter, setFilter] = useState<"all" | "with" | "without">("all");
+  const [detailEleveId, setDetailEleveId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!classe) return;
     const active = periodes.find((p) => p.active);
     setPeriodeId(active?.id ?? "all");
+    setMatiere(classe.matiere?.trim() ? classe.matiere : "all");
+    setFilter("all");
+    setDetailEleveId(null);
   }, [classe, periodes]);
+
+  // Toutes les notes de la classe (toutes périodes) pour lister les matières disponibles
+  const { data: allNotes = [] } = useQuery({
+    ...notesQO({ classeId: classe?.id }),
+    enabled: !!classe?.id,
+  });
+  // Notes filtrées par période (matière filtrée côté client)
   const { data: notes = [] } = useQuery({
     ...notesQO({ classeId: classe?.id, periodeId: periodeId === "all" ? undefined : periodeId }),
     enabled: !!classe?.id,
   });
 
+  const matiereOptions = useMemo(() => {
+    const set = new Set<string>();
+    allNotes.forEach((n) => n.matiere && set.add(n.matiere));
+    if (classe?.matiere) set.add(classe.matiere);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [allNotes, classe]);
+
+  const notesFiltered = useMemo(
+    () => (matiere === "all" ? notes : notes.filter((n) => (n.matiere ?? "") === matiere)),
+    [notes, matiere],
+  );
+  const eleveIdsWithNotes = useMemo(
+    () => new Set(notesFiltered.map((n) => n.eleve_id)),
+    [notesFiltered],
+  );
+
   const total = eleves.length;
   const nbF = eleves.filter((e) => (e.sexe ?? "").toUpperCase().startsWith("F")).length;
   const nbM = eleves.filter((e) => (e.sexe ?? "").toUpperCase().startsWith("M")).length;
   const nbNC = total - nbF - nbM;
-  const withNotes = new Set(notes.map((n) => n.eleve_id)).size;
+  const withNotes = eleveIdsWithNotes.size;
   const periodeLabel = periodeId === "all"
     ? "toutes périodes"
     : periodes.find((p) => p.id === periodeId)?.label ?? "période";
+  const matiereLabel = matiere === "all" ? "toutes matières" : matiere;
+
+  const filteredEleves = useMemo(() => {
+    if (filter === "with") return eleves.filter((e) => eleveIdsWithNotes.has(e.id));
+    if (filter === "without") return eleves.filter((e) => !eleveIdsWithNotes.has(e.id));
+    return eleves;
+  }, [eleves, eleveIdsWithNotes, filter]);
+
+  const detailEleve = detailEleveId ? eleves.find((e) => e.id === detailEleveId) ?? null : null;
 
   const open = !!classe;
   return (
@@ -525,57 +564,104 @@ function ClasseElevesDialog({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-[11px] text-muted-foreground">Période</Label>
-            <Select value={periodeId} onValueChange={setPeriodeId}>
-              <SelectTrigger className="h-8 flex-1 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes périodes</SelectItem>
-                {periodes.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.label}{p.active ? " (active)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Période</Label>
+              <Select value={periodeId} onValueChange={setPeriodeId}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes périodes</SelectItem>
+                  {periodes.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.label}{p.active ? " (active)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Matière</Label>
+              <Select value={matiere} onValueChange={setMatiere}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Matière" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes matières</SelectItem>
+                  {matiereOptions.map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            {withNotes} élève{withNotes > 1 ? "s" : ""} avec au moins une note — {periodeLabel}.
+            {withNotes} élève{withNotes > 1 ? "s" : ""} avec au moins une note — {periodeLabel} · {matiereLabel}.
           </p>
         </div>
 
-        <div className="max-h-[45vh] overflow-y-auto">
+        <div className="flex gap-1 rounded-lg bg-cream-deep/40 p-1">
+          {([
+            { k: "all", l: `Tous (${total})` },
+            { k: "with", l: `Avec notes (${withNotes})` },
+            { k: "without", l: `Sans notes (${total - withNotes})` },
+          ] as const).map((t) => (
+            <button
+              key={t.k}
+              type="button"
+              onClick={() => setFilter(t.k)}
+              className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-medium transition ${
+                filter === t.k
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.l}
+            </button>
+          ))}
+        </div>
+
+        <div className="max-h-[40vh] overflow-y-auto">
           {isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Chargement…</p>
-          ) : eleves.length === 0 ? (
+          ) : filteredEleves.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              Aucun élève dans cette classe.
+              {eleves.length === 0 ? "Aucun élève dans cette classe." : "Aucun élève dans ce filtre."}
             </p>
           ) : (
             <ul className="space-y-2">
-              {eleves.map((e, i) => (
-                <li
-                  key={e.id}
-                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-card/40 px-3 py-2"
-                >
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal/15 text-[11px] font-semibold text-foreground">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-foreground">
-                      {e.nom} {e.prenom}
-                    </div>
-                    <div className="truncate text-[11px] text-muted-foreground">
-                      {e.sexe ? `${e.sexe} · ` : ""}
-                      {e.numero_eleve ? `N° ${e.numero_eleve}` : "—"}
-                      {e.tuteur_nom ? ` · ${e.tuteur_nom}` : ""}
-                      {e.tuteur_numero ? ` · ${e.tuteur_numero}` : ""}
-                    </div>
-                  </div>
-                </li>
-              ))}
+              {filteredEleves.map((e, i) => {
+                const has = eleveIdsWithNotes.has(e.id);
+                return (
+                  <li key={e.id}>
+                    <button
+                      type="button"
+                      onClick={() => setDetailEleveId(e.id)}
+                      className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-card/40 px-3 py-2 text-left transition hover:bg-cream-deep/40"
+                    >
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-teal/15 text-[11px] font-semibold text-foreground">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-sm font-medium text-foreground">
+                            {e.nom} {e.prenom}
+                          </span>
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
+                              has ? "bg-teal/20 text-teal" : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {has ? "notée" : "à noter"}
+                          </span>
+                        </div>
+                        <div className="truncate text-[11px] text-muted-foreground">
+                          {e.sexe ? `${e.sexe} · ` : ""}
+                          {e.numero_eleve ? `N° ${e.numero_eleve}` : "—"}
+                          {e.tuteur_nom ? ` · ${e.tuteur_nom}` : ""}
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -584,6 +670,226 @@ function ClasseElevesDialog({
             Fermer
           </Button>
         </DialogFooter>
+      </DialogContent>
+
+      <EleveNotesQuickDialog
+        eleve={detailEleve}
+        classe={classe}
+        periodes={periodes}
+        periodeId={periodeId}
+        matiere={matiere}
+        onOpenChange={(v) => !v && setDetailEleveId(null)}
+      />
+    </Dialog>
+  );
+}
+
+function EleveNotesQuickDialog({
+  eleve,
+  classe,
+  periodes,
+  periodeId,
+  matiere,
+  onOpenChange,
+}: {
+  eleve: { id: string; nom: string; prenom: string; ecole_id: string } | null;
+  classe: Classe | null;
+  periodes: { id: string; label: string; active: boolean }[];
+  periodeId: string;
+  matiere: string;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const open = !!eleve && !!classe;
+  const { data: eleveNotes = [] } = useQuery({
+    ...notesQO({ eleveId: eleve?.id, periodeId: periodeId === "all" ? undefined : periodeId }),
+    enabled: open,
+  });
+  const filtered = useMemo(
+    () => (matiere === "all" ? eleveNotes : eleveNotes.filter((n) => (n.matiere ?? "") === matiere)),
+    [eleveNotes, matiere],
+  );
+
+  const [form, setForm] = useState({
+    libelle: "",
+    valeur: "",
+    coefficient: "1",
+    date: new Date().toISOString().slice(0, 10),
+  });
+  useEffect(() => {
+    if (open) {
+      setForm({
+        libelle: "",
+        valeur: "",
+        coefficient: "1",
+        date: new Date().toISOString().slice(0, 10),
+      });
+    }
+  }, [open, eleve?.id, periodeId, matiere]);
+
+  const periodeLabel = periodeId === "all"
+    ? "toutes périodes"
+    : periodes.find((p) => p.id === periodeId)?.label ?? "période";
+  const canAdd = periodeId !== "all" && matiere !== "all";
+
+  const add = useMutation({
+    mutationFn: async () => {
+      if (!eleve || !classe) return;
+      if (!canAdd) throw new Error("Sélectionnez une période et une matière précises.");
+      const valeur = Number(form.valeur);
+      const coefficient = Number(form.coefficient) || 1;
+      if (!form.libelle.trim()) throw new Error("Libellé requis");
+      if (Number.isNaN(valeur)) throw new Error("Valeur invalide");
+      const user_id = await requireUserId();
+      await enqueueWrite({
+        table: "notes",
+        op: "insert",
+        payload: {
+          id: crypto.randomUUID(),
+          user_id,
+          eleve_id: eleve.id,
+          ecole_id: eleve.ecole_id ?? classe.ecole_id,
+          periode_id: periodeId,
+          matiere,
+          libelle: form.libelle.trim(),
+          valeur,
+          coefficient,
+          date: form.date,
+        },
+        label: `Note ${form.libelle} — ${eleve.nom}`,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Note enregistrée");
+      qc.invalidateQueries({ queryKey: ["notes"] });
+      setForm((f) => ({ ...f, libelle: "", valeur: "" }));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const prefill = (n: { libelle: string; valeur: number; coefficient: number; date: string }) => {
+    setForm({
+      libelle: n.libelle,
+      valeur: String(n.valeur),
+      coefficient: String(n.coefficient ?? 1),
+      date: n.date?.slice(0, 10) || new Date().toISOString().slice(0, 10),
+    });
+    toast.success("Formulaire pré-rempli");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle className="font-display">
+            Notes — {eleve?.nom} {eleve?.prenom}
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            {periodeLabel} · {matiere === "all" ? "toutes matières" : matiere}
+          </p>
+        </DialogHeader>
+
+        <div className="space-y-2">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Notes existantes ({filtered.length})
+          </div>
+          <div className="max-h-[30vh] overflow-y-auto rounded-lg border border-border/60">
+            {filtered.length === 0 ? (
+              <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+                Aucune note pour ce filtre.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border/60">
+                {filtered.map((n) => (
+                  <li key={n.id} className="flex items-center gap-2 px-3 py-2 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium text-foreground">{n.libelle}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {n.matiere ?? "—"} · coef {n.coefficient} · {n.date}
+                      </div>
+                    </div>
+                    <span className="rounded-md bg-teal/15 px-1.5 py-0.5 font-semibold text-foreground">
+                      {n.valeur}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => prefill(n)}
+                      className="rounded-md px-2 py-1 text-[10px] font-medium text-teal hover:bg-teal/10"
+                    >
+                      Pré-remplir
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            add.mutate();
+          }}
+          className="space-y-2 rounded-xl border border-border/60 bg-card/40 p-3"
+        >
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Nouvelle note
+          </div>
+          {!canAdd && (
+            <p className="rounded-md bg-gold/15 px-2 py-1.5 text-[11px] text-foreground">
+              Sélectionnez une période et une matière précises pour ajouter une note.
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2 space-y-1">
+              <Label className="text-[10px]">Libellé</Label>
+              <Input
+                value={form.libelle}
+                onChange={(e) => setForm({ ...form, libelle: e.target.value })}
+                placeholder="ex. Devoir 1"
+                disabled={!canAdd}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px]">Valeur</Label>
+              <Input
+                type="number"
+                step="0.25"
+                value={form.valeur}
+                onChange={(e) => setForm({ ...form, valeur: e.target.value })}
+                disabled={!canAdd}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px]">Coefficient</Label>
+              <Input
+                type="number"
+                step="0.5"
+                min="0"
+                value={form.coefficient}
+                onChange={(e) => setForm({ ...form, coefficient: e.target.value })}
+                disabled={!canAdd}
+              />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <Label className="text-[10px]">Date</Label>
+              <Input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                disabled={!canAdd}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+              Fermer
+            </Button>
+            <Button type="submit" size="sm" disabled={!canAdd || add.isPending}>
+              {add.isPending ? "Enregistrement…" : "Enregistrer la note"}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
