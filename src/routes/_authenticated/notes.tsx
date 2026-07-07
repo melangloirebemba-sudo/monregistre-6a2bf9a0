@@ -678,6 +678,13 @@ function BulkNoteDialog({
     enabled: !!classeId && open,
   });
 
+  // Notes existantes de la classe : sert à afficher un aperçu des élèves
+  // qui ont déjà été notés et à repérer les doublons dans la prévisualisation.
+  const { data: existingNotes = [] } = useQuery({
+    ...notesQO({ classeId: classeId || undefined }),
+    enabled: !!classeId && open,
+  });
+
   useEffect(() => {
     if (open) {
       const initial = defaultClasseId ?? classes[0]?.id ?? "";
@@ -724,6 +731,42 @@ function BulkNoteDialog({
       .filter(Boolean);
     return Array.from(new Set(parts));
   }, [matieresText]);
+
+  // Résumé par élève des notes déjà saisies dans le contexte courant
+  // (mêmes périodes / matières / libellé si renseignés). Sert à afficher un
+  // aperçu à côté du nom et à signaler les doublons potentiels.
+  const libelleTrim = libelle.trim().toLowerCase();
+  const existingByEleve = useMemo(() => {
+    const periodeSet = periodeIds.length > 0 ? new Set(periodeIds) : null;
+    const matiereSet = matieresList.length > 0
+      ? new Set(matieresList.map((m) => m.toLowerCase()))
+      : null;
+    const map = new Map<string, { total: number; sameLibelle: number; lastLibelle: string | null }>();
+    for (const n of existingNotes) {
+      if (periodeSet && !periodeSet.has(n.periode_id ?? "")) continue;
+      if (matiereSet && !matiereSet.has((n.matiere ?? "").toLowerCase())) continue;
+      const cur = map.get(n.eleve_id) ?? { total: 0, sameLibelle: 0, lastLibelle: null as string | null };
+      cur.total += 1;
+      if (libelleTrim && (n.libelle ?? "").trim().toLowerCase() === libelleTrim) {
+        cur.sameLibelle += 1;
+      }
+      if (!cur.lastLibelle) cur.lastLibelle = n.libelle;
+      map.set(n.eleve_id, cur);
+    }
+    return map;
+  }, [existingNotes, periodeIds, matieresList, libelleTrim]);
+
+  // Clés « déjà noté » exactes (eleve+periode+matiere+libellé) pour marquer
+  // les doublons dans la prévisualisation.
+  const existingExactKeys = useMemo(() => {
+    const s = new Set<string>();
+    if (!libelleTrim) return s;
+    for (const n of existingNotes) {
+      if ((n.libelle ?? "").trim().toLowerCase() !== libelleTrim) continue;
+      s.add(`${n.eleve_id}|${n.periode_id ?? "-"}|${(n.matiere ?? "").toLowerCase()}`);
+    }
+    return s;
+  }, [existingNotes, libelleTrim]);
 
   const parsedRows = useMemo(() => {
     return eleves.map((e) => {
@@ -1055,6 +1098,26 @@ function BulkNoteDialog({
                   <span className="text-destructive">{errorCount} erreur(s)</span>
                 )}
               </div>
+              {(() => {
+                const withNotes = eleves.filter((e) => (existingByEleve.get(e.id)?.total ?? 0) > 0).length;
+                const dupCount = libelleTrim
+                  ? eleves.filter((e) => (existingByEleve.get(e.id)?.sameLibelle ?? 0) > 0).length
+                  : 0;
+                if (withNotes === 0) return null;
+                return (
+                  <div className="col-span-2 flex flex-wrap items-center gap-2 border-t border-border/40 pt-1 text-[11px] normal-case tracking-normal text-muted-foreground">
+                    <span>
+                      {withNotes} élève(s) ont déjà des notes
+                      {periodeIds.length > 0 || matieresList.length > 0 ? " dans ce contexte" : ""}
+                    </span>
+                    {dupCount > 0 && (
+                      <span className="rounded-full bg-destructive/15 px-1.5 py-0.5 font-semibold text-destructive">
+                        ⚠ {dupCount} déjà « {libelle.trim()} »
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div className="max-h-[42vh] overflow-y-auto divide-y divide-border/60">
               {eleves.length === 0 ? (
@@ -1078,7 +1141,28 @@ function BulkNoteDialog({
                       }
                     />
                     <div className="min-w-0 flex-1 truncate text-sm">
-                      {r.eleve.prenom} {r.eleve.nom}
+                      <span>{r.eleve.prenom} {r.eleve.nom}</span>
+                      {(() => {
+                        const info = existingByEleve.get(r.eleve.id);
+                        if (!info || info.total === 0) return null;
+                        const dup = info.sameLibelle > 0;
+                        return (
+                          <span
+                            className={`ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                              dup
+                                ? "bg-destructive/15 text-destructive"
+                                : "bg-gold/15 text-gold-foreground text-[10px]"
+                            }`}
+                            title={
+                              dup
+                                ? `Déjà noté « ${libelle.trim()} » (${info.sameLibelle})`
+                                : `${info.total} note(s) déjà saisie(s)${info.lastLibelle ? ` — dernier : ${info.lastLibelle}` : ""}`
+                            }
+                          >
+                            {dup ? `⚠ ${info.sameLibelle}` : `${info.total}`}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="flex flex-col items-end">
                       <Input
@@ -1236,10 +1320,12 @@ function BulkNoteDialog({
                   <tbody className="divide-y divide-border/50">
                     {visiblePreview.map((p) => {
                       const included = !excludedKeys.has(p.key);
+                      const dupKey = `${p.eleve.id}|${p.periode_id ?? "-"}|${(p.matiere ?? "").toLowerCase()}`;
+                      const isDup = existingExactKeys.has(dupKey);
                       return (
                         <tr
                           key={p.key}
-                          className={`cursor-pointer ${included ? "" : "opacity-40"}`}
+                          className={`cursor-pointer ${included ? "" : "opacity-40"} ${isDup ? "bg-destructive/5" : ""}`}
                           onClick={() =>
                             setExcludedKeys((prev) => {
                               const next = new Set(prev);
@@ -1265,7 +1351,17 @@ function BulkNoteDialog({
                               onClick={(e) => e.stopPropagation()}
                             />
                           </td>
-                          <td className="truncate px-3 py-1.5">{p.eleve.prenom} {p.eleve.nom}</td>
+                          <td className="truncate px-3 py-1.5">
+                            {p.eleve.prenom} {p.eleve.nom}
+                            {isDup && (
+                              <span
+                                className="ml-1.5 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+                                title="Une note avec ce libellé existe déjà pour cet élève"
+                              >
+                                ⚠ doublon
+                              </span>
+                            )}
+                          </td>
                           <td className="px-2 py-1.5 text-muted-foreground">{p.periodeLabel}</td>
                           <td className="px-2 py-1.5 text-muted-foreground">{p.matiereLabel}</td>
                           <td className="px-3 py-1.5 text-right font-semibold">
