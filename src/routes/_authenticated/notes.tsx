@@ -1098,6 +1098,26 @@ function BulkNoteDialog({
                   <span className="text-destructive">{errorCount} erreur(s)</span>
                 )}
               </div>
+              {(() => {
+                const withNotes = eleves.filter((e) => (existingByEleve.get(e.id)?.total ?? 0) > 0).length;
+                const dupCount = libelleTrim
+                  ? eleves.filter((e) => (existingByEleve.get(e.id)?.sameLibelle ?? 0) > 0).length
+                  : 0;
+                if (withNotes === 0) return null;
+                return (
+                  <div className="col-span-2 flex flex-wrap items-center gap-2 border-t border-border/40 pt-1 text-[11px] normal-case tracking-normal text-muted-foreground">
+                    <span>
+                      {withNotes} élève(s) ont déjà des notes
+                      {periodeIds.length > 0 || matieresList.length > 0 ? " dans ce contexte" : ""}
+                    </span>
+                    {dupCount > 0 && (
+                      <span className="rounded-full bg-destructive/15 px-1.5 py-0.5 font-semibold text-destructive">
+                        ⚠ {dupCount} déjà « {libelle.trim()} »
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             <div className="max-h-[42vh] overflow-y-auto divide-y divide-border/60">
               {eleves.length === 0 ? (
