@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   PLAN_LABEL,
+  normalizeWhatsAppNumber,
+  supportConfig,
   upgradeWhatsAppHref,
   type PlanKey,
   type UpgradeContext,
