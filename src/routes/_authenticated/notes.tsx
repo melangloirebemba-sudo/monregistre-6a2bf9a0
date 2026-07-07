@@ -120,11 +120,7 @@ function NotesPage() {
     search: deferredQ,
     searchFields: (n) => [n.eleve?.prenom, n.eleve?.nom, n.libelle, n.matiere],
     filters: [
-      (n) => {
-        if (ecoleFilter === "all") return true;
-        const cls = n.eleve ? classeById[n.eleve.classe_id] : null;
-        return cls?.ecole_id === ecoleFilter;
-      },
+      (n) => ecoleFilter === "all" || n.ecole_id === ecoleFilter,
     ],
     sortKey: `${ecoleFilter}|${classeFilter}|${periodeFilter}`,
   });
