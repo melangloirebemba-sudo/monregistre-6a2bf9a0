@@ -134,7 +134,7 @@ function NotificationsPrefsPage() {
                   checked={active}
                   onCheckedChange={(v) =>
                     setNotificationsPrefs({
-                      push: { [k]: v } as Partial<Record<PushKind, boolean>> as Record<PushKind, boolean>,
+                      push: { [k]: v },
                     })
                   }
                   aria-label={`Push ${PUSH_KIND_LABELS[k]}`}
