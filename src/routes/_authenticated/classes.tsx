@@ -6,6 +6,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { enqueueWrite } from "@/lib/offline-queue";
 import { classesQO, ecolesQO, requireUserId, type Classe } from "@/lib/queries/data";
+import { planCapabilitiesQO } from "@/lib/queries/profil";
+import { PLAN_LABEL, type PlanKey } from "@/config/support";
+import {
+  PlanLimitBanner,
+  LockedEmptyState,
+  LockedFloatingAdd,
+  PlanUpgradeDialog,
+} from "@/components/app/plan-limit";
 import { Button } from "@/components/ui/button";
 import { DataPagination } from "@/components/ui/data-pagination";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
@@ -45,6 +53,8 @@ export const Route = createFileRoute("/_authenticated/classes")({
 
 function ClassesPage() {
   const { data: ecoles = [] } = useQuery(ecolesQO());
+  const { data: allClasses = [] } = useQuery(classesQO());
+  const { data: caps } = useQuery(planCapabilitiesQO());
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const { data: classes = [], isLoading } = useQuery(
     classesQO(ecoleFilter === "all" ? undefined : ecoleFilter),
@@ -52,6 +62,7 @@ function ClassesPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Classe | null>(null);
   const [open, setOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Classe | null>(null);
 
   const pq = usePaginatedQuery({
@@ -65,6 +76,39 @@ function ClassesPage() {
   const ecoleById = useMemo(() => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])), [ecoles]);
 
   const canAdd = ecoles.length > 0;
+
+  // Comptage classes par école pour la vérification de limite
+  const maxClassesParEcole = caps?.max_classes_par_ecole ?? 0;
+  const isAdmin = !!caps?.isAdmin;
+  const classesCountByEcole = useMemo(() => {
+    const map = new Map<string, number>();
+    allClasses.forEach((c) => map.set(c.ecole_id, (map.get(c.ecole_id) ?? 0) + 1));
+    return map;
+  }, [allClasses]);
+
+  const atLimit = useMemo(() => {
+    if (isAdmin || maxClassesParEcole <= 0 || ecoles.length === 0) return false;
+    if (ecoleFilter !== "all") {
+      return (classesCountByEcole.get(ecoleFilter) ?? 0) >= maxClassesParEcole;
+    }
+    return ecoles.every(
+      (e) => (classesCountByEcole.get(e.id) ?? 0) >= maxClassesParEcole,
+    );
+  }, [isAdmin, maxClassesParEcole, ecoles, classesCountByEcole, ecoleFilter]);
+
+  const currentPlan: PlanKey = caps?.plan ?? "gratuit";
+  const planLabel = PLAN_LABEL[currentPlan];
+  const limitDescription = `${maxClassesParEcole} classe${maxClassesParEcole > 1 ? "s" : ""} par école`;
+  const bannerMessage = `Le plan ${planLabel} autorise ${limitDescription}. Passez à un plan supérieur pour en ajouter davantage.`;
+
+  const handleAdd = () => {
+    if (atLimit) {
+      setUpgradeOpen(true);
+      return;
+    }
+    setEditing(null);
+    setOpen(true);
+  };
 
 
   return (
@@ -92,6 +136,14 @@ function ClassesPage() {
         </div>
       </div>
 
+      {canAdd && atLimit && (
+        <PlanLimitBanner
+          planLabel={planLabel}
+          message={bannerMessage}
+          onUpgrade={() => setUpgradeOpen(true)}
+        />
+      )}
+
       {!canAdd ? (
         <div className="card-elevated p-6 text-center">
           <p className="text-sm text-muted-foreground">
@@ -102,18 +154,15 @@ function ClassesPage() {
         <ListSkeleton rows={4} />
       ) : pq.isEmpty ? (
         classes.length === 0 ? (
-          <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
-              <GraduationCap className="h-6 w-6" />
-            </span>
-            <div>
-              <div className="font-display text-lg font-semibold">Aucune classe</div>
-              <p className="mt-1 text-sm text-muted-foreground">Créez votre première classe.</p>
-            </div>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}>
-              <Plus className="mr-1 h-4 w-4" /> Ajouter une classe
-            </Button>
-          </div>
+          <LockedEmptyState
+            icon={<GraduationCap className="h-6 w-6" />}
+            title="Aucune classe"
+            hint="Créez votre première classe."
+            lockedHint="Ajout de classe bloqué : la limite de votre plan est atteinte pour cette école."
+            onAdd={handleAdd}
+            addLabel={<><Plus className="mr-1 h-4 w-4" /> Ajouter une classe</> as unknown as string}
+            locked={atLimit}
+          />
         ) : (
           <NoResults
             query={q}
@@ -199,20 +248,26 @@ function ClassesPage() {
 
 
       {canAdd && (
-        <button
-          onClick={() => { setEditing(null); setOpen(true); }}
-          aria-label="Ajouter"
-          className="fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-teal text-teal-foreground shadow-[var(--shadow-hero)] transition-transform hover:scale-105 lg:bottom-8"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
+        <LockedFloatingAdd
+          onClick={handleAdd}
+          locked={atLimit}
+          icon={<Plus className="h-6 w-6" />}
+        />
       )}
 
       <ClasseDialog open={open} onOpenChange={setOpen} classe={editing} ecoles={ecoles} defaultEcoleId={ecoleFilter !== "all" ? ecoleFilter : ecoles[0]?.id} />
       <DeleteDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)} classe={toDelete} onDone={() => setToDelete(null)} />
+      <PlanUpgradeDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        currentPlan={currentPlan}
+        contextName={ecoles[0]?.nom ?? ""}
+        limitDescription={limitDescription}
+      />
     </div>
   );
 }
+
 
 function ClasseDialog({
   open,

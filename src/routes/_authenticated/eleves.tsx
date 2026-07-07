@@ -14,7 +14,14 @@ import {
   type Eleve,
 } from "@/lib/queries/data";
 import { moyennePonderee, noteColorClass, formatNote } from "@/lib/format";
-import { profilQueryOptions } from "@/lib/queries/profil";
+import { profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
+import { PLAN_LABEL, type PlanKey } from "@/config/support";
+import {
+  PlanLimitBanner,
+  LockedEmptyState,
+  LockedFloatingAdd,
+  PlanUpgradeDialog,
+} from "@/components/app/plan-limit";
 import { Button } from "@/components/ui/button";
 import { DataPagination } from "@/components/ui/data-pagination";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
@@ -56,6 +63,8 @@ function ElevesPage() {
   const { data: classes = [] } = useQuery(classesQO());
   const { data: ecoles = [] } = useQuery(ecolesQO());
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: caps } = useQuery(planCapabilitiesQO());
+  const { data: allEleves = [] } = useQuery(elevesQO());
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [classeFilter, setClasseFilter] = useState<string>("all");
   const { data: eleves = [], isLoading } = useQuery(
@@ -67,7 +76,16 @@ function ElevesPage() {
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<Eleve | null>(null);
   const [open, setOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Eleve | null>(null);
+
+  const maxEleves = caps?.max_eleves ?? 0;
+  const isAdmin = !!caps?.isAdmin;
+  const atLimit = !isAdmin && maxEleves > 0 && allEleves.length >= maxEleves;
+  const currentPlan: PlanKey = caps?.plan ?? "gratuit";
+  const planLabel = PLAN_LABEL[currentPlan];
+  const limitDescription = `${maxEleves} élève${maxEleves > 1 ? "s" : ""}`;
+  const bannerMessage = `Le plan ${planLabel} autorise ${limitDescription}. Passez à un plan supérieur pour en ajouter davantage.`;
 
   const classesForEcole = useMemo(
     () => (ecoleFilter === "all" ? classes : classes.filter((c) => c.ecole_id === ecoleFilter)),
@@ -116,7 +134,14 @@ function ElevesPage() {
     );
   }, [paged, ecoleFilter, ecoleById]);
 
-
+  const handleAdd = () => {
+    if (atLimit) {
+      setUpgradeOpen(true);
+      return;
+    }
+    setEditing(null);
+    setOpen(true);
+  };
 
   return (
     <div className="px-5 pb-24 pt-5">
@@ -159,6 +184,14 @@ function ElevesPage() {
       </div>
 
 
+      {canAdd && atLimit && (
+        <PlanLimitBanner
+          planLabel={planLabel}
+          message={bannerMessage}
+          onUpgrade={() => setUpgradeOpen(true)}
+        />
+      )}
+
       {!canAdd ? (
         <div className="card-elevated p-6 text-center text-sm text-muted-foreground">
           Ajoutez d'abord une classe pour inscrire vos élèves.
@@ -167,18 +200,15 @@ function ElevesPage() {
         <ListSkeleton rows={5} />
       ) : filtered.length === 0 ? (
         eleves.length === 0 ? (
-          <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
-              <Users className="h-6 w-6" />
-            </span>
-            <div>
-              <div className="font-display text-lg font-semibold">Aucun élève</div>
-              <p className="mt-1 text-sm text-muted-foreground">Ajoutez votre premier élève.</p>
-            </div>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}>
-              <Plus className="mr-1 h-4 w-4" /> Ajouter un élève
-            </Button>
-          </div>
+          <LockedEmptyState
+            icon={<Users className="h-6 w-6" />}
+            title="Aucun élève"
+            hint="Ajoutez votre premier élève."
+            lockedHint="Ajout d'élève bloqué : la limite de votre plan est atteinte."
+            onAdd={handleAdd}
+            addLabel={<><Plus className="mr-1 h-4 w-4" /> Ajouter un élève</>}
+            locked={atLimit}
+          />
         ) : (
           <NoResults
             query={q}
@@ -272,13 +302,11 @@ function ElevesPage() {
 
 
       {canAdd && (
-        <button
-          onClick={() => { setEditing(null); setOpen(true); }}
-          aria-label="Ajouter"
-          className="fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-teal text-teal-foreground shadow-[var(--shadow-hero)] transition-transform hover:scale-105 lg:bottom-8"
-        >
-          <Plus className="h-6 w-6" />
-        </button>
+        <LockedFloatingAdd
+          onClick={handleAdd}
+          locked={atLimit}
+          icon={<Plus className="h-6 w-6" />}
+        />
       )}
 
       <EleveDialog
@@ -290,6 +318,13 @@ function ElevesPage() {
         defaultClasseId={classeFilter !== "all" ? classeFilter : classes[0]?.id}
       />
       <DeleteEleveDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)} eleve={toDelete} onDone={() => setToDelete(null)} />
+      <PlanUpgradeDialog
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        currentPlan={currentPlan}
+        contextName={ecoles[0]?.nom ?? ""}
+        limitDescription={limitDescription}
+      />
     </div>
   );
 }
