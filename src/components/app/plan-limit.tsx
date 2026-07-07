@@ -173,7 +173,6 @@ export function PlanUpgradeDialog({
   // on rafraîchit les capacités du plan pour refléter un éventuel upgrade.
   const waClicked = useRef(false);
   useEffect(() => {
-    if (!open) return;
     const refresh = () => {
       if (!waClicked.current) return;
       waClicked.current = false;
@@ -190,7 +189,7 @@ export function PlanUpgradeDialog({
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [open, qc]);
+  }, [qc]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
