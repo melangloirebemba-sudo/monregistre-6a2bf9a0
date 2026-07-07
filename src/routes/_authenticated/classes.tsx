@@ -465,6 +465,30 @@ function ClasseElevesDialog({
     ...elevesQO(classe?.id),
     enabled: !!classe?.id,
   });
+  const { data: periodes = [] } = useQuery({
+    ...periodesQO(),
+    enabled: !!classe?.id,
+  });
+  const [periodeId, setPeriodeId] = useState<string>("all");
+  useEffect(() => {
+    if (!classe) return;
+    const active = periodes.find((p) => p.active);
+    setPeriodeId(active?.id ?? "all");
+  }, [classe, periodes]);
+  const { data: notes = [] } = useQuery({
+    ...notesQO({ classeId: classe?.id, periodeId: periodeId === "all" ? undefined : periodeId }),
+    enabled: !!classe?.id,
+  });
+
+  const total = eleves.length;
+  const nbF = eleves.filter((e) => (e.sexe ?? "").toUpperCase().startsWith("F")).length;
+  const nbM = eleves.filter((e) => (e.sexe ?? "").toUpperCase().startsWith("M")).length;
+  const nbNC = total - nbF - nbM;
+  const withNotes = new Set(notes.map((n) => n.eleve_id)).size;
+  const periodeLabel = periodeId === "all"
+    ? "toutes périodes"
+    : periodes.find((p) => p.id === periodeId)?.label ?? "période";
+
   const open = !!classe;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -480,7 +504,49 @@ function ClasseElevesDialog({
             </p>
           )}
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto">
+
+        <div className="space-y-3 rounded-xl border border-border/60 bg-card/40 p-3">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg bg-teal/10 px-2 py-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Effectif</div>
+              <div className="font-display text-lg font-semibold text-foreground">{total}</div>
+            </div>
+            <div className="rounded-lg bg-gold/15 px-2 py-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Filles / Garçons</div>
+              <div className="font-display text-sm font-semibold text-foreground">
+                {nbF} <span className="text-muted-foreground">·</span> {nbM}
+                {nbNC > 0 && <span className="text-muted-foreground"> (+{nbNC})</span>}
+              </div>
+            </div>
+            <div className="rounded-lg bg-teal/10 px-2 py-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Avec notes</div>
+              <div className="font-display text-lg font-semibold text-foreground">
+                {withNotes}<span className="text-xs text-muted-foreground">/{total}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-[11px] text-muted-foreground">Période</Label>
+            <Select value={periodeId} onValueChange={setPeriodeId}>
+              <SelectTrigger className="h-8 flex-1 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes périodes</SelectItem>
+                {periodes.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.label}{p.active ? " (active)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {withNotes} élève{withNotes > 1 ? "s" : ""} avec au moins une note — {periodeLabel}.
+          </p>
+        </div>
+
+        <div className="max-h-[45vh] overflow-y-auto">
           {isLoading ? (
             <p className="py-6 text-center text-sm text-muted-foreground">Chargement…</p>
           ) : eleves.length === 0 ? (
