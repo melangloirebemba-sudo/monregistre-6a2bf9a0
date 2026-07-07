@@ -802,10 +802,15 @@ function EleveDialog({
                 {pending.map((p) => {
                   const cls = classes.find((c) => c.id === p.classe_id);
                   const ecoleNom = ecoles.find((e) => e.id === p.ecole_id)?.nom;
+                  const dupExisting = existingKeys.has(dedupKey(p.nom, p.prenom, p.classe_id));
                   return (
                     <li
                       key={p.id}
-                      className="flex items-start justify-between gap-2 rounded-md bg-background/60 px-2 py-1.5 text-xs"
+                      className={`flex items-start justify-between gap-2 rounded-md px-2 py-1.5 text-xs ${
+                        dupExisting
+                          ? "border border-destructive/40 bg-destructive/10"
+                          : "bg-background/60"
+                      }`}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-semibold">
@@ -821,6 +826,11 @@ function EleveDialog({
                           {p.tuteur_numero ? ` (${p.tuteur_numero})` : ""}
                           {p.chef ? " · Chef" : ""}
                         </div>
+                        {dupExisting && (
+                          <div className="mt-0.5 text-[10px] font-semibold text-destructive">
+                            ⚠ Doublon : un élève avec ce nom/prénom existe déjà dans cette classe.
+                          </div>
+                        )}
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
                         <button
