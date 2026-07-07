@@ -119,6 +119,26 @@ function AdminNotificationsPage() {
   const scheduleFn = useServerFn(scheduleAdminBroadcast);
   const cancelFn = useServerFn(cancelScheduledBroadcast);
   const triggerFn = useServerFn(triggerNotificationHook);
+  const listUsersFn = useServerFn(listAllUsers);
+
+  const [userSearch, setUserSearch] = useState("");
+  const { data: usersList = [], isLoading: usersLoading } = useQuery({
+    queryKey: ["admin-users-list"],
+    queryFn: () => listUsersFn(),
+    enabled: targetType === "user",
+    staleTime: 60_000,
+  });
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.trim().toLowerCase();
+    if (!q) return usersList.slice(0, 50);
+    return usersList
+      .filter((u) => {
+        const hay = `${u.email ?? ""} ${u.nom_affiche ?? ""} ${u.prenom ?? ""} ${u.nom_famille ?? ""}`.toLowerCase();
+        return hay.includes(q);
+      })
+      .slice(0, 50);
+  }, [usersList, userSearch]);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["admin-scheduled-notifications"] });
