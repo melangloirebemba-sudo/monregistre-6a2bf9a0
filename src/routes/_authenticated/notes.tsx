@@ -668,6 +668,8 @@ function BulkNoteDialog({
   // Filtres actifs dans la prévisualisation. `null` représente « pas de période » ou « pas de matière ».
   const [previewPeriodeFilter, setPreviewPeriodeFilter] = useState<Set<string | null> | null>(null);
   const [previewMatiereFilter, setPreviewMatiereFilter] = useState<Set<string | null> | null>(null);
+  // Élève dont on consulte le détail des notes déjà saisies (via clic sur le badge).
+  const [detailEleveId, setDetailEleveId] = useState<string | null>(null);
 
   const libelleRef = useState<HTMLInputElement | null>(null as unknown as HTMLInputElement | null);
   // Simple ref via useState to avoid extra import; we only need the DOM node.
