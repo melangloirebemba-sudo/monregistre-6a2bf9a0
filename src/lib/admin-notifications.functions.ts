@@ -38,22 +38,25 @@ export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase as never, context.userId);
 
-    // Compute target user ids via a service-role read so admin sees all users
-    // regardless of RLS.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Utilise le client authentifié (RLS admin autorise l'accès à tous les
+    // profils/notifications). Le client service_role peut échouer sur Lovable
+    // Cloud avec les nouvelles clés `sb_secret_*` sur les endpoints Data API.
+    const db = context.supabase;
 
     let userIds: string[] = [];
     if (data.target_type === "all") {
-      const { data: rows } = await supabaseAdmin
+      const { data: rows, error } = await db
         .from("profils_enseignant")
         .select("user_id");
+      if (error) throw new Error(`Lecture des profils impossible: ${error.message}`);
       userIds = (rows ?? []).map((r) => r.user_id as string);
     } else if (data.target_type === "plan") {
       const plan = planSchema.parse(data.target_value);
-      const { data: rows } = await supabaseAdmin
+      const { data: rows, error } = await db
         .from("profils_enseignant")
         .select("user_id")
         .eq("plan", plan);
+      if (error) throw new Error(`Lecture des profils impossible: ${error.message}`);
       userIds = (rows ?? []).map((r) => r.user_id as string);
     } else if (data.target_type === "user") {
       if (!data.target_value) throw new Error("Utilisateur cible manquant");
@@ -61,10 +64,24 @@ export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
     }
 
     if (userIds.length === 0) {
+      // Journalise quand même la tentative pour que l'admin voie 0 destinataire.
+      await db.from("scheduled_notifications").insert({
+        title: data.title,
+        body: data.body ?? null,
+        category: data.category,
+        href: data.href ?? null,
+        target_type: data.target_type,
+        target_value: data.target_value ?? null,
+        send_at: new Date().toISOString(),
+        sent_at: new Date().toISOString(),
+        recipients_count: 0,
+        status: "sent",
+        created_by: context.userId,
+      });
       return { ok: true, recipients: 0 };
     }
 
-    // Insert in chunks of 500 to stay well under any request size limit.
+    // Insertion par lots de 500 pour rester bien en deçà des limites de requête.
     const rows = userIds.map((uid) => ({
       user_id: uid,
       title: data.title,
@@ -74,12 +91,12 @@ export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
     }));
     for (let i = 0; i < rows.length; i += 500) {
       const chunk = rows.slice(i, i + 500);
-      const { error } = await supabaseAdmin.from("user_notifications").insert(chunk);
-      if (error) throw new Error(error.message);
+      const { error } = await db.from("user_notifications").insert(chunk);
+      if (error) throw new Error(`Envoi impossible: ${error.message}`);
     }
 
-    // Log the send as a scheduled_notifications row for audit.
-    await supabaseAdmin.from("scheduled_notifications").insert({
+    // Trace la diffusion pour audit.
+    await db.from("scheduled_notifications").insert({
       title: data.title,
       body: data.body ?? null,
       category: data.category,
