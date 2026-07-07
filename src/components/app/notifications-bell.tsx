@@ -368,8 +368,9 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </Popover>
 
-      <Dialog open={!!detailItem} onOpenChange={(v) => !v && setDetailItem(null)}>
+    <Dialog open={!!detailItem} onOpenChange={(v) => !v && setDetailItem(null)}>
         <DialogContent className="max-w-md gap-0 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl">
           {detailItem && (
             <>
