@@ -134,6 +134,21 @@ function AdminNotificationsPage() {
   const listReadersFn = useServerFn(listBroadcastReaders);
   const deleteBroadcastFn = useServerFn(deleteBroadcast);
   const clearHistoryFn = useServerFn(clearBroadcastHistory);
+  const previewFn = useServerFn(previewBroadcastRecipients);
+
+  const [showPreview, setShowPreview] = useState(false);
+  const [lastResult, setLastResult] = useState<{
+    sent: number;
+    failed: number;
+    total: number;
+    details: Array<{
+      user_id: string;
+      nom_affiche: string | null;
+      email: string | null;
+      status: "sent" | "failed";
+      error?: string;
+    }>;
+  } | null>(null);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
