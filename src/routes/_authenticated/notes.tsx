@@ -1425,6 +1425,107 @@ function BulkNoteDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+      <EleveNotesDetailDialog
+        open={!!detailEleveId}
+        onOpenChange={(v) => !v && setDetailEleveId(null)}
+        eleve={detailEleveId ? eleves.find((e) => e.id === detailEleveId) ?? null : null}
+        notes={detailEleveId ? existingNotes.filter((n) => {
+          if (n.eleve_id !== detailEleveId) return false;
+          if (periodeIds.length > 0 && !periodeIds.includes(n.periode_id ?? "")) return false;
+          if (matieresList.length > 0) {
+            const set = new Set(matieresList.map((m) => m.toLowerCase()));
+            if (!set.has((n.matiere ?? "").toLowerCase())) return false;
+          }
+          return true;
+        }) : []}
+        echelle={echelle}
+        periodeLabelById={periodeLabelById}
+        onPrefill={(n) => {
+          setValues((v) => ({ ...v, [n.eleve_id]: String(n.valeur) }));
+          setChecked((c) => ({ ...c, [n.eleve_id]: true }));
+          if (!libelle.trim()) setLibelle(n.libelle);
+          if (!matieresText.trim() && n.matiere) setMatieresText(n.matiere);
+          setDetailEleveId(null);
+          toast.success(`Note pré-remplie : ${formatNote(n.valeur)}/${echelle}`);
+        }}
+      />
+    </Dialog>
+  );
+}
+
+function EleveNotesDetailDialog({
+  open,
+  onOpenChange,
+  eleve,
+  notes,
+  echelle,
+  periodeLabelById,
+  onPrefill,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  eleve: { id: string; nom: string; prenom: string } | null;
+  notes: Array<Note>;
+  echelle: number;
+  periodeLabelById: Record<string, string>;
+  onPrefill: (n: Note) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[480px] p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="font-display">
+            Notes déjà saisies{eleve ? ` — ${eleve.prenom} ${eleve.nom}` : ""}
+          </DialogTitle>
+        </DialogHeader>
+        {notes.length === 0 ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            Aucune note trouvée dans ce contexte.
+          </div>
+        ) : (
+          <div className="max-h-[60vh] overflow-auto rounded-xl border border-border/60">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-cream-deep/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-1.5 text-left">Libellé</th>
+                  <th className="px-2 py-1.5 text-left">Matière</th>
+                  <th className="px-2 py-1.5 text-left">Période</th>
+                  <th className="px-2 py-1.5 text-right">Note</th>
+                  <th className="px-2 py-1.5"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {notes.map((n) => (
+                  <tr key={n.id}>
+                    <td className="px-3 py-1.5">
+                      <div className="truncate">{n.libelle}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {new Date(n.date).toLocaleDateString("fr-FR")}
+                        {n.coefficient !== 1 ? ` · coef ${n.coefficient}` : ""}
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5 text-muted-foreground">{n.matiere ?? "—"}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground">
+                      {n.periode_id ? periodeLabelById[n.periode_id] ?? "—" : "—"}
+                    </td>
+                    <td className={`px-2 py-1.5 text-right font-semibold ${noteColorClass(n.valeur, echelle)}`}>
+                      {formatNote(n.valeur)}/{echelle}
+                    </td>
+                    <td className="px-2 py-1.5 text-right">
+                      <Button type="button" size="sm" variant="outline" onClick={() => onPrefill(n)}>
+                        Pré-remplir
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Fermer</Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 }
