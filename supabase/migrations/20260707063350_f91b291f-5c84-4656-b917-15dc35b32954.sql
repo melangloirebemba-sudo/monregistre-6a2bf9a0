@@ -1,0 +1,1 @@
+UPDATE public.app_settings SET whatsapp_number = '242069626540' WHERE id = 1;
