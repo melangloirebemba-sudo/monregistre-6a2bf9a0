@@ -331,18 +331,72 @@ function AdminNotificationsPage() {
             </div>
           )}
           {targetType === "user" && (
-            <div>
-              <Label htmlFor="notif-user">Email du destinataire</Label>
+            <div className="sm:col-span-2">
+              <Label htmlFor="notif-user">Destinataire</Label>
               <Input
-                id="notif-user"
-                type="email"
+                id="notif-user-search"
+                type="search"
                 autoComplete="off"
-                value={targetValue}
-                onChange={(e) => setTargetValue(e.target.value)}
-                placeholder="prenom.nom@exemple.com"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder="Rechercher par nom ou email…"
+                className="mb-2"
               />
+              <div className="max-h-60 overflow-y-auto rounded-lg border border-border/60 bg-background/50">
+                {usersLoading ? (
+                  <div className="p-3 text-center text-xs text-muted-foreground">
+                    Chargement des utilisateurs…
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="p-3 text-center text-xs text-muted-foreground">
+                    Aucun utilisateur trouvé.
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-border/40">
+                    {filteredUsers.map((u) => {
+                      const selected = targetValue === (u.email ?? u.user_id);
+                      const label = u.nom_affiche
+                        || [u.prenom, u.nom_famille].filter(Boolean).join(" ")
+                        || u.email
+                        || u.user_id;
+                      return (
+                        <li key={u.user_id}>
+                          <button
+                            type="button"
+                            onClick={() => setTargetValue(u.email ?? u.user_id)}
+                            className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs transition hover:bg-muted/50 ${
+                              selected ? "bg-gold/10 text-foreground" : "text-foreground"
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium">{label}</div>
+                              <div className="truncate text-[11px] text-muted-foreground">
+                                {u.email ?? "email non renseigné"}
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              {u.plan && (
+                                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                  {u.plan}
+                                </span>
+                              )}
+                              {u.statut && u.statut !== "actif" && (
+                                <span className="rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] text-destructive">
+                                  {u.statut}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Entrez l'email de connexion de l'utilisateur. L'identifiant est résolu automatiquement.
+                {targetValue
+                  ? <>Sélectionné : <b className="text-foreground">{targetValue}</b></>
+                  : "Cliquez sur un utilisateur pour le sélectionner."}
               </p>
             </div>
           )}
