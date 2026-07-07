@@ -40,15 +40,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  *   puis en repli via l'API Auth Admin (source de vérité pour l'email de connexion).
  */
 async function resolveUserByEmailOrId(
-  db: {
-    from: (t: string) => {
-      select: (c: string) => {
-        eq: (col: string, val: string) => {
-          maybeSingle: () => Promise<{ data: { user_id: string } | null; error: unknown }>;
-        };
-      };
-    };
-  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  db: any,
   raw: string,
 ): Promise<string> {
   const value = raw.trim();
