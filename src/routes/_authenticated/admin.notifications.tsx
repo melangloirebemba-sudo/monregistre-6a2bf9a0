@@ -10,6 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
   BellRing,
+  Send,
   CalendarClock,
   Trash2,
   RefreshCw,
@@ -39,6 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  sendAdminBroadcastNow,
   scheduleAdminBroadcast,
   cancelScheduledBroadcast,
   triggerNotificationHook,
@@ -119,6 +121,8 @@ function AdminNotificationsPage() {
     const d = new Date(Date.now() + 60 * 60 * 1000);
     return toLocalInputValue(d);
   });
+  const [mode, setMode] = useState<"now" | "schedule">("now");
+  const sendNow = useServerFn(sendAdminBroadcastNow);
   const scheduleFn = useServerFn(scheduleAdminBroadcast);
   const cancelFn = useServerFn(cancelScheduledBroadcast);
   const triggerFn = useServerFn(triggerNotificationHook);
@@ -161,12 +165,19 @@ function AdminNotificationsPage() {
         href: href.trim() || null,
         target_type: targetType,
         target_value: targetType === "all" ? null : targetValue.trim() || null,
-        send_at: new Date(sendAt).toISOString(),
+        send_at: mode === "schedule" ? new Date(sendAt).toISOString() : null,
       };
-      return scheduleFn({ data: payload });
+      return mode === "now"
+        ? sendNow({ data: payload })
+        : scheduleFn({ data: payload });
     },
-    onSuccess: () => {
-      toast.success("Notification programmée");
+    onSuccess: (res) => {
+      if (mode === "now") {
+        const r = res as { recipients?: number };
+        toast.success(`Notification envoyée à ${r.recipients ?? 0} destinataire(s)`);
+      } else {
+        toast.success("Notification programmée");
+      }
       setTitle("");
       setBody("");
       setHref("");
@@ -175,6 +186,7 @@ function AdminNotificationsPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const removeBroadcast = useMutation({
     mutationFn: async (id: string) => deleteBroadcastFn({ data: { id } }),
@@ -418,28 +430,51 @@ function AdminNotificationsPage() {
         </div>
 
         <div className="rounded-xl border border-border/60 bg-background/50 p-3">
-          <div className="mb-3">
-            <Label htmlFor="notif-when" className="flex items-center gap-1.5">
-              <CalendarClock className="h-3.5 w-3.5" />
-              Date & heure d'envoi
-            </Label>
-            <Input
-              id="notif-when"
-              type="datetime-local"
-              value={sendAt}
-              onChange={(e) => setSendAt(e.target.value)}
-            />
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              Le service dispatch vérifie les notifications programmées toutes les 5 minutes.
-            </p>
+          <div className="mb-3 flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "now" ? "default" : "outline"}
+              onClick={() => setMode("now")}
+            >
+              <Send className="mr-1.5 h-3.5 w-3.5" />
+              Envoyer maintenant
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "schedule" ? "default" : "outline"}
+              onClick={() => setMode("schedule")}
+            >
+              <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+              Programmer
+            </Button>
           </div>
+          {mode === "schedule" && (
+            <div className="mb-3">
+              <Label htmlFor="notif-when">Date & heure d'envoi</Label>
+              <Input
+                id="notif-when"
+                type="datetime-local"
+                value={sendAt}
+                onChange={(e) => setSendAt(e.target.value)}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Le service dispatch vérifie les notifications programmées toutes les 5 minutes.
+              </p>
+            </div>
+          )}
           <Button
             type="button"
             className="w-full"
             disabled={!canSubmit || submitting.isPending}
             onClick={() => submitting.mutate()}
           >
-            {submitting.isPending ? "Envoi…" : "Programmer l'envoi"}
+            {submitting.isPending
+              ? "Envoi…"
+              : mode === "now"
+                ? "Envoyer immédiatement"
+                : "Programmer l'envoi"}
           </Button>
         </div>
       </section>
