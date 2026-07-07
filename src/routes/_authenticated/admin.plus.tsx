@@ -41,6 +41,7 @@ function AdminPlusPage() {
             <li key={it.to}>
               <Link
                 to={it.to}
+                preload={false}
                 className="card-elevated flex items-center gap-3 p-4 transition-colors hover:bg-cream-deep/40"
               >
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-teal/15 text-teal">
