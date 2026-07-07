@@ -1130,7 +1130,10 @@ function BulkNoteDialog({
             <div className="rounded-xl border border-teal/40 bg-teal/5">
               <div className="flex items-center justify-between gap-2 border-b border-teal/30 px-3 py-2">
                 <div className="text-sm font-semibold text-foreground">
-                  Prévisualisation · {includedCount}/{previewNotes.length} sélectionnée(s)
+                  Prévisualisation · {includedCount}/{visiblePreview.length} sélectionnée(s)
+                  {visiblePreview.length !== previewNotes.length && (
+                    <span className="text-muted-foreground font-normal"> · {previewNotes.length - visiblePreview.length} masquée(s)</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
