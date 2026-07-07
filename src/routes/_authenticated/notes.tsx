@@ -363,6 +363,15 @@ function NotesPage() {
         defaultClasseId={classeFilter !== "all" ? classeFilter : undefined}
         defaultPeriodeId={periodeFilter !== "all" ? periodeFilter : undefined}
       />
+      <BulkNoteDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        classes={classes}
+        periodes={periodes}
+        echelle={echelle}
+        defaultClasseId={classeFilter !== "all" ? classeFilter : undefined}
+        defaultPeriodeId={periodeFilter !== "all" ? periodeFilter : undefined}
+      />
       <DeleteNoteDialog open={!!toDelete} onOpenChange={(v) => !v && setToDelete(null)} note={toDelete} onDone={() => setToDelete(null)} />
     </div>
   );
