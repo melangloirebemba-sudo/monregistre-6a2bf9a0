@@ -184,6 +184,14 @@ function ElevesPage() {
       </div>
 
 
+      {canAdd && atLimit && (
+        <PlanLimitBanner
+          planLabel={planLabel}
+          message={bannerMessage}
+          onUpgrade={() => setUpgradeOpen(true)}
+        />
+      )}
+
       {!canAdd ? (
         <div className="card-elevated p-6 text-center text-sm text-muted-foreground">
           Ajoutez d'abord une classe pour inscrire vos élèves.
@@ -192,18 +200,15 @@ function ElevesPage() {
         <ListSkeleton rows={5} />
       ) : filtered.length === 0 ? (
         eleves.length === 0 ? (
-          <div className="card-elevated flex flex-col items-center gap-3 p-8 text-center">
-            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-teal/15 text-ink">
-              <Users className="h-6 w-6" />
-            </span>
-            <div>
-              <div className="font-display text-lg font-semibold">Aucun élève</div>
-              <p className="mt-1 text-sm text-muted-foreground">Ajoutez votre premier élève.</p>
-            </div>
-            <Button onClick={() => { setEditing(null); setOpen(true); }}>
-              <Plus className="mr-1 h-4 w-4" /> Ajouter un élève
-            </Button>
-          </div>
+          <LockedEmptyState
+            icon={<Users className="h-6 w-6" />}
+            title="Aucun élève"
+            hint="Ajoutez votre premier élève."
+            lockedHint="Ajout d'élève bloqué : la limite de votre plan est atteinte."
+            onAdd={handleAdd}
+            addLabel={<><Plus className="mr-1 h-4 w-4" /> Ajouter un élève</>}
+            locked={atLimit}
+          />
         ) : (
           <NoResults
             query={q}
