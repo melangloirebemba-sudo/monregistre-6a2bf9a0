@@ -144,7 +144,16 @@ function NotesPage() {
           <h1 className="mt-1 font-display text-3xl font-semibold text-foreground">Notes</h1>
           <span className="rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal">{notes.length}</span>
         </div>
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            disabled={classes.length === 0}
+            onClick={() => setBulkOpen(true)}
+          >
+            <Zap className="mr-1 h-4 w-4" /> Saisie rapide
+          </Button>
           <Button
             type="button"
             variant="outline"
