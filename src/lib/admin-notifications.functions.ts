@@ -31,6 +31,59 @@ async function assertAdmin(supabase: {
   if (data !== true) throw new Error("Forbidden: admin only");
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Résout un destinataire à partir d'un email ou d'un UUID.
+ * - Si la valeur est un UUID, on la considère comme user_id directement.
+ * - Sinon on cherche l'email dans `profils_enseignant` (rempli par l'utilisateur),
+ *   puis en repli via l'API Auth Admin (source de vérité pour l'email de connexion).
+ */
+async function resolveUserByEmailOrId(
+  db: {
+    from: (t: string) => {
+      select: (c: string) => {
+        eq: (col: string, val: string) => {
+          maybeSingle: () => Promise<{ data: { user_id: string } | null; error: unknown }>;
+        };
+      };
+    };
+  },
+  raw: string,
+): Promise<string> {
+  const value = raw.trim();
+  if (!value) throw new Error("Destinataire manquant");
+  if (UUID_RE.test(value)) return value;
+  if (!value.includes("@")) {
+    throw new Error("Entrez un email valide pour le destinataire");
+  }
+  const email = value.toLowerCase();
+
+  // 1) Recherche dans les profils enseignants (colonne email renseignée par l'utilisateur).
+  const { data: profil } = await db
+    .from("profils_enseignant")
+    .select("user_id")
+    .eq("email", email)
+    .maybeSingle();
+  if (profil?.user_id) return profil.user_id;
+
+  // 2) Repli : source de vérité côté Auth (email de connexion).
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // getUserByEmail n'existe pas dans l'API publique ; on utilise listUsers avec un filtre.
+  const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
+    page: 1,
+    perPage: 200,
+  });
+  if (error) {
+    throw new Error(`Recherche utilisateur impossible: ${error.message}`);
+  }
+  const match = list.users.find((u) => (u.email ?? "").toLowerCase() === email);
+  if (!match) {
+    throw new Error(`Aucun utilisateur trouvé pour ${email}`);
+  }
+  return match.id;
+}
+
 /** Send a broadcast immediately (writes user_notifications rows). */
 export const sendAdminBroadcastNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
