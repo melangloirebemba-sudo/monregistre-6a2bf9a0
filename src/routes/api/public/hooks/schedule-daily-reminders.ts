@@ -98,6 +98,7 @@ export const Route = createFileRoute("/api/public/hooks/schedule-daily-reminders
               data: { kind: "schedule_daily", ymd },
             },
             { kind: "schedule_daily", key: ymd },
+            { pushKind: "schedule_daily" },
           );
           if (res.sent > 0) sent++;
         }

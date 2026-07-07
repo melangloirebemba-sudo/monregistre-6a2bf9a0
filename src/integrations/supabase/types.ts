@@ -915,6 +915,60 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_notifications: {
+        Row: {
+          body: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          href: string | null
+          id: string
+          recipients_count: number | null
+          send_at: string
+          sent_at: string | null
+          status: string
+          target_type: string
+          target_value: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          href?: string | null
+          id?: string
+          recipients_count?: number | null
+          send_at?: string
+          sent_at?: string | null
+          status?: string
+          target_type?: string
+          target_value?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          href?: string | null
+          id?: string
+          recipients_count?: number | null
+          send_at?: string
+          sent_at?: string | null
+          status?: string
+          target_type?: string
+          target_value?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sequences_programme: {
         Row: {
           classe_id: string

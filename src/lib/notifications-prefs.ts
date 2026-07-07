@@ -55,12 +55,65 @@ export const REMINDER_FREQUENCY_LABELS: Record<ReminderFrequency, string> = {
 
 export type DefaultFilter = "all" | NotifCategory;
 
+/**
+ * Push categories — types de notifications push mobiles que l'utilisateur
+ * peut activer/désactiver individuellement, indépendamment du canal in-app.
+ * Ces clés sont utilisées côté serveur par `sendPushToUser` pour filtrer.
+ */
+export type PushKind =
+  | "schedule_daily"
+  | "license_expiry"
+  | "billing"
+  | "reactivation"
+  | "admin"
+  | "security"
+  | "account"
+  | "feature"
+  | "fix";
+
+export const ALL_PUSH_KINDS: PushKind[] = [
+  "schedule_daily",
+  "license_expiry",
+  "billing",
+  "reactivation",
+  "admin",
+  "security",
+  "account",
+  "feature",
+  "fix",
+];
+
+export const PUSH_KIND_LABELS: Record<PushKind, string> = {
+  schedule_daily: "Programme du lendemain",
+  license_expiry: "Expiration de licence",
+  billing: "Paiements & facturation",
+  reactivation: "Réactivation de compte",
+  admin: "Actions administratives",
+  security: "Sécurité",
+  account: "Compte & profil",
+  feature: "Nouvelles fonctionnalités",
+  fix: "Améliorations & corrections",
+};
+
+export const PUSH_KIND_DESCRIPTIONS: Record<PushKind, string> = {
+  schedule_daily: "Chaque soir, un résumé des cours du lendemain.",
+  license_expiry: "Rappels J-14, J-7, J-3, J-1 avant expiration.",
+  billing: "Confirmations de paiement et reçus.",
+  reactivation: "Notifications lors d'une réactivation de compte.",
+  admin: "Actions effectuées par un administrateur sur votre compte.",
+  security: "Alertes de sécurité et changements de mot de passe.",
+  account: "Modifications de profil et compte.",
+  feature: "Nouveautés produit et fonctionnalités.",
+  fix: "Corrections et petites améliorations.",
+};
+
 export interface NotificationsPrefs {
   enabled: boolean;
   categories: Record<NotifCategory, boolean>;
   channels: Record<NotifCategory, CategoryChannels>;
   reminderFrequency: ReminderFrequency;
   defaultFilter: DefaultFilter;
+  push: Record<PushKind, boolean>;
 }
 
 const ALL_CATEGORIES: NotifCategory[] = [
@@ -102,12 +155,19 @@ function defaultCategories(): Record<NotifCategory, boolean> {
   return out;
 }
 
+function defaultPush(): Record<PushKind, boolean> {
+  const out = {} as Record<PushKind, boolean>;
+  for (const k of ALL_PUSH_KINDS) out[k] = true;
+  return out;
+}
+
 export const DEFAULT_NOTIFICATIONS_PREFS: NotificationsPrefs = {
   enabled: true,
   categories: defaultCategories(),
   channels: defaultChannels(),
   reminderFrequency: "daily",
   defaultFilter: "all",
+  push: defaultPush(),
 };
 
 /** Catégories pour lesquelles email et SMS peuvent être proposés. */
@@ -158,6 +218,14 @@ function coerce(raw: unknown): NotificationsPrefs {
     )
       ? (r.defaultFilter as DefaultFilter)
       : DEFAULT_NOTIFICATIONS_PREFS.defaultFilter,
+    push: (() => {
+      const raw = (r.push ?? {}) as Partial<Record<PushKind, unknown>>;
+      const out = {} as Record<PushKind, boolean>;
+      for (const k of ALL_PUSH_KINDS) {
+        out[k] = typeof raw[k] === "boolean" ? (raw[k] as boolean) : true;
+      }
+      return out;
+    })(),
   };
 }
 
@@ -212,7 +280,12 @@ async function pushRemotePrefs(prefs: NotificationsPrefs) {
     .eq("user_id", user.id);
 }
 
-export function setNotificationsPrefs(patch: Partial<NotificationsPrefs>) {
+type PrefsPatch = Partial<Omit<NotificationsPrefs, "categories" | "push">> & {
+  categories?: Partial<Record<NotifCategory, boolean>>;
+  push?: Partial<Record<PushKind, boolean>>;
+};
+
+export function setNotificationsPrefs(patch: PrefsPatch) {
   const current = readCache();
   const mergedChannels = { ...current.channels };
   if (patch.channels) {
@@ -226,6 +299,7 @@ export function setNotificationsPrefs(patch: Partial<NotificationsPrefs>) {
     ...patch,
     categories: { ...current.categories, ...(patch.categories ?? {}) },
     channels: mergedChannels,
+    push: { ...current.push, ...(patch.push ?? {}) },
   });
   writeCache(merged);
   emitChange();

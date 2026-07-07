@@ -79,6 +79,7 @@ export const Route = createFileRoute("/api/public/hooks/license-expiry-reminders
               data: { kind: "license_expiry", daysLeft: d },
             },
             { kind: "license_expiry", key: `${row.plan_expires_at.slice(0, 10)}-d${d}` },
+            { pushKind: "license_expiry" },
           );
           if (res.sent > 0) sent++;
         }

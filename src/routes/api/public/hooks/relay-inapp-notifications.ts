@@ -38,16 +38,18 @@ export const Route = createFileRoute("/api/public/hooks/relay-inapp-notification
 
         let sent = 0;
         for (const n of (data ?? []) as NotifRow[]) {
+          const cat = n.category ?? "app";
           const res = await sendPushToUser(
             n.user_id,
             {
               title: n.title,
               body: n.body ?? "",
               url: n.href ?? "/accueil",
-              tag: n.category ?? "app",
+              tag: cat,
               data: { kind: "inapp", notificationId: n.id, category: n.category },
             },
             { kind: "inapp_relay", key: n.id },
+            { pushKind: cat },
           );
           if (res.sent > 0) sent++;
         }

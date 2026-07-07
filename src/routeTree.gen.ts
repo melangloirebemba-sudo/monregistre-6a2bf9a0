@@ -36,11 +36,13 @@ import { Route as AuthenticatedFacturationIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
 import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
+import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
 import { Route as AuthenticatedAdminFacturationRouteImport } from './routes/_authenticated/admin.facturation'
 import { Route as AuthenticatedAdminAnneesScolairesRouteImport } from './routes/_authenticated/admin.annees-scolaires'
 import { Route as ApiPublicHooksScheduleDailyRemindersRouteImport } from './routes/api/public/hooks/schedule-daily-reminders'
 import { Route as ApiPublicHooksRelayInappNotificationsRouteImport } from './routes/api/public/hooks/relay-inapp-notifications'
 import { Route as ApiPublicHooksLicenseExpiryRemindersRouteImport } from './routes/api/public/hooks/license-expiry-reminders'
+import { Route as ApiPublicHooksDispatchScheduledNotificationsRouteImport } from './routes/api/public/hooks/dispatch-scheduled-notifications'
 import { Route as AuthenticatedFacturationIdPdfRouteImport } from './routes/_authenticated/facturation.$id.pdf'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -186,6 +188,12 @@ const AuthenticatedAdminParametresRoute =
     path: '/parametres',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminNotificationsRoute =
+  AuthenticatedAdminNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminFacturationRoute =
   AuthenticatedAdminFacturationRouteImport.update({
     id: '/facturation',
@@ -214,6 +222,12 @@ const ApiPublicHooksLicenseExpiryRemindersRoute =
   ApiPublicHooksLicenseExpiryRemindersRouteImport.update({
     id: '/api/public/hooks/license-expiry-reminders',
     path: '/api/public/hooks/license-expiry-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksDispatchScheduledNotificationsRoute =
+  ApiPublicHooksDispatchScheduledNotificationsRouteImport.update({
+    id: '/api/public/hooks/dispatch-scheduled-notifications',
+    path: '/api/public/hooks/dispatch-scheduled-notifications',
     getParentRoute: () => rootRouteImport,
   } as any)
 const AuthenticatedFacturationIdPdfRoute =
@@ -245,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/admin/facturation': typeof AuthenticatedAdminFacturationRoute
+  '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
@@ -253,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/dispatch-scheduled-notifications': typeof ApiPublicHooksDispatchScheduledNotificationsRoute
   '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
   '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
   '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
@@ -278,6 +294,7 @@ export interface FileRoutesByTo {
   '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/admin/facturation': typeof AuthenticatedAdminFacturationRoute
+  '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
@@ -286,6 +303,7 @@ export interface FileRoutesByTo {
   '/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/dispatch-scheduled-notifications': typeof ApiPublicHooksDispatchScheduledNotificationsRoute
   '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
   '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
   '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
@@ -314,6 +332,7 @@ export interface FileRoutesById {
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/_authenticated/admin/facturation': typeof AuthenticatedAdminFacturationRoute
+  '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/parametres': typeof AuthenticatedAdminParametresRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/utilisateurs': typeof AuthenticatedAdminUtilisateursRoute
@@ -322,6 +341,7 @@ export interface FileRoutesById {
   '/_authenticated/parametres/rappels': typeof AuthenticatedParametresRappelsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/facturation/$id/pdf': typeof AuthenticatedFacturationIdPdfRoute
+  '/api/public/hooks/dispatch-scheduled-notifications': typeof ApiPublicHooksDispatchScheduledNotificationsRoute
   '/api/public/hooks/license-expiry-reminders': typeof ApiPublicHooksLicenseExpiryRemindersRoute
   '/api/public/hooks/relay-inapp-notifications': typeof ApiPublicHooksRelayInappNotificationsRoute
   '/api/public/hooks/schedule-daily-reminders': typeof ApiPublicHooksScheduleDailyRemindersRoute
@@ -350,6 +370,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/admin/annees-scolaires'
     | '/admin/facturation'
+    | '/admin/notifications'
     | '/admin/parametres'
     | '/admin/plans'
     | '/admin/utilisateurs'
@@ -358,6 +379,7 @@ export interface FileRouteTypes {
     | '/parametres/rappels'
     | '/admin/'
     | '/facturation/$id/pdf'
+    | '/api/public/hooks/dispatch-scheduled-notifications'
     | '/api/public/hooks/license-expiry-reminders'
     | '/api/public/hooks/relay-inapp-notifications'
     | '/api/public/hooks/schedule-daily-reminders'
@@ -383,6 +405,7 @@ export interface FileRouteTypes {
     | '/support'
     | '/admin/annees-scolaires'
     | '/admin/facturation'
+    | '/admin/notifications'
     | '/admin/parametres'
     | '/admin/plans'
     | '/admin/utilisateurs'
@@ -391,6 +414,7 @@ export interface FileRouteTypes {
     | '/parametres/rappels'
     | '/admin'
     | '/facturation/$id/pdf'
+    | '/api/public/hooks/dispatch-scheduled-notifications'
     | '/api/public/hooks/license-expiry-reminders'
     | '/api/public/hooks/relay-inapp-notifications'
     | '/api/public/hooks/schedule-daily-reminders'
@@ -418,6 +442,7 @@ export interface FileRouteTypes {
     | '/_authenticated/support'
     | '/_authenticated/admin/annees-scolaires'
     | '/_authenticated/admin/facturation'
+    | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/parametres'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/utilisateurs'
@@ -426,6 +451,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parametres/rappels'
     | '/_authenticated/admin/'
     | '/_authenticated/facturation/$id/pdf'
+    | '/api/public/hooks/dispatch-scheduled-notifications'
     | '/api/public/hooks/license-expiry-reminders'
     | '/api/public/hooks/relay-inapp-notifications'
     | '/api/public/hooks/schedule-daily-reminders'
@@ -436,6 +462,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicHooksDispatchScheduledNotificationsRoute: typeof ApiPublicHooksDispatchScheduledNotificationsRoute
   ApiPublicHooksLicenseExpiryRemindersRoute: typeof ApiPublicHooksLicenseExpiryRemindersRoute
   ApiPublicHooksRelayInappNotificationsRoute: typeof ApiPublicHooksRelayInappNotificationsRoute
   ApiPublicHooksScheduleDailyRemindersRoute: typeof ApiPublicHooksScheduleDailyRemindersRoute
@@ -632,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminParametresRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/notifications': {
+      id: '/_authenticated/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AuthenticatedAdminNotificationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/facturation': {
       id: '/_authenticated/admin/facturation'
       path: '/facturation'
@@ -667,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksLicenseExpiryRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/dispatch-scheduled-notifications': {
+      id: '/api/public/hooks/dispatch-scheduled-notifications'
+      path: '/api/public/hooks/dispatch-scheduled-notifications'
+      fullPath: '/api/public/hooks/dispatch-scheduled-notifications'
+      preLoaderRoute: typeof ApiPublicHooksDispatchScheduledNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/facturation/$id/pdf': {
       id: '/_authenticated/facturation/$id/pdf'
       path: '/pdf'
@@ -680,6 +721,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnneesScolairesRoute: typeof AuthenticatedAdminAnneesScolairesRoute
   AuthenticatedAdminFacturationRoute: typeof AuthenticatedAdminFacturationRoute
+  AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminParametresRoute: typeof AuthenticatedAdminParametresRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminUtilisateursRoute: typeof AuthenticatedAdminUtilisateursRoute
@@ -690,6 +732,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAnneesScolairesRoute:
     AuthenticatedAdminAnneesScolairesRoute,
   AuthenticatedAdminFacturationRoute: AuthenticatedAdminFacturationRoute,
+  AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
   AuthenticatedAdminParametresRoute: AuthenticatedAdminParametresRoute,
   AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
   AuthenticatedAdminUtilisateursRoute: AuthenticatedAdminUtilisateursRoute,
@@ -791,6 +834,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicHooksDispatchScheduledNotificationsRoute:
+    ApiPublicHooksDispatchScheduledNotificationsRoute,
   ApiPublicHooksLicenseExpiryRemindersRoute:
     ApiPublicHooksLicenseExpiryRemindersRoute,
   ApiPublicHooksRelayInappNotificationsRoute:

@@ -10,6 +10,7 @@ import {
   LogOut,
   MoreHorizontal,
   ShieldCheck,
+  BellRing,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ interface AdminShellProps {
 const adminNav = [
   { to: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
+  { to: "/admin/notifications", label: "Notifications", icon: BellRing },
   { to: "/admin/facturation", label: "Facturation", icon: Receipt },
   { to: "/admin/annees-scolaires", label: "Années", icon: CalendarClock },
   { to: "/admin/plans", label: "Plans", icon: Crown },
@@ -176,7 +178,7 @@ export function AdminShell({ children }: AdminShellProps) {
 
         {/* Bottom nav mobile */}
         <nav aria-label="Navigation admin mobile" className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur lg:hidden">
-          <ul className="mx-auto grid max-w-2xl grid-cols-5">
+          <ul className="mx-auto grid max-w-2xl grid-cols-6">
             {adminNav.map((t) => {
               const active = isActive(pathname, t.to);
               const Icon = t.icon;
