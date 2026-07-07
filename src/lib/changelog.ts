@@ -175,8 +175,9 @@ export function useNotificationCenter() {
       const { data: userRes } = await supabase.auth.getUser();
       if (cancelled || !userRes.user) return;
       const uid = userRes.user.id;
-      ch1 = supabase
-        .channel(`notification_reads:${uid}`)
+      const suffix = Math.random().toString(36).slice(2);
+      ch1 = supabase.channel(`notification_reads:${uid}:${suffix}`);
+      ch1
         .on(
           "postgres_changes",
           {
@@ -188,8 +189,8 @@ export function useNotificationCenter() {
           () => qc.invalidateQueries({ queryKey: ["notification-reads"] }),
         )
         .subscribe();
-      ch2 = supabase
-        .channel(`user_notifications:${uid}`)
+      ch2 = supabase.channel(`user_notifications:${uid}:${suffix}`);
+      ch2
         .on(
           "postgres_changes",
           {

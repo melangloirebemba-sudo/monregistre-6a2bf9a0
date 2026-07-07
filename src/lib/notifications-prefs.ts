@@ -266,8 +266,8 @@ export function useNotificationsPrefs(): NotificationsPrefs {
       const { data: userRes } = await supabase.auth.getUser();
       if (cancelled || !userRes.user) return;
       const uid = userRes.user.id;
-      channel = supabase
-        .channel(`prefs:${uid}`)
+      channel = supabase.channel(`prefs:${uid}:${Math.random().toString(36).slice(2)}`);
+      channel
         .on(
           "postgres_changes",
           {
