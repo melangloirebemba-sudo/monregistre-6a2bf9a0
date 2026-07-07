@@ -181,7 +181,19 @@ function ClassesPage() {
       ) : (
         (() => {
           const renderItem = (c: Classe) => (
-            <li key={c.id} className="card-elevated p-4">
+            <li
+              key={c.id}
+              className="card-elevated cursor-pointer p-4 transition hover:bg-cream-deep/40"
+              onClick={() => setViewing(c)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setViewing(c);
+                }
+              }}
+            >
               <div className="flex items-start gap-3">
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-teal/15 text-foreground">
                   <GraduationCap className="h-5 w-5" />
@@ -198,10 +210,10 @@ function ClassesPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <button onClick={() => { setEditing(c); setOpen(true); }} aria-label="Modifier" className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground">
+                  <button onClick={(e) => { e.stopPropagation(); setEditing(c); setOpen(true); }} aria-label="Modifier" className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground">
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <button onClick={() => setToDelete(c)} aria-label="Supprimer" className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                  <button onClick={(e) => { e.stopPropagation(); setToDelete(c); }} aria-label="Supprimer" className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
