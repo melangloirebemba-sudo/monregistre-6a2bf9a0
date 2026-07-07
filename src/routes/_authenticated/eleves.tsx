@@ -822,14 +822,24 @@ function EleveDialog({
                           {p.chef ? " · Chef" : ""}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removePending(p.id)}
-                        aria-label="Retirer de la file"
-                        className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => editPending(p.id)}
+                          aria-label="Modifier cet élève en attente"
+                          className="rounded p-0.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePending(p.id)}
+                          aria-label="Retirer de la file"
+                          className="rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
