@@ -1,7 +1,9 @@
 // Petites utilitaires CSV utilisées pour l'import Élèves et l'export Notes.
-import Papa from "papaparse";
+// Papaparse (~40 Ko) est chargé à la demande via import() pour ne pas
+// figurer dans le bundle initial des pages qui l'utilisent rarement.
 
-export function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
+export async function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
+  const { default: Papa } = await import("papaparse");
   const csv = Papa.unparse(rows, { quotes: true });
   // BOM pour Excel FR
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -15,7 +17,8 @@ export function downloadCsv(filename: string, rows: Array<Record<string, unknown
   URL.revokeObjectURL(url);
 }
 
-export function parseCsvFile<T = Record<string, string>>(file: File): Promise<T[]> {
+export async function parseCsvFile<T = Record<string, string>>(file: File): Promise<T[]> {
+  const { default: Papa } = await import("papaparse");
   return new Promise((resolve, reject) => {
     Papa.parse<T>(file, {
       header: true,

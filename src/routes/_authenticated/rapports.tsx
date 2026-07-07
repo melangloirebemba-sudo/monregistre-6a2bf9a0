@@ -20,8 +20,9 @@ import {
 } from "@/lib/queries/data";
 import { profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { moyennePonderee, noteColorClass } from "@/lib/format";
-import { generateBulletinPDF } from "@/lib/pdf/bulletin";
-import { generateClasseRapportPDF } from "@/lib/pdf/classe-rapport";
+// Les générateurs PDF (jspdf + jspdf-autotable) sont chargés à la demande
+// via import() pour ne pas peser sur le bundle initial de la page.
+
 import { Button } from "@/components/ui/button";
 import { DataPagination } from "@/components/ui/data-pagination";
 import { usePaginatedQuery } from "@/hooks/use-paginated-query";
@@ -111,7 +112,7 @@ function RapportsPage() {
     return { moyennes, moyClasse, top3, bottom3, buckets, sorted };
   }, [notes, eleves, echelle]);
 
-  function handleExport(eleveId: string) {
+  async function handleExport(eleveId: string) {
     if (!canPdf) {
       toast.error("Export PDF réservé aux plans Lite et Premium.");
       return;
@@ -123,6 +124,7 @@ function RapportsPage() {
       toast.error("Aucune note pour cet élève sur la période.");
       return;
     }
+    const { generateBulletinPDF } = await import("@/lib/pdf/bulletin");
     generateBulletinPDF({
       ecole,
       classe,
@@ -135,7 +137,7 @@ function RapportsPage() {
     });
   }
 
-  function handleExportAll() {
+  async function handleExportAll() {
     if (!canPdf) {
       toast.error("Export PDF réservé aux plans Lite et Premium.");
       return;
@@ -144,6 +146,7 @@ function RapportsPage() {
       toast.error("Aucun élève à exporter.");
       return;
     }
+    const { generateClasseRapportPDF } = await import("@/lib/pdf/classe-rapport");
     generateClasseRapportPDF({
       ecole,
       classe,
