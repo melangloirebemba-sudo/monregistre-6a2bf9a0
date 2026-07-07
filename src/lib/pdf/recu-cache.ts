@@ -147,11 +147,14 @@ export function ensureRecuPDF(
       // 2) Fallback: build the PDF locally, then push it to Storage.
       if (!blob) {
         await new Promise((r) => setTimeout(r, 0));
+        // Import dynamique : jspdf (~200 Ko) n'est téléchargé qu'à la première génération.
+        const { buildRecuPaiementPDFBlob } = await import("./recu-paiement");
         const built = buildRecuPaiementPDFBlob(ctx);
         blob = built.blob;
         // Persist in the background — don't block the download on it.
         void uploadAndPersist(id, blob);
       }
+      if (!blob) throw new Error("Impossible de générer le reçu");
 
       const filename = `Recu_${ctx.numero_recu}.pdf`;
       const prev = cache.get(id);
