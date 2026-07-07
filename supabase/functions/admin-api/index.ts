@@ -181,6 +181,15 @@ Deno.serve(async (req) => {
         }
 
 
+        await admin.from("user_notifications").insert({
+          user_id: userId,
+          title: isTrial ? `Essai ${plan} activé` : `Plan ${plan} activé`,
+          body: isTrial
+            ? `Vous bénéficiez d'un essai gratuit de ${days} jour(s). Expire le ${expiresAt.toLocaleDateString("fr-FR")}.`
+            : `Votre plan ${plan} (${periode}) est actif jusqu'au ${expiresAt.toLocaleDateString("fr-FR")}.`,
+          category: "billing",
+          href: "/mon-profil",
+        });
         return json({ ok: true, plan_expires_at: expiresAt.toISOString() });
       }
 
