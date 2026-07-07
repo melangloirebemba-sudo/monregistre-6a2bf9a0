@@ -182,7 +182,8 @@ export function NotificationsBell({ variant = "topbar" }: NotificationsBellProps
     "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors";
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button aria-label="Notifications" className={buttonBase}>
           <Bell className={variant === "sidebar" ? "h-4 w-4 shrink-0" : "h-5 w-5"} />
