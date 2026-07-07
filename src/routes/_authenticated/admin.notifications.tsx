@@ -903,5 +903,102 @@ function ReadersPanel({ id, loader }: { id: string; loader: ReadersLoader }) {
   );
 }
 
+function SendResultPanel({
+  result,
+  onClose,
+}: {
+  result: {
+    sent: number;
+    failed: number;
+    total: number;
+    details: Array<{
+      user_id: string;
+      nom_affiche: string | null;
+      email: string | null;
+      status: "sent" | "failed";
+      error?: string;
+    }>;
+  };
+  onClose: () => void;
+}) {
+  const allOk = result.failed === 0 && result.sent > 0;
+  const partial = result.failed > 0 && result.sent > 0;
+  const allFail = result.failed > 0 && result.sent === 0;
+
+  return (
+    <div
+      className={`mt-3 rounded-xl border p-3 ${
+        allOk
+          ? "border-teal/40 bg-teal/10"
+          : allFail
+            ? "border-destructive/40 bg-destructive/10"
+            : "border-gold/40 bg-gold/10"
+      }`}
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {allOk ? (
+            <MailCheck className="h-4 w-4 text-teal" />
+          ) : allFail ? (
+            <XCircle className="h-4 w-4 text-destructive" />
+          ) : (
+            <AlertCircle className="h-4 w-4 text-gold" />
+          )}
+          <div>
+            <div className="text-sm font-semibold text-foreground">
+              {allOk
+                ? "Notification envoyée avec succès"
+                : allFail
+                  ? "Envoi échoué"
+                  : "Envoi partiel"}
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {result.sent} succès · {result.failed} échec(s) · {result.total} au total
+            </div>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Fermer">
+          <XCircle className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      {result.details.length > 0 && (
+        <ul className="max-h-56 space-y-1 overflow-y-auto rounded-md bg-background/40 p-1">
+          {result.details.map((d) => (
+            <li
+              key={d.user_id}
+              className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-xs hover:bg-muted/40"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium text-foreground">
+                  {d.nom_affiche || d.email || d.user_id}
+                </div>
+                {d.email && d.nom_affiche && (
+                  <div className="truncate text-[10px] text-muted-foreground">{d.email}</div>
+                )}
+                {d.status === "failed" && d.error && (
+                  <div className="truncate text-[10px] text-destructive">{d.error}</div>
+                )}
+              </div>
+              {d.status === "sent" ? (
+                <span className="inline-flex items-center gap-1 text-[10px] text-teal">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Envoyée
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] text-destructive">
+                  <XCircle className="h-3 w-3" />
+                  Échec
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // Silence unused import warning
 void useQuery;
+void partial;
+
