@@ -109,9 +109,13 @@ function ElevesPage() {
     [classes, ecoleFilter],
   );
 
+  // `useDeferredValue` garde la saisie de la barre de recherche fluide :
+  // React continue à afficher l'ancienne liste filtrée pendant qu'il
+  // recalcule la nouvelle en arrière-plan.
+  const deferredQ = useDeferredValue(q);
   const pq = usePaginatedQuery({
     data: eleves,
-    search: q,
+    search: deferredQ,
     searchFields: (e) => [e.nom, e.prenom],
     filters: [(e) => ecoleFilter === "all" || e.ecole_id === ecoleFilter],
     sortKey: `${ecoleFilter}|${classeFilter}`,
