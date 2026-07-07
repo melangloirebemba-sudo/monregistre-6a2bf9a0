@@ -218,6 +218,14 @@ function coerce(raw: unknown): NotificationsPrefs {
     )
       ? (r.defaultFilter as DefaultFilter)
       : DEFAULT_NOTIFICATIONS_PREFS.defaultFilter,
+    push: (() => {
+      const raw = (r.push ?? {}) as Partial<Record<PushKind, unknown>>;
+      const out = {} as Record<PushKind, boolean>;
+      for (const k of ALL_PUSH_KINDS) {
+        out[k] = typeof raw[k] === "boolean" ? (raw[k] as boolean) : true;
+      }
+      return out;
+    })(),
   };
 }
 
