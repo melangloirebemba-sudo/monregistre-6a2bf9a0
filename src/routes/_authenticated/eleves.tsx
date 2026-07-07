@@ -134,7 +134,14 @@ function ElevesPage() {
     );
   }, [paged, ecoleFilter, ecoleById]);
 
-
+  const handleAdd = () => {
+    if (atLimit) {
+      setUpgradeOpen(true);
+      return;
+    }
+    setEditing(null);
+    setOpen(true);
+  };
 
   return (
     <div className="px-5 pb-24 pt-5">
