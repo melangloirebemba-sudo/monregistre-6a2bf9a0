@@ -525,11 +525,14 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
   const { data: profil } = useQuery(profilQueryOptions());
   const ecoleNom = profil?.etablissement?.trim() ?? "";
 
-  const availablePlans = (["lite", "premium"] as UpgradePlan[]).filter((p) =>
-    currentPlan === "gratuit" ? true : currentPlan === "lite" ? p === "premium" : false,
-  );
+  const allPlans: UpgradePlan[] = ["lite", "premium"];
+  const isPlanDisabled = (p: UpgradePlan) =>
+    currentPlan === "premium" || (currentPlan === "lite" && p === "lite");
+  const defaultPlan: UpgradePlan =
+    currentPlan === "gratuit" ? "lite" : "premium";
 
-  const [selectedPlan, setSelectedPlan] = useState<UpgradePlan>(availablePlans[0] ?? "premium");
+  const [selectedPlan, setSelectedPlan] = useState<UpgradePlan>(defaultPlan);
+
   const [selectedPeriode, setSelectedPeriode] = useState<UpgradePeriode>("mensuelle");
 
   const { data: prices = [] } = useQuery({
@@ -592,32 +595,43 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
 
         {/* Sélection du plan */}
         <div className="grid gap-3 sm:grid-cols-2">
-          {availablePlans.map((p) => {
+          {allPlans.map((p) => {
             const t = PLAN_TIERS[p];
             const active = selectedPlan === p;
+            const disabled = isPlanDisabled(p);
             const fromPrice = priceOf(p, "mensuelle");
             return (
               <button
                 key={p}
                 type="button"
-                onClick={() => setSelectedPlan(p)}
+                onClick={() => !disabled && setSelectedPlan(p)}
                 aria-pressed={active}
+                disabled={disabled}
                 className={`text-left rounded-lg border p-3 transition ${
-                  active
+                  disabled
+                    ? "border-border bg-muted/30 opacity-60 cursor-not-allowed"
+                    : active
                     ? "border-teal ring-2 ring-teal/40 bg-teal/5"
                     : t.highlight
                     ? "border-teal/60 bg-teal/5 hover:border-teal"
                     : "border-border bg-background/60 hover:border-foreground/30"
                 }`}
               >
-                <div className="flex items-center gap-1.5">
-                  {p === "premium" ? (
-                    <Crown className="h-4 w-4 text-teal" aria-hidden="true" />
-                  ) : (
-                    <Zap className="h-4 w-4 text-gold" aria-hidden="true" />
+
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    {p === "premium" ? (
+                      <Crown className="h-4 w-4 text-teal" aria-hidden="true" />
+                    ) : (
+                      <Zap className="h-4 w-4 text-gold" aria-hidden="true" />
+                    )}
+                    <h3 className="font-serif text-base text-foreground">{t.title}</h3>
+                  </div>
+                  {currentPlan === p && (
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Actuel</span>
                   )}
-                  <h3 className="font-serif text-base text-foreground">{t.title}</h3>
                 </div>
+
                 <p className="text-[11px] text-muted-foreground">{t.tagline}</p>
                 {fromPrice !== null && (
                   <p className="mt-1.5 text-xs font-semibold text-foreground">
