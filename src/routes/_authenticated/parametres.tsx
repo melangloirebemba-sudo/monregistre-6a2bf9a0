@@ -481,11 +481,12 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
 type UpgradePlan = "lite" | "premium";
 type UpgradePeriode = "mensuelle" | "trimestrielle" | "annuelle";
 
-const PERIODE_LABEL: Record<UpgradePeriode, string> = {
+const UPGRADE_PERIODE_LABEL: Record<UpgradePeriode, string> = {
   mensuelle: "Mensuel",
   trimestrielle: "Trimestriel",
   annuelle: "Annuel",
 };
+
 const PERIODE_SUFFIX: Record<UpgradePeriode, string> = {
   mensuelle: "/ mois",
   trimestrielle: "/ trimestre",
