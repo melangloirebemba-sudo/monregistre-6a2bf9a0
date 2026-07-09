@@ -542,6 +542,12 @@ function EcoleClassesDialog({
         </div>
       </DialogContent>
     </Dialog>
+    <ClasseElevesDialog
+      classe={selectedClasse}
+      ecoleNom={ecole?.nom}
+      onOpenChange={(v) => !v && setSelectedClasse(null)}
+    />
+    </>
   );
 }
 
