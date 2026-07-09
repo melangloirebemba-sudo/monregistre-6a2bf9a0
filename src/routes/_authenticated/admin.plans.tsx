@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Crown, School, GraduationCap, Users, FileText, BookOpen, Save, Infinity as InfinityIcon, Coins } from "lucide-react";

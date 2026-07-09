@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown, ArrowUp, ArrowDown, ArrowUpDown, Sparkles, Clock, History, Mail } from "lucide-react";

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
 import { VirtualList } from "@/components/ui/virtual-list";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

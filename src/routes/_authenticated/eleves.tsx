@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Users, Plus, Pencil, Trash2, Search, Crown, Upload, Download, Eye } from "lucide-react";

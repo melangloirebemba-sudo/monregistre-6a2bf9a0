@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toFrench } from "@/lib/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { anneesScolairesQO, activerAnnee } from "@/lib/queries/annees";
