@@ -236,8 +236,12 @@ function AccueilPage() {
               </h1>
             </div>
             {planCap && (
-              <div className="shrink-0 pt-0.5 text-right">
-                <div className="inline-flex flex-col items-end rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 backdrop-blur">
+              <Link
+                to="/parametres"
+                aria-label="Voir mon plan et les options de mise à niveau"
+                className="shrink-0 pt-0.5 text-right transition-transform hover:-translate-y-0.5"
+              >
+                <div className="inline-flex flex-col items-end rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5 backdrop-blur hover:bg-white/10">
                   <span className="text-[10px] font-medium uppercase tracking-wider text-gold-soft">
                     <span className="capitalize">{planCap.plan}</span>
                     {planCap.periode && planCap.plan !== "gratuit" && (
@@ -270,9 +274,13 @@ function AccueilPage() {
                             : null}
                     </span>
                   )}
+                  <span className="mt-0.5 text-[9px] uppercase tracking-wider text-gold-soft/70">
+                    Voir le plan →
+                  </span>
                 </div>
-              </div>
+              </Link>
             )}
+
           </div>
           <div className="mt-1 text-sm text-ink-foreground/70">{annee}</div>
 
