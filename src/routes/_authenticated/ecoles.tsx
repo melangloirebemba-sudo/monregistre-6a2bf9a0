@@ -230,6 +230,11 @@ function EcolesPage() {
         ressource="Écoles"
         limitDescription={`${maxEcoles} école${maxEcoles > 1 ? "s" : ""}`}
       />
+
+      <EcoleClassesDialog
+        ecole={viewing}
+        onOpenChange={(v) => !v && setViewing(null)}
+      />
     </div>
   );
 }
