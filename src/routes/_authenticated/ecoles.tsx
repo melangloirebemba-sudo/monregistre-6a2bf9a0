@@ -509,11 +509,10 @@ function EcoleClassesDialog({
                 const n = countByClasse.get(c.id) ?? 0;
                 return (
                   <li key={c.id}>
-                    <Link
-                      to="/eleves"
-                      search={{ ecole: ecole?.id, classe: c.id } as never}
-                      onClick={() => onOpenChange(false)}
-                      className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 transition hover:bg-cream-deep/40"
+                    <button
+                      type="button"
+                      onClick={() => setSelectedClasse(c)}
+                      className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-card p-3 text-left transition hover:bg-cream-deep/40"
                     >
                       <span className="grid h-9 w-9 place-items-center rounded-lg bg-teal/15 text-foreground">
                         <GraduationCap className="h-4 w-4" />
@@ -534,7 +533,7 @@ function EcoleClassesDialog({
                       <span className="rounded-full bg-teal/10 px-2 py-0.5 text-xs font-semibold text-teal">
                         {n} élève{n > 1 ? "s" : ""}
                       </span>
-                    </Link>
+                    </button>
                   </li>
                 );
               })}
