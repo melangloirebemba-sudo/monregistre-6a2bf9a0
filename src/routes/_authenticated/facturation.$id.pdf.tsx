@@ -1,3 +1,4 @@
+import { toFrench } from "@/lib/errors";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
@@ -157,7 +158,7 @@ function RecuPdfPage() {
             ) : entry.status === "error" ? (
               <div className="flex flex-col items-center gap-3 py-2">
                 <AlertTriangle className="h-8 w-8 text-destructive" />
-                <p className="text-sm text-destructive">{entry.error}</p>
+                <p className="text-sm text-destructive">{toFrench(entry.error)}</p>
                 <Button onClick={handleManual} variant="outline" className="gap-2">
                   <Download className="h-4 w-4" />
                   Réessayer

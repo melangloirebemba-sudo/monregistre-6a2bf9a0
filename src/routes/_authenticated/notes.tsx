@@ -1202,7 +1202,7 @@ function BulkNoteDialog({
                         }}
                       />
                       {r.error ? (
-                        <span className="mt-0.5 text-[10px] text-destructive">{r.error}</span>
+                        <span className="mt-0.5 text-[10px] text-destructive">{toFrench(r.error)}</span>
                       ) : null}
                     </div>
                   </label>

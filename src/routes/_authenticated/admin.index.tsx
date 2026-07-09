@@ -133,7 +133,7 @@ function AdminDashboard() {
       )}
       {error && (
         <div className="card-elevated p-6 text-sm text-destructive">
-          Erreur : {(error as Error).message}
+          Erreur : {toFrench(error)}
         </div>
       )}
 

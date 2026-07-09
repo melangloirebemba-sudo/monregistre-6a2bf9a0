@@ -52,7 +52,7 @@ function PlansPage() {
       </header>
 
       {isLoading && <div className="card-elevated p-6 text-sm text-muted-foreground">Chargement…</div>}
-      {error && <div className="card-elevated p-6 text-sm text-destructive">Erreur : {(error as Error).message}</div>}
+      {error && <div className="card-elevated p-6 text-sm text-destructive">Erreur : {toFrench(error)}</div>}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {(["gratuit", "lite", "premium"] as AppPlan[]).map((p) => {

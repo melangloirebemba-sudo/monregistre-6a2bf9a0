@@ -276,7 +276,7 @@ function AdminContent() {
             <ListSkeleton rows={6} />
           </div>
         )}
-        {error && <div className="p-6 text-sm text-destructive">Erreur : {(error as Error).message}</div>}
+        {error && <div className="p-6 text-sm text-destructive">Erreur : {toFrench(error)}</div>}
         {!isLoading && !error && filtered.length === 0 && (
           <div className="p-4">
             <NoResults
@@ -913,7 +913,7 @@ function HistoryDialog({ target, onClose }: { target: AdminUser | null; onClose:
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
           {isLoading && <div className="p-4 text-sm text-muted-foreground">Chargement…</div>}
-          {error && <div className="p-4 text-sm text-destructive">Erreur : {(error as Error).message}</div>}
+          {error && <div className="p-4 text-sm text-destructive">Erreur : {toFrench(error)}</div>}
           {!isLoading && !error && activations.length === 0 && (
             <div className="p-4 text-sm text-muted-foreground">Aucune activation enregistrée.</div>
           )}
