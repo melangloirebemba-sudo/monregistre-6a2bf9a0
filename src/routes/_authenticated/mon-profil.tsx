@@ -115,25 +115,52 @@ function MonProfilPage() {
         </h1>
       </div>
 
-      <div className="card-elevated flex items-center gap-4 p-5 mb-4">
-        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gold font-display text-xl font-semibold text-gold-foreground shadow-soft">
-          {displayInitiales}
-        </div>
-        <div className="min-w-0">
-          <div className="font-display text-lg font-semibold text-foreground">
-            {`${prenom} ${nomFamille}`.trim() || profil?.nom_affiche || "Enseignant"}
+      <div className="card-elevated p-5 mb-4">
+        <div className="flex items-center gap-4">
+          <div className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-gold font-display text-xl font-semibold text-gold-foreground shadow-soft">
+            {displayInitiales}
           </div>
-          <div className="text-xs text-muted-foreground truncate">
-            {matiere ? `Enseignant de : ${matiere}` : "Enseignant"}
-            {etablissement ? ` • ${etablissement}` : ""}
-          </div>
-          {currentPhone && (
-            <div className="mt-1 flex items-center gap-1.5 text-xs">
-              <span className="text-muted-foreground">{currentPhone}</span>
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-lg font-semibold text-foreground">
+              {`${prenom} ${nomFamille}`.trim() || profil?.nom_affiche || "Enseignant"}
             </div>
-          )}
+            <div className="text-xs text-muted-foreground truncate">
+              {matiere ? `Enseignant de : ${matiere}` : "Enseignant"}
+              {etablissement ? ` • ${etablissement}` : ""}
+            </div>
+            {currentPhone && (
+              <div className="mt-1 flex items-center gap-1.5 text-xs">
+                <span className="text-muted-foreground">{currentPhone}</span>
+              </div>
+            )}
+            {planCap && (
+              <div className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                Plan{" "}
+                <span className="font-semibold capitalize text-foreground">{planCap.plan}</span>
+                {planCap.periode && planCap.plan !== "gratuit" && (
+                  <span className="text-muted-foreground">
+                    {" · "}
+                    {planCap.periode === "mensuelle"
+                      ? "Mensuel"
+                      : planCap.periode === "trimestrielle"
+                        ? "Trimestriel"
+                        : "Annuel"}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
+        {planCap && planCap.plan !== "premium" && !planCap.isAdmin && (
+          <Button asChild className="mt-4 w-full gap-2">
+            <Link to="/parametres">
+              <Sparkles className="h-4 w-4" />
+              Mettre à niveau mon plan
+            </Link>
+          </Button>
+        )}
       </div>
+
 
       {/* Phone verification hidden — system not deployed yet */}
 
