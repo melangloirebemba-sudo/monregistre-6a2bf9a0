@@ -210,7 +210,7 @@ function ProgressionPage() {
       setOpen(false);
       toast.success(edit ? "Séquence mise à jour" : "Séquence ajoutée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const remove = useMutation({
@@ -223,7 +223,7 @@ function ProgressionPage() {
       setToDelete(null);
       toast.success("Séquence supprimée");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const quickAdvance = useMutation({
@@ -237,7 +237,7 @@ function ProgressionPage() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sequences"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   return (

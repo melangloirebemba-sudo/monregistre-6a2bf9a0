@@ -436,7 +436,7 @@ function AbsenceDialog({
     },
     onError: (e: Error, _v, ctx) => {
       if (ctx?.snapshot) rollbackLists<AbsenceRow>(qc, ctx.snapshot);
-      toast.error(e.message);
+      toast.error(toFrench(e));
     },
     onSuccess: () => {
       toast.success(absence ? "Absence modifiée" : "Absence enregistrée");
@@ -578,7 +578,7 @@ function DeleteAbsenceDialog({
     },
     onError: (e: Error, _v, ctx) => {
       if (ctx?.snapshot) rollbackLists<AbsenceRow>(qc, ctx.snapshot);
-      toast.error(e.message);
+      toast.error(toFrench(e));
     },
     onSuccess: () => toast.success("Absence supprimée"),
     onSettled: () => {

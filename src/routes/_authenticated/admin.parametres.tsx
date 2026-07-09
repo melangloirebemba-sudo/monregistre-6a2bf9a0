@@ -518,7 +518,7 @@ function SupportSettingsCard() {
       toast.success("Coordonnées du support enregistrées");
       qc.invalidateQueries({ queryKey: ["admin-settings"] });
     },
-    onError: (e: Error) => toast.error(humanizeAuthError(e.message)),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const dirty =

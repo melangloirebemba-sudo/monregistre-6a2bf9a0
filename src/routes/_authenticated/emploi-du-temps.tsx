@@ -143,7 +143,7 @@ function EmploiDuTempsPage() {
       toast.success(edit ? "Créneau modifié" : "Créneau ajouté");
       setOpen(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const del = useMutation({

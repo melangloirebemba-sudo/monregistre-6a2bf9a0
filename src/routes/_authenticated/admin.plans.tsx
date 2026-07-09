@@ -153,7 +153,7 @@ function PriceRow({
       return adminApi.pricesUpdate({ plan, periode, montant: Math.floor(n), devise: "XAF" });
     },
     onSuccess: () => { toast.success("Tarif enregistré"); onSaved(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const changed = val.trim() !== String(initial);
@@ -225,7 +225,7 @@ function PlanCard({ row, onSaved }: { row: PlanLimit; onSaved: () => void }) {
       });
     },
     onSuccess: () => { toast.success(`Plan ${PLAN_LABELS[row.plan]} mis à jour`); onSaved(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   return (

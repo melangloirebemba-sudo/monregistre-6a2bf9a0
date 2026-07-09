@@ -540,7 +540,7 @@ function EleveDialog({
       resetFormKeepContext();
       toast.success(`${p.prenom} ${p.nom} mis en file (${pending.length + 1})`);
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(toFrench(e));
     }
   };
 
@@ -668,7 +668,7 @@ function EleveDialog({
       qc.invalidateQueries({ queryKey: ["counts"] });
       if (!skipped || skipped.length === 0) onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   return (
@@ -927,7 +927,7 @@ function DeleteEleveDialog({ open, onOpenChange, eleve, onDone }: { open: boolea
       qc.invalidateQueries({ queryKey: ["counts"] });
       onDone();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

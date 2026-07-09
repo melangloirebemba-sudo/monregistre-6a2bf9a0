@@ -63,7 +63,7 @@ function AdminAnneesPage() {
   const [activateTarget, setActivateTarget] = useState<AdminAnneeAggregate | null>(null);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-annees"] });
-  const err = (e: Error) => toast.error(e.message);
+  const err = (e: Error) => toast.error(toFrench(e));
 
   const create = useMutation({
     mutationFn: (v: { libelle: string; date_debut?: string; date_fin?: string }) =>

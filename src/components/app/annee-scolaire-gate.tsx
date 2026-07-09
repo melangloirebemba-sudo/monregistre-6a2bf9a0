@@ -49,7 +49,7 @@ export function AnneeScolaireGate() {
       toast.success("Année scolaire activée");
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const create = useMutation({
@@ -76,7 +76,7 @@ export function AnneeScolaireGate() {
       toast.success("Année scolaire créée");
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const selectables = annees.filter((a) => a.statut !== "archivee");

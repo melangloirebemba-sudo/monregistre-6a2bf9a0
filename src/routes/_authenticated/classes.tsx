@@ -369,7 +369,7 @@ function ClasseDialog({
       qc.invalidateQueries({ queryKey: ["counts"] });
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   return (
@@ -434,7 +434,7 @@ function DeleteDialog({ open, onOpenChange, classe, onDone }: { open: boolean; o
       qc.invalidateQueries({ queryKey: ["counts"] });
       onDone();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -764,7 +764,7 @@ function EleveNotesQuickDialog({
       qc.invalidateQueries({ queryKey: ["notes"] });
       setForm((f) => ({ ...f, libelle: "", valeur: "" }));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const prefill = (n: { libelle: string; valeur: number; coefficient: number; date: string }) => {

@@ -76,7 +76,7 @@ function ParametresPage() {
       toast.success("Profil enregistré");
       qc.invalidateQueries({ queryKey: ["profil"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const [newPeriode, setNewPeriode] = useState("");
@@ -100,7 +100,7 @@ function ParametresPage() {
       toast.success("Période ajoutée");
       qc.invalidateQueries({ queryKey: ["periodes"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const togglePeriode = useMutation({
@@ -112,7 +112,7 @@ function ParametresPage() {
       if (e2) throw e2;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["periodes"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const delPeriode = useMutation({
@@ -124,7 +124,7 @@ function ParametresPage() {
       toast.success("Période supprimée");
       qc.invalidateQueries({ queryKey: ["periodes"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const addPreset = useMutation({
@@ -144,7 +144,7 @@ function ParametresPage() {
       toast.success("Périodes créées");
       qc.invalidateQueries({ queryKey: ["periodes"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   return (
@@ -733,7 +733,7 @@ function DeleteAccountSection() {
       await supabase.auth.signOut();
       navigate({ to: "/auth" });
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(toFrench(e));
     } finally {
       setSubmitting(false);
     }

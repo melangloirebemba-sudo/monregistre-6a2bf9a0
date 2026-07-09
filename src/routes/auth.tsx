@@ -106,7 +106,7 @@ function SignInForm({ onDone }: { onDone: () => void }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(toFrench(error));
       return;
     }
     toast.success("Bienvenue !");
@@ -180,7 +180,7 @@ function SignUpForm({ onDone }: { onDone: () => void }) {
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(toFrench(error));
       return;
     }
     if (!data.session) {

@@ -506,7 +506,7 @@ function NoteDialog({
     },
     onError: (e: Error, _vars, ctx) => {
       if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
-      toast.error(e.message);
+      toast.error(toFrench(e));
     },
     onSuccess: () => {
       toast.success(note ? "Note modifiée" : "Note ajoutée");
@@ -609,7 +609,7 @@ function DeleteNoteDialog({ open, onOpenChange, note, onDone }: { open: boolean;
     },
     onError: (e: Error, _v, ctx) => {
       if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
-      toast.error(e.message);
+      toast.error(toFrench(e));
     },
     onSuccess: () => toast.success("Note supprimée"),
     onSettled: () => {
@@ -948,7 +948,7 @@ function BulkNoteDialog({
     },
     onError: (e: Error, _v, ctx) => {
       if (ctx?.snapshot) rollbackLists<NoteRow>(qc, ctx.snapshot);
-      toast.error(e.message);
+      toast.error(toFrench(e));
     },
     onSuccess: () => toast.success(`${includedCount} note(s) ajoutée(s)`),
     onSettled: () => {

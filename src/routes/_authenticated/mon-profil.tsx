@@ -91,7 +91,7 @@ function MonProfilPage() {
       toast.success("Profil enregistré");
       qc.invalidateQueries({ queryKey: ["profil"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const displayInitiales =
@@ -436,7 +436,7 @@ function ChangePasswordCard() {
     const { error } = await supabase.auth.updateUser({ password: pwd });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(toFrench(error));
       return;
     }
     setPwd("");

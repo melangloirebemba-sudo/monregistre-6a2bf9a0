@@ -56,7 +56,7 @@ function AnneesPage() {
       toast.success("Année activée");
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const archive = useMutation({
@@ -79,7 +79,7 @@ function AnneesPage() {
       toast.success("Année archivée");
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const del = useMutation({
@@ -94,7 +94,7 @@ function AnneesPage() {
       toast.success("Année supprimée");
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   return (
@@ -278,7 +278,7 @@ function AnneeDialog({
       qc.invalidateQueries();
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   return (
