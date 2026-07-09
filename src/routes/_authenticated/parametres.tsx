@@ -478,10 +478,89 @@ function PlanCard({ caps }: { caps: PlanCapabilities }) {
 
 
 
+type UpgradePlan = "lite" | "premium";
+type UpgradePeriode = "mensuelle" | "trimestrielle" | "annuelle";
+
+const PERIODE_LABEL: Record<UpgradePeriode, string> = {
+  mensuelle: "Mensuel",
+  trimestrielle: "Trimestriel",
+  annuelle: "Annuel",
+};
+const PERIODE_SUFFIX: Record<UpgradePeriode, string> = {
+  mensuelle: "/ mois",
+  trimestrielle: "/ trimestre",
+  annuelle: "/ an",
+};
+
+const PLAN_TIERS: Record<UpgradePlan, { title: string; tagline: string; benefits: string[]; highlight?: boolean }> = {
+  lite: {
+    title: "Lite",
+    tagline: "Pour élargir votre suivi",
+    benefits: [
+      "Jusqu'à 2 écoles & 2 classes par école",
+      "Nombre d'élèves illimité",
+      "Export PDF des bulletins & rapports",
+      "Rapports détaillés (moyennes, distribution)",
+    ],
+  },
+  premium: {
+    title: "Premium",
+    tagline: "Tout, sans limite",
+    highlight: true,
+    benefits: [
+      "Écoles, classes et élèves illimités",
+      "Export PDF illimité",
+      "Rapports & suivi de progression avancé",
+      "Support prioritaire",
+    ],
+  },
+};
+
+function formatFcfa(n: number): string {
+  return new Intl.NumberFormat("fr-FR").format(n) + " FCFA";
+}
+
 function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanCapabilities["plan"]; variant?: "header" | "inline" }) {
   const { data: profil } = useQuery(profilQueryOptions());
   const ecoleNom = profil?.etablissement?.trim() ?? "";
-  const waHref = upgradeWhatsAppHref(ecoleNom, PLAN_LABEL[currentPlan]);
+
+  const availablePlans = (["lite", "premium"] as UpgradePlan[]).filter((p) =>
+    currentPlan === "gratuit" ? true : currentPlan === "lite" ? p === "premium" : false,
+  );
+
+  const [selectedPlan, setSelectedPlan] = useState<UpgradePlan>(availablePlans[0] ?? "premium");
+  const [selectedPeriode, setSelectedPeriode] = useState<UpgradePeriode>("mensuelle");
+
+  const { data: prices = [] } = useQuery({
+    queryKey: ["plan-prices-public"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plan_prices")
+        .select("plan, periode, montant, devise")
+        .in("plan", ["lite", "premium"]);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const priceOf = (plan: UpgradePlan, periode: UpgradePeriode): number | null => {
+    const row = prices.find((p) => p.plan === plan && p.periode === periode);
+    return row ? Number(row.montant) : null;
+  };
+
+  const tier = PLAN_TIERS[selectedPlan];
+  const currentPrice = priceOf(selectedPlan, selectedPeriode);
+
+  const waHref = upgradeWhatsAppHref({
+    planLabel: PLAN_LABEL[currentPlan],
+    targetPlanLabel: `${PLAN_LABEL[selectedPlan]} (${PERIODE_LABEL[selectedPeriode].toLowerCase()}${
+      currentPrice !== null ? ` — ${formatFcfa(currentPrice)}` : ""
+    })`,
+    ecole: ecoleNom,
+    userName: profil?.nom_affiche ?? undefined,
+    telephone: profil?.telephone ?? undefined,
+  });
 
   const trigger =
     variant === "header" ? (
@@ -506,40 +585,115 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
             Passez à la vitesse supérieure
           </DialogTitle>
           <DialogDescription>
-            Vous êtes actuellement sur le plan <strong>{PLAN_LABEL[currentPlan]}</strong>. Débloquez plus de capacité et toutes les fonctionnalités avancées.
+            Vous êtes actuellement sur le plan <strong>{PLAN_LABEL[currentPlan]}</strong>. Choisissez un plan supérieur puis la fréquence qui vous convient.
           </DialogDescription>
         </DialogHeader>
 
+        {/* Sélection du plan */}
         <div className="grid gap-3 sm:grid-cols-2">
-          <UpgradeTier
-            icon={<Zap className="h-4 w-4 text-gold" aria-hidden="true" />}
-            title="Lite"
-            tagline="Pour élargir votre suivi"
-            benefits={[
-              "Jusqu'à 2 écoles & 2 classes par école",
-              "Nombre d'élèves illimité",
-              "Export PDF des bulletins & rapports",
-              "Rapports détaillés (moyennes, distribution)",
-            ]}
-          />
-          <UpgradeTier
-            icon={<Crown className="h-4 w-4 text-teal" aria-hidden="true" />}
-            title="Premium"
-            highlight
-            tagline="Tout, sans limite"
-            benefits={[
-              "Écoles, classes et élèves illimités",
-              "Export PDF illimité",
-              "Rapports & suivi de progression avancé",
-              "Support prioritaire",
-            ]}
-          />
+          {availablePlans.map((p) => {
+            const t = PLAN_TIERS[p];
+            const active = selectedPlan === p;
+            const fromPrice = priceOf(p, "mensuelle");
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setSelectedPlan(p)}
+                aria-pressed={active}
+                className={`text-left rounded-lg border p-3 transition ${
+                  active
+                    ? "border-teal ring-2 ring-teal/40 bg-teal/5"
+                    : t.highlight
+                    ? "border-teal/60 bg-teal/5 hover:border-teal"
+                    : "border-border bg-background/60 hover:border-foreground/30"
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  {p === "premium" ? (
+                    <Crown className="h-4 w-4 text-teal" aria-hidden="true" />
+                  ) : (
+                    <Zap className="h-4 w-4 text-gold" aria-hidden="true" />
+                  )}
+                  <h3 className="font-serif text-base text-foreground">{t.title}</h3>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t.tagline}</p>
+                {fromPrice !== null && (
+                  <p className="mt-1.5 text-xs font-semibold text-foreground">
+                    À partir de {formatFcfa(fromPrice)} <span className="font-normal text-muted-foreground">/ mois</span>
+                  </p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Détails du plan choisi */}
+        <div className={`rounded-lg border p-3 ${tier.highlight ? "border-teal/60 bg-teal/5" : "border-border bg-background/60"}`}>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              {selectedPlan === "premium" ? (
+                <Crown className="h-4 w-4 text-teal" aria-hidden="true" />
+              ) : (
+                <Zap className="h-4 w-4 text-gold" aria-hidden="true" />
+              )}
+              <h3 className="font-serif text-base text-foreground">Plan {tier.title}</h3>
+            </div>
+            {currentPrice !== null && (
+              <div className="text-right">
+                <div className="text-base font-semibold text-foreground">{formatFcfa(currentPrice)}</div>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{PERIODE_SUFFIX[selectedPeriode]}</div>
+              </div>
+            )}
+          </div>
+          <ul className="mt-2 space-y-1">
+            {tier.benefits.map((b) => (
+              <li key={b} className="flex items-start gap-1.5 text-xs text-foreground/80">
+                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal" aria-hidden="true" />
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Choix de la fréquence */}
+        <div>
+          <div className="mb-1.5 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Fréquence d'abonnement</div>
+          <div className="grid grid-cols-3 gap-2">
+            {(["mensuelle", "trimestrielle", "annuelle"] as UpgradePeriode[]).map((per) => {
+              const price = priceOf(selectedPlan, per);
+              const active = selectedPeriode === per;
+              return (
+                <button
+                  key={per}
+                  type="button"
+                  onClick={() => setSelectedPeriode(per)}
+                  aria-pressed={active}
+                  className={`rounded-lg border p-2 text-center transition ${
+                    active
+                      ? "border-teal ring-2 ring-teal/40 bg-teal/5"
+                      : "border-border bg-background/60 hover:border-foreground/30"
+                  }`}
+                >
+                  <div className="text-xs font-semibold text-foreground">{PERIODE_LABEL[per]}</div>
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">
+                    {price !== null ? formatFcfa(price) : "—"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="rounded-lg border border-border bg-background/60 p-3 text-xs text-foreground/80">
-          <p className="font-semibold text-foreground">Comment mettre à niveau ?</p>
+          <p className="font-semibold text-foreground">Récapitulatif</p>
           <p className="mt-1">
-            Contactez-nous pour activer votre nouveau plan. Nous vous accompagnons pour choisir la formule adaptée à votre établissement.
+            Vous souhaitez passer au plan <strong>{tier.title}</strong> en formule{" "}
+            <strong>{PERIODE_LABEL[selectedPeriode].toLowerCase()}</strong>
+            {currentPrice !== null ? (
+              <> pour <strong>{formatFcfa(currentPrice)}</strong> {PERIODE_SUFFIX[selectedPeriode]}</>
+            ) : null}
+            . Contactez-nous sur WhatsApp pour activer votre abonnement.
           </p>
         </div>
 
@@ -560,37 +714,6 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
   );
 }
 
-function UpgradeTier({
-  icon,
-  title,
-  tagline,
-  benefits,
-  highlight,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  tagline: string;
-  benefits: string[];
-  highlight?: boolean;
-}) {
-  return (
-    <div className={`rounded-lg border p-3 ${highlight ? "border-teal/60 bg-teal/5" : "border-border bg-background/60"}`}>
-      <div className="flex items-center gap-1.5">
-        {icon}
-        <h3 className="font-serif text-base text-foreground">{title}</h3>
-      </div>
-      <p className="text-[11px] text-muted-foreground">{tagline}</p>
-      <ul className="mt-2 space-y-1">
-        {benefits.map((b) => (
-          <li key={b} className="flex items-start gap-1.5 text-xs text-foreground/80">
-            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal" aria-hidden="true" />
-            <span>{b}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 type PlanActivationRow = {
   id: string;
