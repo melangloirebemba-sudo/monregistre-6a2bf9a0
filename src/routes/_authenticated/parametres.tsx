@@ -618,14 +618,20 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
                 }`}
               >
 
-                <div className="flex items-center gap-1.5">
-                  {p === "premium" ? (
-                    <Crown className="h-4 w-4 text-teal" aria-hidden="true" />
-                  ) : (
-                    <Zap className="h-4 w-4 text-gold" aria-hidden="true" />
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    {p === "premium" ? (
+                      <Crown className="h-4 w-4 text-teal" aria-hidden="true" />
+                    ) : (
+                      <Zap className="h-4 w-4 text-gold" aria-hidden="true" />
+                    )}
+                    <h3 className="font-serif text-base text-foreground">{t.title}</h3>
+                  </div>
+                  {currentPlan === p && (
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Actuel</span>
                   )}
-                  <h3 className="font-serif text-base text-foreground">{t.title}</h3>
                 </div>
+
                 <p className="text-[11px] text-muted-foreground">{t.tagline}</p>
                 {fromPrice !== null && (
                   <p className="mt-1.5 text-xs font-semibold text-foreground">
