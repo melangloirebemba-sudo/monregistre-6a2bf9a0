@@ -21,10 +21,10 @@ android {
 
     signingConfigs {
     release {
-        storeFile file("monregistre.keystore")
-        storePassword "Admin@1234"
+        storeFile file(System.getenv("MONREGISTRE_KEYSTORE_PATH") ?: "monregistre-release.keystore")
+        storePassword System.getenv("MONREGISTRE_KEYSTORE_PASSWORD")
         keyAlias "monregistre"
-        keyPassword "Admin@1234"
+        keyPassword System.getenv("MONREGISTRE_KEYSTORE_PASSWORD")
     }
 }
     buildTypes {

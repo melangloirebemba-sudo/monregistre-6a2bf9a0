@@ -367,6 +367,26 @@ export function wireOfflineAutoFlush(onFlushed?: () => void): () => void {
     await flushQueue();
     onFlushed?.();
   };
+
+  // Écoute Capacitor Network en plus des events navigateur (WebView Android
+  // ne déclenche pas toujours 'online' de façon fiable).
+  let removeNetworkListener: (() => void) | undefined;
+  void (async () => {
+    try {
+      const { Capacitor } = await import("@capacitor/core");
+      if (!Capacitor.isNativePlatform()) return;
+      const { Network } = await import("@capacitor/network");
+      const listener = await Network.addListener("networkStatusChange", (s) => {
+        if (s.connected) void handler();
+      });
+      removeNetworkListener = () => {
+        void listener.remove();
+      };
+    } catch {
+      // @capacitor/network indisponible (web) — on garde uniquement les events navigateur.
+    }
+  })();
+
   if (!autoWired) {
     window.addEventListener("online", handler);
     autoWired = true;
@@ -374,9 +394,13 @@ export function wireOfflineAutoFlush(onFlushed?: () => void): () => void {
     void handler();
     return () => {
       window.removeEventListener("online", handler);
+      removeNetworkListener?.();
       autoWired = false;
     };
   }
   window.addEventListener("online", handler);
-  return () => window.removeEventListener("online", handler);
+  return () => {
+    window.removeEventListener("online", handler);
+    removeNetworkListener?.();
+  };
 }

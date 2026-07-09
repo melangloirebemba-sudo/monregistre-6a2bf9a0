@@ -41,11 +41,34 @@ export function useOfflineStatus(): OfflineStatus {
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
 
+    // Sur l'app native (Capacitor), les événements navigateur online/offline
+    // sont parfois peu fiables dans la WebView Android — on s'appuie en plus
+    // sur le plugin @capacitor/network quand il est disponible.
+    let removeNetworkListener: (() => void) | undefined;
+    void (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform()) return;
+        const { Network } = await import("@capacitor/network");
+        const status = await Network.getStatus();
+        setOnline(status.connected);
+        const listener = await Network.addListener("networkStatusChange", (s) => {
+          setOnline(s.connected);
+        });
+        removeNetworkListener = () => {
+          void listener.remove();
+        };
+      } catch {
+        // @capacitor/network non disponible (web) — on garde les events navigateur.
+      }
+    })();
+
     return () => {
       unsub();
       teardown();
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
+      removeNetworkListener?.();
     };
   }, [qc]);
 

@@ -18,6 +18,7 @@ import { THEME_INIT_SCRIPT, applyTheme, getStoredTheme } from "@/lib/theme";
 import { hydrateAppSettings } from "@/lib/app-settings";
 import { InstallPwaPrompt } from "@/components/app/install-pwa-prompt";
 import { AppUpdateNotifier } from "@/components/app/app-update-notifier";
+import { CapacitorLiveUpdater } from "@/components/app/capacitor-live-updater";
 
 function NotFoundComponent() {
   return (
@@ -173,6 +174,7 @@ function RootComponent() {
       <Outlet />
       <InstallPwaPrompt />
       <AppUpdateNotifier />
+      <CapacitorLiveUpdater />
       <Toaster />
     </QueryClientProvider>
   );

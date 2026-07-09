@@ -3,12 +3,14 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.monregistre.app',
   appName: 'MonRegistre',
-  webDir: 'public-mini',
+  // Build local et offline-first : les fichiers de l'app sont embarqués dans
+  // l'APK (voir `npm run build:mobile`), l'app ne dépend plus d'une URL
+  // distante pour s'ouvrir. Les données (classes, élèves, notes, absences,
+  // EDT...) fonctionnent hors ligne via la file d'attente IndexedDB
+  // (src/lib/offline-queue.ts) + le cache de lecture persistant (src/router.tsx).
+  webDir: 'dist/client',
   server: {
-    // L'app charge directement le site déployé (SSR + Supabase fonctionnent normalement)
-    url: 'https://monregistre.lovable.app',
     androidScheme: 'https',
-    cleartext: false,
   },
   android: {
     backgroundColor: '#1a1a2e',
@@ -23,6 +25,11 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'DARK',
       backgroundColor: '#1a1a2e',
+    },
+    CapacitorUpdater: {
+      // À configurer : URL de ton serveur Capgo self-hosted (ou le cloud
+      // Capgo si tu préfères cette option). Voir INSTRUCTIONS.md.
+      autoUpdate: true,
     },
   },
 };

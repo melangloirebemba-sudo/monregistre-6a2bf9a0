@@ -1,4 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
+import { persistQueryClient } from "@tanstack/react-query-persist-client";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import { get, set, del } from "idb-keyval";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
@@ -18,6 +21,30 @@ export const getRouter = () => {
       },
     },
   });
+
+  // Hors ligne : le cache de lecture (classes, élèves, notes, absences, EDT...)
+  // est persisté dans IndexedDB, pour que l'app affiche les dernières données
+  // connues même après un redémarrage complet sans connexion.
+  if (typeof window !== "undefined") {
+    const persister = createAsyncStoragePersister({
+      key: "monregistre-query-cache",
+      storage: {
+        getItem: (key: string) => get(key),
+        setItem: (key: string, value: string) => set(key, value),
+        removeItem: (key: string) => del(key),
+      },
+      throttleTime: 1000,
+    });
+    persistQueryClient({
+      queryClient,
+      persister,
+      maxAge: 1000 * 60 * 60 * 24 * 14, // 14 jours de cache offline
+      dehydrateOptions: {
+        // Ne persiste que les requêtes résolues avec succès (pas les erreurs/pending).
+        shouldDehydrateQuery: (query) => query.state.status === "success",
+      },
+    });
+  }
 
   const router = createRouter({
     routeTree,

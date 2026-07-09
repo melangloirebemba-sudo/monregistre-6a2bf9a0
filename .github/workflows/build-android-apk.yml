@@ -7,6 +7,9 @@ on:
     paths:
       - "android/**"
       - "capacitor.config.ts"
+      - "vite.config.mobile.ts"
+      - "src/**"
+      - "package.json"
       - ".github/workflows/build-android-apk.yml"
 
 jobs:
@@ -30,18 +33,49 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build offline-capable web bundle
+        run: npm run build:mobile
+
       - name: Sync Capacitor
         run: npx cap sync android
 
       - name: Grant execute permission to gradlew
         run: chmod +x android/gradlew
 
-      - name: Build release APK
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.MONREGISTRE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/monregistre-release.keystore
+            echo "HAS_KEYSTORE=true" >> "$GITHUB_ENV"
+          else
+            echo "HAS_KEYSTORE=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build signed release APK
+        if: env.HAS_KEYSTORE == 'true'
         working-directory: android
+        env:
+          MONREGISTRE_KEYSTORE_PATH: monregistre-release.keystore
+          MONREGISTRE_KEYSTORE_PASSWORD: ${{ secrets.MONREGISTRE_KEYSTORE_PASSWORD }}
         run: ./gradlew assembleRelease --no-daemon
 
-      - name: Upload APK
+      - name: Build debug APK (fallback — no keystore secret configured yet)
+        if: env.HAS_KEYSTORE != 'true'
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload release APK
+        if: env.HAS_KEYSTORE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MonRegistre-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload debug APK
+        if: env.HAS_KEYSTORE != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: MonRegistre-debug-apk
-	  path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

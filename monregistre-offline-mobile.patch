@@ -1,0 +1,1052 @@
+From de0434dc07f287385726078f5749101a4532152b Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Thu, 9 Jul 2026 20:28:48 +0000
+Subject: [PATCH] App mobile offline-first: build local + SQLite/IndexedDB sync
+ + Capgo live update + fix CI + rotation keystore
+
+---
+ .github/workflows/build-android-apk.yml       |  40 ++-
+ .gitignore                                    |   2 +
+ android/app/.gitignore                        |   1 +
+ android/app/build.gradle                      |   6 +-
+ android/app/capacitor.build.gradle            |   3 +
+ android/app/monregistre.keystore              | Bin 2754 -> 0 bytes
+ android/capacitor.settings.gradle             |   9 +
+ capacitor.config.ts                           |  15 +-
+ package-lock.json                             | 330 ++++++------------
+ package.json                                  |   7 +
+ src/components/app/capacitor-live-updater.tsx |  39 +++
+ src/hooks/use-offline-status.ts               |  23 ++
+ src/lib/offline-queue.ts                      |  26 +-
+ src/routeTree.gen.ts                          |  10 +
+ src/router.tsx                                |  27 ++
+ src/routes/__root.tsx                         |   2 +
+ vite.config.mobile.ts                         |  21 ++
+ 17 files changed, 335 insertions(+), 226 deletions(-)
+ delete mode 100644 android/app/monregistre.keystore
+ create mode 100644 src/components/app/capacitor-live-updater.tsx
+ create mode 100644 vite.config.mobile.ts
+
+diff --git a/.github/workflows/build-android-apk.yml b/.github/workflows/build-android-apk.yml
+index 8bad6c5..404ddc6 100644
+--- a/.github/workflows/build-android-apk.yml
++++ b/.github/workflows/build-android-apk.yml
+@@ -7,6 +7,9 @@ on:
+     paths:
+       - "android/**"
+       - "capacitor.config.ts"
++      - "vite.config.mobile.ts"
++      - "src/**"
++      - "package.json"
+       - ".github/workflows/build-android-apk.yml"
+ 
+ jobs:
+@@ -30,18 +33,49 @@ jobs:
+       - name: Install dependencies
+         run: npm install
+ 
++      - name: Build offline-capable web bundle
++        run: npm run build:mobile
++
+       - name: Sync Capacitor
+         run: npx cap sync android
+ 
+       - name: Grant execute permission to gradlew
+         run: chmod +x android/gradlew
+ 
+-      - name: Build release APK
++      - name: Decode release keystore
++        env:
++          KEYSTORE_BASE64: ${{ secrets.MONREGISTRE_KEYSTORE_BASE64 }}
++        run: |
++          if [ -n "$KEYSTORE_BASE64" ]; then
++            echo "$KEYSTORE_BASE64" | base64 -d > android/app/monregistre-release.keystore
++            echo "HAS_KEYSTORE=true" >> "$GITHUB_ENV"
++          else
++            echo "HAS_KEYSTORE=false" >> "$GITHUB_ENV"
++          fi
++
++      - name: Build signed release APK
++        if: env.HAS_KEYSTORE == 'true'
+         working-directory: android
++        env:
++          MONREGISTRE_KEYSTORE_PATH: monregistre-release.keystore
++          MONREGISTRE_KEYSTORE_PASSWORD: ${{ secrets.MONREGISTRE_KEYSTORE_PASSWORD }}
+         run: ./gradlew assembleRelease --no-daemon
+ 
+-      - name: Upload APK
++      - name: Build debug APK (fallback — no keystore secret configured yet)
++        if: env.HAS_KEYSTORE != 'true'
++        working-directory: android
++        run: ./gradlew assembleDebug --no-daemon
++
++      - name: Upload release APK
++        if: env.HAS_KEYSTORE == 'true'
++        uses: actions/upload-artifact@v4
++        with:
++          name: MonRegistre-release-apk
++          path: android/app/build/outputs/apk/release/app-release.apk
++
++      - name: Upload debug APK
++        if: env.HAS_KEYSTORE != 'true'
+         uses: actions/upload-artifact@v4
+         with:
+           name: MonRegistre-debug-apk
+-	  path: android/app/build/outputs/apk/debug/app-debug.apk
++          path: android/app/build/outputs/apk/debug/app-debug.apk
+diff --git a/.gitignore b/.gitignore
+index d24df8a..f9a32da 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -30,3 +30,5 @@ dist-ssr
+ *.njsproj
+ *.sln
+ *.sw?
++*.keystore
++monregistre-capacitor-android.patch
+diff --git a/android/app/.gitignore b/android/app/.gitignore
+index 043df80..66e6075 100644
+--- a/android/app/.gitignore
++++ b/android/app/.gitignore
+@@ -1,2 +1,3 @@
+ /build/*
+ !/build/.npmkeep
++android/app/monregistre-release.keystore
+diff --git a/android/app/build.gradle b/android/app/build.gradle
+index f1f43a5..f3dac0d 100644
+--- a/android/app/build.gradle
++++ b/android/app/build.gradle
+@@ -21,10 +21,10 @@ android {
+ 
+     signingConfigs {
+     release {
+-        storeFile file("monregistre.keystore")
+-        storePassword "Admin@1234"
++        storeFile file(System.getenv("MONREGISTRE_KEYSTORE_PATH") ?: "monregistre-release.keystore")
++        storePassword System.getenv("MONREGISTRE_KEYSTORE_PASSWORD")
+         keyAlias "monregistre"
+-        keyPassword "Admin@1234"
++        keyPassword System.getenv("MONREGISTRE_KEYSTORE_PASSWORD")
+     }
+ }
+     buildTypes {
+diff --git a/android/app/capacitor.build.gradle b/android/app/capacitor.build.gradle
+index 416810b..53661de 100644
+--- a/android/app/capacitor.build.gradle
++++ b/android/app/capacitor.build.gradle
+@@ -9,8 +9,11 @@ android {
+ 
+ apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
+ dependencies {
++    implementation project(':capacitor-app')
++    implementation project(':capacitor-network')
+     implementation project(':capacitor-splash-screen')
+     implementation project(':capacitor-status-bar')
++    implementation project(':capgo-capacitor-updater')
+ 
+ }
+ 
+diff --git a/android/app/monregistre.keystore b/android/app/monregistre.keystore
+deleted file mode 100644
+index d56707966fde881df39c975aef439b04fa214bca..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 2754
+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
+
+diff --git a/android/capacitor.settings.gradle b/android/capacitor.settings.gradle
+index bdeffaf..5f6ae43 100644
+--- a/android/capacitor.settings.gradle
++++ b/android/capacitor.settings.gradle
+@@ -2,8 +2,17 @@
+ include ':capacitor-android'
+ project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
+ 
++include ':capacitor-app'
++project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
++
++include ':capacitor-network'
++project(':capacitor-network').projectDir = new File('../node_modules/@capacitor/network/android')
++
+ include ':capacitor-splash-screen'
+ project(':capacitor-splash-screen').projectDir = new File('../node_modules/@capacitor/splash-screen/android')
+ 
+ include ':capacitor-status-bar'
+ project(':capacitor-status-bar').projectDir = new File('../node_modules/@capacitor/status-bar/android')
++
++include ':capgo-capacitor-updater'
++project(':capgo-capacitor-updater').projectDir = new File('../node_modules/@capgo/capacitor-updater/android')
+diff --git a/capacitor.config.ts b/capacitor.config.ts
+index 966a95d..729870a 100644
+--- a/capacitor.config.ts
++++ b/capacitor.config.ts
+@@ -3,12 +3,14 @@ import type { CapacitorConfig } from '@capacitor/cli';
+ const config: CapacitorConfig = {
+   appId: 'com.monregistre.app',
+   appName: 'MonRegistre',
+-  webDir: 'public-mini',
++  // Build local et offline-first : les fichiers de l'app sont embarqués dans
++  // l'APK (voir `npm run build:mobile`), l'app ne dépend plus d'une URL
++  // distante pour s'ouvrir. Les données (classes, élèves, notes, absences,
++  // EDT...) fonctionnent hors ligne via la file d'attente IndexedDB
++  // (src/lib/offline-queue.ts) + le cache de lecture persistant (src/router.tsx).
++  webDir: 'dist/client',
+   server: {
+-    // L'app charge directement le site déployé (SSR + Supabase fonctionnent normalement)
+-    url: 'https://monregistre.lovable.app',
+     androidScheme: 'https',
+-    cleartext: false,
+   },
+   android: {
+     backgroundColor: '#1a1a2e',
+@@ -24,6 +26,11 @@ const config: CapacitorConfig = {
+       style: 'DARK',
+       backgroundColor: '#1a1a2e',
+     },
++    CapacitorUpdater: {
++      // À configurer : URL de ton serveur Capgo self-hosted (ou le cloud
++      // Capgo si tu préfères cette option). Voir INSTRUCTIONS.md.
++      autoUpdate: true,
++    },
+   },
+ };
+ 
+diff --git a/package-lock.json b/package-lock.json
+index f2c54d5..97f5868 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -7,24 +7,22 @@
+       "name": "tanstack_start_ts",
+       "dependencies": {
+         "@capacitor/android": "^8.4.1",
++        "@capacitor/app": "^8.1.0",
+         "@capacitor/cli": "^8.4.1",
+         "@capacitor/core": "^8.4.1",
++        "@capacitor/network": "^8.0.1",
+         "@capacitor/splash-screen": "^8.0.1",
+         "@capacitor/status-bar": "^8.0.2",
++        "@capgo/capacitor-updater": "^8.50.2",
+         "@hookform/resolvers": "^5.2.2",
+         "@radix-ui/react-accordion": "^1.2.12",
+         "@radix-ui/react-alert-dialog": "^1.1.15",
+-        "@radix-ui/react-aspect-ratio": "^1.1.8",
+         "@radix-ui/react-avatar": "^1.1.11",
+         "@radix-ui/react-checkbox": "^1.3.3",
+         "@radix-ui/react-collapsible": "^1.1.12",
+-        "@radix-ui/react-context-menu": "^2.2.16",
+         "@radix-ui/react-dialog": "^1.1.15",
+         "@radix-ui/react-dropdown-menu": "^2.1.16",
+-        "@radix-ui/react-hover-card": "^1.1.15",
+         "@radix-ui/react-label": "^2.1.8",
+-        "@radix-ui/react-menubar": "^1.1.16",
+-        "@radix-ui/react-navigation-menu": "^1.2.14",
+         "@radix-ui/react-popover": "^1.1.15",
+         "@radix-ui/react-progress": "^1.1.8",
+         "@radix-ui/react-radio-group": "^1.3.8",
+@@ -40,15 +38,17 @@
+         "@radix-ui/react-tooltip": "^1.2.8",
+         "@supabase/supabase-js": "^2.110.0",
+         "@tailwindcss/vite": "^4.2.1",
++        "@tanstack/query-async-storage-persister": "^5.101.2",
+         "@tanstack/react-query": "^5.101.1",
++        "@tanstack/react-query-persist-client": "^5.101.2",
+         "@tanstack/react-router": "^1.170.16",
+         "@tanstack/react-start": "^1.168.26",
++        "@tanstack/react-virtual": "^3.14.5",
+         "@tanstack/router-plugin": "^1.168.18",
+         "class-variance-authority": "^0.7.1",
+         "clsx": "^2.1.1",
+-        "cmdk": "^1.1.1",
+         "date-fns": "^4.1.0",
+-        "embla-carousel-react": "^8.6.0",
++        "idb-keyval": "^6.3.0",
+         "input-otp": "^1.4.2",
+         "jspdf": "^4.2.1",
+         "jspdf-autotable": "^5.0.8",
+@@ -58,7 +58,6 @@
+         "react-day-picker": "^9.14.0",
+         "react-dom": "^19.2.0",
+         "react-hook-form": "^7.71.2",
+-        "react-resizable-panels": "^4.6.5",
+         "recharts": "^2.15.4",
+         "sonner": "^2.0.7",
+         "tailwind-merge": "^3.5.0",
+@@ -71,7 +70,7 @@
+       },
+       "devDependencies": {
+         "@eslint/js": "^9.32.0",
+-        "@lovable.dev/vite-tanstack-config": "2.7.0",
++        "@lovable.dev/vite-tanstack-config": "2.7.1",
+         "@types/node": "^22.16.5",
+         "@types/papaparse": "^5.5.2",
+         "@types/react": "^19.2.0",
+@@ -1786,6 +1785,15 @@
+         "@capacitor/core": "^8.4.0"
+       }
+     },
++    "node_modules/@capacitor/app": {
++      "version": "8.1.0",
++      "resolved": "https://registry.npmjs.org/@capacitor/app/-/app-8.1.0.tgz",
++      "integrity": "sha512-MlmttTOWHDedr/G4SrhNRxsXMqY+R75S4MM4eIgzsgCzOYhb/MpCkA5Q3nuOCfL1oHm26xjUzqZ5aupbOwdfYg==",
++      "license": "MIT",
++      "peerDependencies": {
++        "@capacitor/core": ">=8.0.0"
++      }
++    },
+     "node_modules/@capacitor/cli": {
+       "version": "8.4.1",
+       "resolved": "https://registry.npmjs.org/@capacitor/cli/-/cli-8.4.1.tgz",
+@@ -1827,6 +1835,15 @@
+         "tslib": "^2.1.0"
+       }
+     },
++    "node_modules/@capacitor/network": {
++      "version": "8.0.1",
++      "resolved": "https://registry.npmjs.org/@capacitor/network/-/network-8.0.1.tgz",
++      "integrity": "sha512-9xK/FHFmzKGanB6BdoSZOzXk8vF0OFVQSQ4PAsIrzAzLuXHryO317qy8dcHVpgxYeuZq2noI0My9z1DvVDi/9w==",
++      "license": "MIT",
++      "peerDependencies": {
++        "@capacitor/core": ">=8.0.0"
++      }
++    },
+     "node_modules/@capacitor/splash-screen": {
+       "version": "8.0.1",
+       "resolved": "https://registry.npmjs.org/@capacitor/splash-screen/-/splash-screen-8.0.1.tgz",
+@@ -1845,6 +1862,15 @@
+         "@capacitor/core": ">=8.0.0"
+       }
+     },
++    "node_modules/@capgo/capacitor-updater": {
++      "version": "8.50.2",
++      "resolved": "https://registry.npmjs.org/@capgo/capacitor-updater/-/capacitor-updater-8.50.2.tgz",
++      "integrity": "sha512-bMsZFp17jg39hBqCioLrJfRyH4VDUS3vcvTJ55MlcdBAxEfj2rqkJZtBPVerO3Y8oJuoGM4x89ISdXJkPzmTfA==",
++      "license": "MPL-2.0",
++      "peerDependencies": {
++        "@capacitor/core": "^8.0.0"
++      }
++    },
+     "node_modules/@csstools/color-helpers": {
+       "version": "6.1.0",
+       "resolved": "https://registry.npmjs.org/@csstools/color-helpers/-/color-helpers-6.1.0.tgz",
+@@ -3003,9 +3029,9 @@
+       }
+     },
+     "node_modules/@lovable.dev/vite-tanstack-config": {
+-      "version": "2.7.0",
+-      "resolved": "https://registry.npmjs.org/@lovable.dev/vite-tanstack-config/-/vite-tanstack-config-2.7.0.tgz",
+-      "integrity": "sha512-a6IMTa5NPWve8zbJziwTaeZkNpsPPzOyDC0EkFguFjpSvHssJP0YmOTik9Ek4SxFlE/jQJY9iKcZUD2z3tC+Kw==",
++      "version": "2.7.1",
++      "resolved": "https://registry.npmjs.org/@lovable.dev/vite-tanstack-config/-/vite-tanstack-config-2.7.1.tgz",
++      "integrity": "sha512-PCb3Rh65bCxm/rlTx8g5xxMyaV3A/Mn+JkSM/2MYYksYJQx4v/AhE1qTi+JI4o/FCAzJVljM01SKzTqz0icA5A==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+@@ -3596,29 +3622,6 @@
+         }
+       }
+     },
+-    "node_modules/@radix-ui/react-aspect-ratio": {
+-      "version": "1.1.11",
+-      "resolved": "https://registry.npmjs.org/@radix-ui/react-aspect-ratio/-/react-aspect-ratio-1.1.11.tgz",
+-      "integrity": "sha512-IUAhIVpBUvP5NNICjlaB1OFmtRLGqQqTF3ZOSGPoq3XeLXRFtHiWTRxSVEULgOd9GQR2c7tsYqDnhUennapZnw==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "@radix-ui/react-primitive": "2.1.7"
+-      },
+-      "peerDependencies": {
+-        "@types/react": "*",
+-        "@types/react-dom": "*",
+-        "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+-        "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+-      },
+-      "peerDependenciesMeta": {
+-        "@types/react": {
+-          "optional": true
+-        },
+-        "@types/react-dom": {
+-          "optional": true
+-        }
+-      }
+-    },
+     "node_modules/@radix-ui/react-avatar": {
+       "version": "1.2.2",
+       "resolved": "https://registry.npmjs.org/@radix-ui/react-avatar/-/react-avatar-1.2.2.tgz",
+@@ -3762,33 +3765,6 @@
+         }
+       }
+     },
+-    "node_modules/@radix-ui/react-context-menu": {
+-      "version": "2.3.3",
+-      "resolved": "https://registry.npmjs.org/@radix-ui/react-context-menu/-/react-context-menu-2.3.3.tgz",
+-      "integrity": "sha512-PS+gKE0z2prJ74Y0sM+brAGK4mYOHIR7TlcV5EJgUQ6E0xMvyswkK2X4yRqyganrzsRL+WCSKAPu0NQITICRWg==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "@radix-ui/primitive": "1.1.5",
+-        "@radix-ui/react-context": "1.2.0",
+-        "@radix-ui/react-menu": "2.1.20",
+-        "@radix-ui/react-primitive": "2.1.7",
+-        "@radix-ui/react-use-controllable-state": "1.2.3"
+-      },
+-      "peerDependencies": {
+-        "@types/react": "*",
+-        "@types/react-dom": "*",
+-        "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+-        "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+-      },
+-      "peerDependenciesMeta": {
+-        "@types/react": {
+-          "optional": true
+-        },
+-        "@types/react-dom": {
+-          "optional": true
+-        }
+-      }
+-    },
+     "node_modules/@radix-ui/react-dialog": {
+       "version": "1.1.19",
+       "resolved": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.1.19.tgz",
+@@ -3936,37 +3912,6 @@
+         }
+       }
+     },
+-    "node_modules/@radix-ui/react-hover-card": {
+-      "version": "1.1.19",
+-      "resolved": "https://registry.npmjs.org/@radix-ui/react-hover-card/-/react-hover-card-1.1.19.tgz",
+-      "integrity": "sha512-2KTgMLQtKvicznQgbindEI2RZ3QbDIwU5gabjUPwFJsormjGDz+rUvO4NANmYwzEEpTcTONUt33vBHIfTIVSfw==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "@radix-ui/primitive": "1.1.5",
+-        "@radix-ui/react-compose-refs": "1.1.3",
+-        "@radix-ui/react-context": "1.2.0",
+-        "@radix-ui/react-dismissable-layer": "1.1.15",
+-        "@radix-ui/react-popper": "1.3.3",
+-        "@radix-ui/react-portal": "1.1.13",
+-        "@radix-ui/react-presence": "1.1.7",
+-        "@radix-ui/react-primitive": "2.1.7",
+-        "@radix-ui/react-use-controllable-state": "1.2.3"
+-      },
+-      "peerDependencies": {
+-        "@types/react": "*",
+-        "@types/react-dom": "*",
+-        "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+-        "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+-      },
+-      "peerDependenciesMeta": {
+-        "@types/react": {
+-          "optional": true
+-        },
+-        "@types/react-dom": {
+-          "optional": true
+-        }
+-      }
+-    },
+     "node_modules/@radix-ui/react-id": {
+       "version": "1.1.2",
+       "resolved": "https://registry.npmjs.org/@radix-ui/react-id/-/react-id-1.1.2.tgz",
+@@ -4048,74 +3993,6 @@
+         }
+       }
+     },
+-    "node_modules/@radix-ui/react-menubar": {
+-      "version": "1.1.20",
+-      "resolved": "https://registry.npmjs.org/@radix-ui/react-menubar/-/react-menubar-1.1.20.tgz",
+-      "integrity": "sha512-gzFZvybgmwYsFBWDqanycIoEYnhyk8MMnuLamdFVHUZYGp4COM+sqXiwbnn0VMWqGLeeU7GV7jm+dXRa+Wufag==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "@radix-ui/primitive": "1.1.5",
+-        "@radix-ui/react-collection": "1.1.12",
+-        "@radix-ui/react-compose-refs": "1.1.3",
+-        "@radix-ui/react-context": "1.2.0",
+-        "@radix-ui/react-direction": "1.1.2",
+-        "@radix-ui/react-id": "1.1.2",
+-        "@radix-ui/react-menu": "2.1.20",
+-        "@radix-ui/react-primitive": "2.1.7",
+-        "@radix-ui/react-roving-focus": "1.1.15",
+-        "@radix-ui/react-use-controllable-state": "1.2.3"
+-      },
+-      "peerDependencies": {
+-        "@types/react": "*",
+-        "@types/react-dom": "*",
+-        "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+-        "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+-      },
+-      "peerDependenciesMeta": {
+-        "@types/react": {
+-          "optional": true
+-        },
+-        "@types/react-dom": {
+-          "optional": true
+-        }
+-      }
+-    },
+-    "node_modules/@radix-ui/react-navigation-menu": {
+-      "version": "1.2.18",
+-      "resolved": "https://registry.npmjs.org/@radix-ui/react-navigation-menu/-/react-navigation-menu-1.2.18.tgz",
+-      "integrity": "sha512-K9HiuxZ6xCwSaHcIuUpxyhy4w5gpwzWjh9dHTSbMN3Ix4qAyVObS9RlU3zMycb0PO3v9Tpk0BXMwWvXOUbVXew==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "@radix-ui/primitive": "1.1.5",
+-        "@radix-ui/react-collection": "1.1.12",
+-        "@radix-ui/react-compose-refs": "1.1.3",
+-        "@radix-ui/react-context": "1.2.0",
+-        "@radix-ui/react-direction": "1.1.2",
+-        "@radix-ui/react-dismissable-layer": "1.1.15",
+-        "@radix-ui/react-id": "1.1.2",
+-        "@radix-ui/react-presence": "1.1.7",
+-        "@radix-ui/react-primitive": "2.1.7",
+-        "@radix-ui/react-use-callback-ref": "1.1.2",
+-        "@radix-ui/react-use-controllable-state": "1.2.3",
+-        "@radix-ui/react-use-layout-effect": "1.1.2",
+-        "@radix-ui/react-use-previous": "1.1.2",
+-        "@radix-ui/react-visually-hidden": "1.2.7"
+-      },
+-      "peerDependencies": {
+-        "@types/react": "*",
+-        "@types/react-dom": "*",
+-        "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+-        "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+-      },
+-      "peerDependenciesMeta": {
+-        "@types/react": {
+-          "optional": true
+-        },
+-        "@types/react-dom": {
+-          "optional": true
+-        }
+-      }
+-    },
+     "node_modules/@radix-ui/react-popover": {
+       "version": "1.1.19",
+       "resolved": "https://registry.npmjs.org/@radix-ui/react-popover/-/react-popover-1.1.19.tgz",
+@@ -6005,6 +5882,20 @@
+         "url": "https://github.com/sponsors/tannerlinsley"
+       }
+     },
++    "node_modules/@tanstack/query-async-storage-persister": {
++      "version": "5.101.2",
++      "resolved": "https://registry.npmjs.org/@tanstack/query-async-storage-persister/-/query-async-storage-persister-5.101.2.tgz",
++      "integrity": "sha512-jf7zvVKZ5q2j/xuhbTIBUpw5xt6cw/ioOFQquxK7fRY0AmMQP8A0JVMOgYoeQLA4PKdeT7RxsuLAF0Lft9oJ8Q==",
++      "license": "MIT",
++      "dependencies": {
++        "@tanstack/query-core": "5.101.2",
++        "@tanstack/query-persist-client-core": "5.101.2"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/tannerlinsley"
++      }
++    },
+     "node_modules/@tanstack/query-core": {
+       "version": "5.101.2",
+       "resolved": "https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.101.2.tgz",
+@@ -6015,6 +5906,19 @@
+         "url": "https://github.com/sponsors/tannerlinsley"
+       }
+     },
++    "node_modules/@tanstack/query-persist-client-core": {
++      "version": "5.101.2",
++      "resolved": "https://registry.npmjs.org/@tanstack/query-persist-client-core/-/query-persist-client-core-5.101.2.tgz",
++      "integrity": "sha512-rgMsbvBVpSPDUsprC9FYxojdG0Q1LH6yq1i3DXz2aps4VEqv2l4Msj3YDqIifU3xkl/DrYe9YWntZAJLrM6xTg==",
++      "license": "MIT",
++      "dependencies": {
++        "@tanstack/query-core": "5.101.2"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/tannerlinsley"
++      }
++    },
+     "node_modules/@tanstack/react-query": {
+       "version": "5.101.2",
+       "resolved": "https://registry.npmjs.org/@tanstack/react-query/-/react-query-5.101.2.tgz",
+@@ -6031,6 +5935,23 @@
+         "react": "^18 || ^19"
+       }
+     },
++    "node_modules/@tanstack/react-query-persist-client": {
++      "version": "5.101.2",
++      "resolved": "https://registry.npmjs.org/@tanstack/react-query-persist-client/-/react-query-persist-client-5.101.2.tgz",
++      "integrity": "sha512-19UpaRtf0lvB2QAJ2MoixxtGf3osMOd508g99EsttUj4+3eLs+ulnNgYjB7AkQMHrRlcbVXqpVNqWkB4a7g8Zw==",
++      "license": "MIT",
++      "dependencies": {
++        "@tanstack/query-persist-client-core": "5.101.2"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/tannerlinsley"
++      },
++      "peerDependencies": {
++        "@tanstack/react-query": "^5.101.2",
++        "react": "^18 || ^19"
++      }
++    },
+     "node_modules/@tanstack/react-router": {
+       "version": "1.170.17",
+       "resolved": "https://registry.npmjs.org/@tanstack/react-router/-/react-router-1.170.17.tgz",
+@@ -6199,6 +6120,23 @@
+         "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+       }
+     },
++    "node_modules/@tanstack/react-virtual": {
++      "version": "3.14.5",
++      "resolved": "https://registry.npmjs.org/@tanstack/react-virtual/-/react-virtual-3.14.5.tgz",
++      "integrity": "sha512-4EKRXh7zBLkbKbFmG3AUVkircuHd+7OdT1pocJSepxtfBd3qnrJgJ5rtPkRYyo9fmyVb2+pI2xPy5oYvMLQy6A==",
++      "license": "MIT",
++      "dependencies": {
++        "@tanstack/virtual-core": "3.17.3"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/tannerlinsley"
++      },
++      "peerDependencies": {
++        "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
++        "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
++      }
++    },
+     "node_modules/@tanstack/router-core": {
+       "version": "1.171.14",
+       "resolved": "https://registry.npmjs.org/@tanstack/router-core/-/router-core-1.171.14.tgz",
+@@ -6480,6 +6418,16 @@
+         "url": "https://github.com/sponsors/tannerlinsley"
+       }
+     },
++    "node_modules/@tanstack/virtual-core": {
++      "version": "3.17.3",
++      "resolved": "https://registry.npmjs.org/@tanstack/virtual-core/-/virtual-core-3.17.3.tgz",
++      "integrity": "sha512-8Np/TFELpI0ySuJoVmjvOrQYXH/8sTX0Biv9szhFhY39xOdAAY+smrMxjxOum/ux3eM8MUJQsEJ0/R0UpvC8dw==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/tannerlinsley"
++      }
++    },
+     "node_modules/@tanstack/virtual-file-routes": {
+       "version": "1.162.0",
+       "resolved": "https://registry.npmjs.org/@tanstack/virtual-file-routes/-/virtual-file-routes-1.162.0.tgz",
+@@ -7870,22 +7818,6 @@
+         "node": ">=6"
+       }
+     },
+-    "node_modules/cmdk": {
+-      "version": "1.1.1",
+-      "resolved": "https://registry.npmjs.org/cmdk/-/cmdk-1.1.1.tgz",
+-      "integrity": "sha512-Vsv7kFaXm+ptHDMZ7izaRsP70GgrW9NBNGswt9OZaVBLlE0SNpDq8eu/VGXyF9r7M0azK3Wy7OlYXsuyYLFzHg==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "@radix-ui/react-compose-refs": "^1.1.1",
+-        "@radix-ui/react-dialog": "^1.1.6",
+-        "@radix-ui/react-id": "^1.1.0",
+-        "@radix-ui/react-primitive": "^2.0.2"
+-      },
+-      "peerDependencies": {
+-        "react": "^18 || ^19 || ^19.0.0-rc",
+-        "react-dom": "^18 || ^19 || ^19.0.0-rc"
+-      }
+-    },
+     "node_modules/color-convert": {
+       "version": "2.0.1",
+       "resolved": "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz",
+@@ -8508,34 +8440,6 @@
+         "node": ">= 0.4.0"
+       }
+     },
+-    "node_modules/embla-carousel": {
+-      "version": "8.6.0",
+-      "resolved": "https://registry.npmjs.org/embla-carousel/-/embla-carousel-8.6.0.tgz",
+-      "integrity": "sha512-SjWyZBHJPbqxHOzckOfo8lHisEaJWmwd23XppYFYVh10bU66/Pn5tkVkbkCMZVdbUE5eTCI2nD8OyIP4Z+uwkA==",
+-      "license": "MIT"
+-    },
+-    "node_modules/embla-carousel-react": {
+-      "version": "8.6.0",
+-      "resolved": "https://registry.npmjs.org/embla-carousel-react/-/embla-carousel-react-8.6.0.tgz",
+-      "integrity": "sha512-0/PjqU7geVmo6F734pmPqpyHqiM99olvyecY7zdweCw+6tKEXnrE90pBiBbMMU8s5tICemzpQ3hi5EpxzGW+JA==",
+-      "license": "MIT",
+-      "dependencies": {
+-        "embla-carousel": "8.6.0",
+-        "embla-carousel-reactive-utils": "8.6.0"
+-      },
+-      "peerDependencies": {
+-        "react": "^16.8.0 || ^17.0.1 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc"
+-      }
+-    },
+-    "node_modules/embla-carousel-reactive-utils": {
+-      "version": "8.6.0",
+-      "resolved": "https://registry.npmjs.org/embla-carousel-reactive-utils/-/embla-carousel-reactive-utils-8.6.0.tgz",
+-      "integrity": "sha512-fMVUDUEx0/uIEDM0Mz3dHznDhfX+znCCDCeIophYb1QGVM7YThSWX+wz11zlYwWFOr74b4QLGg0hrGPJeG2s4A==",
+-      "license": "MIT",
+-      "peerDependencies": {
+-        "embla-carousel": "8.6.0"
+-      }
+-    },
+     "node_modules/emoji-regex": {
+       "version": "8.0.0",
+       "resolved": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
+@@ -9930,6 +9834,12 @@
+       "dev": true,
+       "license": "ISC"
+     },
++    "node_modules/idb-keyval": {
++      "version": "6.3.0",
++      "resolved": "https://registry.npmjs.org/idb-keyval/-/idb-keyval-6.3.0.tgz",
++      "integrity": "sha512-um+2dgAWmYsu615EXpWVwSmapJhON0G43t3Ka/EVaohzPQXSMqKEqeDK/oIW3Ow+BXaF2PvSc+oBTFp793A5Ow==",
++      "license": "Apache-2.0"
++    },
+     "node_modules/ignore": {
+       "version": "5.3.2",
+       "resolved": "https://registry.npmjs.org/ignore/-/ignore-5.3.2.tgz",
+@@ -13011,16 +12921,6 @@
+         }
+       }
+     },
+-    "node_modules/react-resizable-panels": {
+-      "version": "4.12.1",
+-      "resolved": "https://registry.npmjs.org/react-resizable-panels/-/react-resizable-panels-4.12.1.tgz",
+-      "integrity": "sha512-ElE/UpOvMLRWtAqbCgyizHXcbws8RPMyN3cBqmdY17Nxr5f01+DEwzOLqhgcy68GSnjtIUFgKWKl8aIgx5aypQ==",
+-      "license": "MIT",
+-      "peerDependencies": {
+-        "react": "^18.0.0 || ^19.0.0",
+-        "react-dom": "^18.0.0 || ^19.0.0"
+-      }
+-    },
+     "node_modules/react-smooth": {
+       "version": "4.0.4",
+       "resolved": "https://registry.npmjs.org/react-smooth/-/react-smooth-4.0.4.tgz",
+diff --git a/package.json b/package.json
+index cfd00cb..866d777 100644
+--- a/package.json
++++ b/package.json
+@@ -6,6 +6,7 @@
+   "scripts": {
+     "dev": "vite dev",
+     "build": "vite build",
++    "build:mobile": "vite build --config vite.config.mobile.ts",
+     "build:dev": "vite build --mode development",
+     "preview": "vite preview",
+     "lint": "eslint .",
+@@ -13,10 +14,13 @@
+   },
+   "dependencies": {
+     "@capacitor/android": "^8.4.1",
++    "@capacitor/app": "^8.1.0",
+     "@capacitor/cli": "^8.4.1",
+     "@capacitor/core": "^8.4.1",
++    "@capacitor/network": "^8.0.1",
+     "@capacitor/splash-screen": "^8.0.1",
+     "@capacitor/status-bar": "^8.0.2",
++    "@capgo/capacitor-updater": "^8.50.2",
+     "@hookform/resolvers": "^5.2.2",
+     "@radix-ui/react-accordion": "^1.2.12",
+     "@radix-ui/react-alert-dialog": "^1.1.15",
+@@ -41,7 +45,9 @@
+     "@radix-ui/react-tooltip": "^1.2.8",
+     "@supabase/supabase-js": "^2.110.0",
+     "@tailwindcss/vite": "^4.2.1",
++    "@tanstack/query-async-storage-persister": "^5.101.2",
+     "@tanstack/react-query": "^5.101.1",
++    "@tanstack/react-query-persist-client": "^5.101.2",
+     "@tanstack/react-router": "^1.170.16",
+     "@tanstack/react-start": "^1.168.26",
+     "@tanstack/react-virtual": "^3.14.5",
+@@ -49,6 +55,7 @@
+     "class-variance-authority": "^0.7.1",
+     "clsx": "^2.1.1",
+     "date-fns": "^4.1.0",
++    "idb-keyval": "^6.3.0",
+     "input-otp": "^1.4.2",
+     "jspdf": "^4.2.1",
+     "jspdf-autotable": "^5.0.8",
+diff --git a/src/components/app/capacitor-live-updater.tsx b/src/components/app/capacitor-live-updater.tsx
+new file mode 100644
+index 0000000..6699c52
+--- /dev/null
++++ b/src/components/app/capacitor-live-updater.tsx
+@@ -0,0 +1,39 @@
++import { useEffect } from "react";
++
++/**
++ * Initialise les mises à jour "live" (OTA) via Capgo sur l'app native.
++ * Ne fait rien sur le web (où c'est le service worker / AppUpdateNotifier
++ * qui gère les mises à jour).
++ *
++ * Fonctionnement :
++ *  - Au démarrage, on notifie Capgo que le bundle actuel s'est chargé sans
++ *    planter (sinon Capgo revient automatiquement à la version précédente
++ *    après quelques secondes — filet de sécurité anti mise-à-jour cassée).
++ *  - Capgo vérifie en tâche de fond s'il existe un nouveau bundle JS/CSS sur
++ *    le serveur configuré, le télécharge, et l'applique au prochain
++ *    redémarrage de l'app (ou immédiatement selon la configuration choisie).
++ */
++export function CapacitorLiveUpdater() {
++  useEffect(() => {
++    let cancelled = false;
++    void (async () => {
++      try {
++        const { Capacitor } = await import("@capacitor/core");
++        if (!Capacitor.isNativePlatform()) return;
++        const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
++        if (cancelled) return;
++        // Confirme que le bundle actuel est sain (annule le rollback auto).
++        await CapacitorUpdater.notifyAppReady();
++        // Vérifie s'il existe une mise à jour disponible.
++        await CapacitorUpdater.getLatest();
++      } catch {
++        // @capgo/capacitor-updater indisponible (web) — pas d'action nécessaire.
++      }
++    })();
++    return () => {
++      cancelled = true;
++    };
++  }, []);
++
++  return null;
++}
+diff --git a/src/hooks/use-offline-status.ts b/src/hooks/use-offline-status.ts
+index 1e077b7..f64b6bc 100644
+--- a/src/hooks/use-offline-status.ts
++++ b/src/hooks/use-offline-status.ts
+@@ -41,11 +41,34 @@ export function useOfflineStatus(): OfflineStatus {
+     window.addEventListener("online", onOnline);
+     window.addEventListener("offline", onOffline);
+ 
++    // Sur l'app native (Capacitor), les événements navigateur online/offline
++    // sont parfois peu fiables dans la WebView Android — on s'appuie en plus
++    // sur le plugin @capacitor/network quand il est disponible.
++    let removeNetworkListener: (() => void) | undefined;
++    void (async () => {
++      try {
++        const { Capacitor } = await import("@capacitor/core");
++        if (!Capacitor.isNativePlatform()) return;
++        const { Network } = await import("@capacitor/network");
++        const status = await Network.getStatus();
++        setOnline(status.connected);
++        const listener = await Network.addListener("networkStatusChange", (s) => {
++          setOnline(s.connected);
++        });
++        removeNetworkListener = () => {
++          void listener.remove();
++        };
++      } catch {
++        // @capacitor/network non disponible (web) — on garde les events navigateur.
++      }
++    })();
++
+     return () => {
+       unsub();
+       teardown();
+       window.removeEventListener("online", onOnline);
+       window.removeEventListener("offline", onOffline);
++      removeNetworkListener?.();
+     };
+   }, [qc]);
+ 
+diff --git a/src/lib/offline-queue.ts b/src/lib/offline-queue.ts
+index 2647a3a..08c5b12 100644
+--- a/src/lib/offline-queue.ts
++++ b/src/lib/offline-queue.ts
+@@ -367,6 +367,26 @@ export function wireOfflineAutoFlush(onFlushed?: () => void): () => void {
+     await flushQueue();
+     onFlushed?.();
+   };
++
++  // Écoute Capacitor Network en plus des events navigateur (WebView Android
++  // ne déclenche pas toujours 'online' de façon fiable).
++  let removeNetworkListener: (() => void) | undefined;
++  void (async () => {
++    try {
++      const { Capacitor } = await import("@capacitor/core");
++      if (!Capacitor.isNativePlatform()) return;
++      const { Network } = await import("@capacitor/network");
++      const listener = await Network.addListener("networkStatusChange", (s) => {
++        if (s.connected) void handler();
++      });
++      removeNetworkListener = () => {
++        void listener.remove();
++      };
++    } catch {
++      // @capacitor/network indisponible (web) — on garde uniquement les events navigateur.
++    }
++  })();
++
+   if (!autoWired) {
+     window.addEventListener("online", handler);
+     autoWired = true;
+@@ -374,9 +394,13 @@ export function wireOfflineAutoFlush(onFlushed?: () => void): () => void {
+     void handler();
+     return () => {
+       window.removeEventListener("online", handler);
++      removeNetworkListener?.();
+       autoWired = false;
+     };
+   }
+   window.addEventListener("online", handler);
+-  return () => window.removeEventListener("online", handler);
++  return () => {
++    window.removeEventListener("online", handler);
++    removeNetworkListener?.();
++  };
+ }
+diff --git a/src/routeTree.gen.ts b/src/routeTree.gen.ts
+index b03d090..4ddc5ff 100644
+--- a/src/routeTree.gen.ts
++++ b/src/routeTree.gen.ts
+@@ -867,3 +867,13 @@ const rootRouteChildren: RootRouteChildren = {
+ export const routeTree = rootRouteImport
+   ._addFileChildren(rootRouteChildren)
+   ._addFileTypes<FileRouteTypes>()
++
++import type { getRouter } from './router.tsx'
++import type { startInstance } from './start.ts'
++declare module '@tanstack/react-start' {
++  interface Register {
++    ssr: true
++    router: Awaited<ReturnType<typeof getRouter>>
++    config: Awaited<ReturnType<typeof startInstance.getOptions>>
++  }
++}
+diff --git a/src/router.tsx b/src/router.tsx
+index d3f2f88..0d1e384 100644
+--- a/src/router.tsx
++++ b/src/router.tsx
+@@ -1,4 +1,7 @@
+ import { QueryClient } from "@tanstack/react-query";
++import { persistQueryClient } from "@tanstack/react-query-persist-client";
++import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
++import { get, set, del } from "idb-keyval";
+ import { createRouter } from "@tanstack/react-router";
+ import { routeTree } from "./routeTree.gen";
+ 
+@@ -19,6 +22,30 @@ export const getRouter = () => {
+     },
+   });
+ 
++  // Hors ligne : le cache de lecture (classes, élèves, notes, absences, EDT...)
++  // est persisté dans IndexedDB, pour que l'app affiche les dernières données
++  // connues même après un redémarrage complet sans connexion.
++  if (typeof window !== "undefined") {
++    const persister = createAsyncStoragePersister({
++      key: "monregistre-query-cache",
++      storage: {
++        getItem: (key: string) => get(key),
++        setItem: (key: string, value: string) => set(key, value),
++        removeItem: (key: string) => del(key),
++      },
++      throttleTime: 1000,
++    });
++    persistQueryClient({
++      queryClient,
++      persister,
++      maxAge: 1000 * 60 * 60 * 24 * 14, // 14 jours de cache offline
++      dehydrateOptions: {
++        // Ne persiste que les requêtes résolues avec succès (pas les erreurs/pending).
++        shouldDehydrateQuery: (query) => query.state.status === "success",
++      },
++    });
++  }
++
+   const router = createRouter({
+     routeTree,
+     context: { queryClient },
+diff --git a/src/routes/__root.tsx b/src/routes/__root.tsx
+index 97acfb0..6614298 100644
+--- a/src/routes/__root.tsx
++++ b/src/routes/__root.tsx
+@@ -18,6 +18,7 @@ import { THEME_INIT_SCRIPT, applyTheme, getStoredTheme } from "@/lib/theme";
+ import { hydrateAppSettings } from "@/lib/app-settings";
+ import { InstallPwaPrompt } from "@/components/app/install-pwa-prompt";
+ import { AppUpdateNotifier } from "@/components/app/app-update-notifier";
++import { CapacitorLiveUpdater } from "@/components/app/capacitor-live-updater";
+ 
+ function NotFoundComponent() {
+   return (
+@@ -173,6 +174,7 @@ function RootComponent() {
+       <Outlet />
+       <InstallPwaPrompt />
+       <AppUpdateNotifier />
++      <CapacitorLiveUpdater />
+       <Toaster />
+     </QueryClientProvider>
+   );
+diff --git a/vite.config.mobile.ts b/vite.config.mobile.ts
+new file mode 100644
+index 0000000..91cf986
+--- /dev/null
++++ b/vite.config.mobile.ts
+@@ -0,0 +1,21 @@
++// Build config used ONLY for the mobile app (Capacitor).
++// The web app on Lovable keeps using vite.config.ts (SSR) untouched.
++// This produces a static, client-only build (TanStack Start "SPA mode")
++// that can be bundled inside the Android/iOS app and works fully offline.
++import { defineConfig } from "@lovable.dev/vite-tanstack-config";
++
++export default defineConfig({
++  nitro: false,
++  tanstackStart: {
++    spa: {
++      enabled: true,
++      maskPath: "/",
++    },
++  },
++  vite: {
++    preview: {
++      host: "127.0.0.1",
++    },
++  },
++});
++
+-- 
+2.43.0
+
