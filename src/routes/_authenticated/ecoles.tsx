@@ -49,6 +49,7 @@ function EcolesPage() {
   const [open, setOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [toDelete, setToDelete] = useState<Ecole | null>(null);
+  const [viewing, setViewing] = useState<Ecole | null>(null);
 
   const pq = usePaginatedQuery({
     data: ecoles,
