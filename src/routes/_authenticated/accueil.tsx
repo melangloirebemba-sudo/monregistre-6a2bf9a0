@@ -139,7 +139,10 @@ function AccueilPage() {
 
 
   const nom = profil?.nom_affiche?.split(" ")[0] || "Enseignant";
-  const annee = profil?.annee_active || "Aucune année active";
+  const annee = profil?.annee_active
+    ? `Année scolaire ${profil.annee_active}`
+    : "Aucune année scolaire active";
+
 
   // ISO day: Mon=1 ... Sun=7
   const jsDay = new Date().getDay();
