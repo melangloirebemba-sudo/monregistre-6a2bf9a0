@@ -296,7 +296,7 @@ function PasswordChangesLogCard() {
       )}
       {error && (
         <p className="mt-4 text-sm text-destructive">
-          Erreur : {(error as Error).message}
+          Erreur : {toFrench(error)}
         </p>
       )}
 
@@ -548,7 +548,7 @@ function SupportSettingsCard() {
       )}
       {error && (
         <p className="mt-4 text-sm text-destructive">
-          Erreur : {(error as Error).message}
+          Erreur : {toFrench(error)}
         </p>
       )}
 

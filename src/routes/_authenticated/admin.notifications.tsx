@@ -599,7 +599,7 @@ function AdminNotificationsPage() {
                   <div className="text-xs text-muted-foreground">Calcul en cours…</div>
                 ) : previewQuery.error ? (
                   <div className="text-xs text-destructive">
-                    {(previewQuery.error as Error).message}
+                    {toFrench(previewQuery.error)}
                   </div>
                 ) : (
                   <>
@@ -920,7 +920,7 @@ function ReadersPanel({ id, loader }: { id: string; loader: ReadersLoader }) {
   if (error) {
     return (
       <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-        {(error as Error).message}
+        {toFrench(error)}
       </div>
     );
   }
@@ -1047,7 +1047,7 @@ function SendResultPanel({
                   <div className="truncate text-[10px] text-muted-foreground">{d.email}</div>
                 )}
                 {d.status === "failed" && d.error && (
-                  <div className="truncate text-[10px] text-destructive">{d.error}</div>
+                  <div className="truncate text-[10px] text-destructive">{toFrench(d.error)}</div>
                 )}
               </div>
               {d.status === "sent" ? (
