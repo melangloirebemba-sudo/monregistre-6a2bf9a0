@@ -452,7 +452,7 @@ function DeleteDialog({ open, onOpenChange, classe, onDone }: { open: boolean; o
   );
 }
 
-function ClasseElevesDialog({
+export function ClasseElevesDialog({
   classe,
   ecoleNom,
   onOpenChange,
