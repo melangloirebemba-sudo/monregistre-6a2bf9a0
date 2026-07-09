@@ -525,11 +525,14 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
   const { data: profil } = useQuery(profilQueryOptions());
   const ecoleNom = profil?.etablissement?.trim() ?? "";
 
-  const availablePlans = (["lite", "premium"] as UpgradePlan[]).filter((p) =>
-    currentPlan === "gratuit" ? true : currentPlan === "lite" ? p === "premium" : false,
-  );
+  const allPlans: UpgradePlan[] = ["lite", "premium"];
+  const isPlanDisabled = (p: UpgradePlan) =>
+    currentPlan === "premium" || (currentPlan === "lite" && p === "lite");
+  const defaultPlan: UpgradePlan =
+    currentPlan === "gratuit" ? "lite" : "premium";
 
-  const [selectedPlan, setSelectedPlan] = useState<UpgradePlan>(availablePlans[0] ?? "premium");
+  const [selectedPlan, setSelectedPlan] = useState<UpgradePlan>(defaultPlan);
+
   const [selectedPeriode, setSelectedPeriode] = useState<UpgradePeriode>("mensuelle");
 
   const { data: prices = [] } = useQuery({
