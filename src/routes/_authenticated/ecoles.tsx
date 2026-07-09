@@ -459,3 +459,89 @@ function DeleteDialog({
   );
 }
 
+function EcoleClassesDialog({
+  ecole,
+  onOpenChange,
+}: {
+  ecole: Ecole | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const open = !!ecole;
+  const { data: classes = [], isLoading } = useQuery({
+    ...classesQO(ecole?.id),
+    enabled: open,
+  });
+  const { data: eleves = [] } = useQuery({
+    ...elevesQO(),
+    enabled: open,
+  });
+
+  const countByClasse = new Map<string, number>();
+  for (const el of eleves) {
+    if (el.classe_id) countByClasse.set(el.classe_id, (countByClasse.get(el.classe_id) ?? 0) + 1);
+  }
+  const totalEleves = classes.reduce((s, c) => s + (countByClasse.get(c.id) ?? 0), 0);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[420px] p-0">
+        <DialogHeader className="border-b px-4 py-3">
+          <DialogTitle className="font-display text-base">
+            {ecole?.nom}
+          </DialogTitle>
+          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><GraduationCap className="h-3 w-3" /> {classes.length} classe{classes.length > 1 ? "s" : ""}</span>
+            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {totalEleves} élève{totalEleves > 1 ? "s" : ""}</span>
+          </div>
+        </DialogHeader>
+        <div className="max-h-[65vh] overflow-y-auto px-4 py-3">
+          {isLoading ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">Chargement…</div>
+          ) : classes.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              Aucune classe pour cette école.
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {classes.map((c) => {
+                const n = countByClasse.get(c.id) ?? 0;
+                return (
+                  <li key={c.id}>
+                    <Link
+                      to="/eleves"
+                      search={{ ecole: ecole?.id, classe: c.id } as never}
+                      onClick={() => onOpenChange(false)}
+                      className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 transition hover:bg-cream-deep/40"
+                    >
+                      <span className="grid h-9 w-9 place-items-center rounded-lg bg-teal/15 text-foreground">
+                        <GraduationCap className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-medium text-foreground">{c.nom}</span>
+                          {c.code && (
+                            <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-semibold text-foreground">
+                              {c.code}
+                            </span>
+                          )}
+                        </div>
+                        {c.matiere && (
+                          <div className="text-xs text-muted-foreground">{c.matiere}</div>
+                        )}
+                      </div>
+                      <span className="rounded-full bg-teal/10 px-2 py-0.5 text-xs font-semibold text-teal">
+                        {n} élève{n > 1 ? "s" : ""}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
