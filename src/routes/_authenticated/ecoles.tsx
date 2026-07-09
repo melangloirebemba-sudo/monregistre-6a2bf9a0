@@ -485,6 +485,7 @@ function EcoleClassesDialog({
   const totalEleves = classes.reduce((s, c) => s + (countByClasse.get(c.id) ?? 0), 0);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[420px] p-0">
         <DialogHeader className="border-b px-4 py-3">
