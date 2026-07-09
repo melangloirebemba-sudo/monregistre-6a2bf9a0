@@ -468,6 +468,7 @@ function EcoleClassesDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const open = !!ecole;
+  const [selectedClasse, setSelectedClasse] = useState<Classe | null>(null);
   const { data: classes = [], isLoading } = useQuery({
     ...classesQO(ecole?.id),
     enabled: open,
