@@ -15,7 +15,9 @@ import {
   BookMarked,
   Shield,
   CalendarX,
+  ArrowLeft,
 } from "lucide-react";
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { profilQueryOptions } from "@/lib/queries/profil";
