@@ -555,7 +555,7 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
 
   const waHref = upgradeWhatsAppHref({
     planLabel: PLAN_LABEL[currentPlan],
-    targetPlanLabel: `${PLAN_LABEL[selectedPlan]} (${PERIODE_LABEL[selectedPeriode].toLowerCase()}${
+    targetPlanLabel: `${PLAN_LABEL[selectedPlan]} (${UPGRADE_PERIODE_LABEL[selectedPeriode].toLowerCase()}${
       currentPrice !== null ? ` — ${formatFcfa(currentPrice)}` : ""
     })`,
     ecole: ecoleNom,
@@ -676,7 +676,7 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
                       : "border-border bg-background/60 hover:border-foreground/30"
                   }`}
                 >
-                  <div className="text-xs font-semibold text-foreground">{PERIODE_LABEL[per]}</div>
+                  <div className="text-xs font-semibold text-foreground">{UPGRADE_PERIODE_LABEL[per]}</div>
                   <div className="mt-0.5 text-[11px] text-muted-foreground">
                     {price !== null ? formatFcfa(price) : "—"}
                   </div>
@@ -690,7 +690,7 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
           <p className="font-semibold text-foreground">Récapitulatif</p>
           <p className="mt-1">
             Vous souhaitez passer au plan <strong>{tier.title}</strong> en formule{" "}
-            <strong>{PERIODE_LABEL[selectedPeriode].toLowerCase()}</strong>
+            <strong>{UPGRADE_PERIODE_LABEL[selectedPeriode].toLowerCase()}</strong>
             {currentPrice !== null ? (
               <> pour <strong>{formatFcfa(currentPrice)}</strong> {PERIODE_SUFFIX[selectedPeriode]}</>
             ) : null}
