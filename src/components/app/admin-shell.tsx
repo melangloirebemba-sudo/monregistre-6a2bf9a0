@@ -147,7 +147,20 @@ export function AdminShell({ children }: AdminShellProps) {
 
         {/* Topbar mobile/tablet */}
         <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 lg:hidden">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {pathname !== "/admin" && (
+              <button
+                type="button"
+                aria-label="Retour"
+                onClick={() => {
+                  if (window.history.length > 1) window.history.back();
+                  else navigate({ to: "/admin" });
+                }}
+                className="shrink-0 rounded-full p-2 text-ink-foreground/80 hover:bg-white/10 hover:text-ink-foreground"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-teal font-semibold text-ink-foreground shadow-soft">
               <Shield className="h-5 w-5" aria-hidden="true" />
             </div>
@@ -158,6 +171,7 @@ export function AdminShell({ children }: AdminShellProps) {
               </div>
             </div>
           </div>
+
 
           <div className="flex items-center gap-1">
             <NotificationsBell variant="topbar" />
