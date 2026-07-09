@@ -1,12 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { toFrench } from "@/lib/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { UserCircle2, KeyRound } from "lucide-react";
+import { UserCircle2, KeyRound, Sparkles } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { profilQueryOptions } from "@/lib/queries/profil";
+import { profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { requireUserId } from "@/lib/queries/data";
 import { supabase } from "@/integrations/supabase/client";
+
 import {
   requestPhoneVerificationOtp,
   confirmPhoneVerification,
