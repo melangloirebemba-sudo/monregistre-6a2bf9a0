@@ -595,24 +595,29 @@ function UpgradeDialog({ currentPlan, variant = "header" }: { currentPlan: PlanC
 
         {/* Sélection du plan */}
         <div className="grid gap-3 sm:grid-cols-2">
-          {availablePlans.map((p) => {
+          {allPlans.map((p) => {
             const t = PLAN_TIERS[p];
             const active = selectedPlan === p;
+            const disabled = isPlanDisabled(p);
             const fromPrice = priceOf(p, "mensuelle");
             return (
               <button
                 key={p}
                 type="button"
-                onClick={() => setSelectedPlan(p)}
+                onClick={() => !disabled && setSelectedPlan(p)}
                 aria-pressed={active}
+                disabled={disabled}
                 className={`text-left rounded-lg border p-3 transition ${
-                  active
+                  disabled
+                    ? "border-border bg-muted/30 opacity-60 cursor-not-allowed"
+                    : active
                     ? "border-teal ring-2 ring-teal/40 bg-teal/5"
                     : t.highlight
                     ? "border-teal/60 bg-teal/5 hover:border-teal"
                     : "border-border bg-background/60 hover:border-foreground/30"
                 }`}
               >
+
                 <div className="flex items-center gap-1.5">
                   {p === "premium" ? (
                     <Crown className="h-4 w-4 text-teal" aria-hidden="true" />
