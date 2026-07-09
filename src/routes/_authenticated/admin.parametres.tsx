@@ -817,7 +817,7 @@ function AdminAccountCard() {
       );
     },
     onError: (e: Error) => {
-      const msg = humanizeAuthError(e.message);
+      const msg = toFrench(e);
       setEmailError(msg);
       toast.error(msg);
     },
@@ -844,7 +844,7 @@ function AdminAccountCard() {
       qc.invalidateQueries({ queryKey: ["admin-password-changes"] });
     },
     onError: (e: Error) => {
-      const msg = humanizeAuthError(e.message);
+      const msg = toFrench(e);
       setPwdErrors((p) => ({ ...p, pwd: msg }));
       toast.error(msg);
     },
