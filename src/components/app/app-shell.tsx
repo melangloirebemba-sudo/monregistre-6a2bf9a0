@@ -172,7 +172,25 @@ export function AppShell({ children }: AppShellProps) {
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* Top bar mobile/tablet */}
         <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 lg:hidden">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {(() => {
+              const rootRoutes = ["/accueil", "/", "/ecoles", "/classes", "/eleves", "/plus", "/admin"];
+              const showBack = !rootRoutes.includes(pathname);
+              if (!showBack) return null;
+              return (
+                <button
+                  type="button"
+                  aria-label="Retour"
+                  onClick={() => {
+                    if (window.history.length > 1) window.history.back();
+                    else navigate({ to: "/accueil" });
+                  }}
+                  className="shrink-0 rounded-full p-2 text-ink-foreground/80 hover:bg-white/10 hover:text-ink-foreground"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+              );
+            })()}
             <Link
               to="/mon-profil"
               aria-label="Mon profil"
@@ -187,6 +205,7 @@ export function AppShell({ children }: AppShellProps) {
               </div>
             </div>
           </div>
+
 
           <div className="flex items-center gap-1">
             <NotificationsBell variant="topbar" />
