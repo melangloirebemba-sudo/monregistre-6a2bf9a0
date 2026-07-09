@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toFrench } from "@/lib/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { anneesScolairesQO, activerAnnee } from "@/lib/queries/annees";
@@ -49,7 +50,7 @@ export function AnneeScolaireGate() {
       toast.success("Année scolaire activée");
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const create = useMutation({
@@ -76,7 +77,7 @@ export function AnneeScolaireGate() {
       toast.success("Année scolaire créée");
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const selectables = annees.filter((a) => a.statut !== "archivee");

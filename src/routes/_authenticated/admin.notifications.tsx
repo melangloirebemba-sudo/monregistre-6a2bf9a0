@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useMemo, useState } from "react";
 import {
   useMutation,
@@ -241,7 +242,7 @@ function AdminNotificationsPage() {
     },
     onError: (e: Error) => {
       setShowPreview(false);
-      toast.error(e.message);
+      toast.error(toFrench(e));
     },
   });
 
@@ -253,7 +254,7 @@ function AdminNotificationsPage() {
       toast.success("Notification supprimée");
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const clearHistory = useMutation({
@@ -262,7 +263,7 @@ function AdminNotificationsPage() {
       toast.success("Historique effacé");
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const canSubmit = title.trim().length > 0 &&
@@ -287,7 +288,7 @@ function AdminNotificationsPage() {
       toast.success("Notification annulée");
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const trigger = useMutation({
@@ -307,7 +308,7 @@ function AdminNotificationsPage() {
       else toast.error(`Échec (${r.status})`);
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const stats = useMemo(() => {

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { UserCircle2, KeyRound } from "lucide-react";
@@ -91,7 +92,7 @@ function MonProfilPage() {
       toast.success("Profil enregistré");
       qc.invalidateQueries({ queryKey: ["profil"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const displayInitiales =
@@ -436,7 +437,7 @@ function ChangePasswordCard() {
     const { error } = await supabase.auth.updateUser({ password: pwd });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(toFrench(error));
       return;
     }
     setPwd("");

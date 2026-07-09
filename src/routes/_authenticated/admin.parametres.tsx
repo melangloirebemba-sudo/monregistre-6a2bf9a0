@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -518,7 +519,7 @@ function SupportSettingsCard() {
       toast.success("Coordonnées du support enregistrées");
       qc.invalidateQueries({ queryKey: ["admin-settings"] });
     },
-    onError: (e: Error) => toast.error(humanizeAuthError(e.message)),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const dirty =
@@ -816,7 +817,7 @@ function AdminAccountCard() {
       );
     },
     onError: (e: Error) => {
-      const msg = humanizeAuthError(e.message);
+      const msg = toFrench(e);
       setEmailError(msg);
       toast.error(msg);
     },
@@ -843,7 +844,7 @@ function AdminAccountCard() {
       qc.invalidateQueries({ queryKey: ["admin-password-changes"] });
     },
     onError: (e: Error) => {
-      const msg = humanizeAuthError(e.message);
+      const msg = toFrench(e);
       setPwdErrors((p) => ({ ...p, pwd: msg }));
       toast.error(msg);
     },

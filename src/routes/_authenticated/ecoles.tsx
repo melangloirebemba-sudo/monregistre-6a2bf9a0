@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Search, Plus, School as SchoolIcon, MapPin, Phone, Pencil, Trash2, Lock, Sparkles, GraduationCap, Users } from "lucide-react";
@@ -352,7 +353,7 @@ function EcoleDialog({
       qc.invalidateQueries({ queryKey: ["counts"] });
       onOpenChange(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   return (
@@ -432,7 +433,7 @@ function DeleteDialog({
       qc.invalidateQueries({ queryKey: ["counts"] });
       onDone();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

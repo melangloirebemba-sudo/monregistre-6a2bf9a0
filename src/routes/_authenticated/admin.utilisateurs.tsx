@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Users, Search, KeyRound, Trash2, Ban, CheckCircle2, Crown, ArrowUp, ArrowDown, ArrowUpDown, Sparkles, Clock, History, Mail } from "lucide-react";
@@ -130,7 +131,7 @@ function AdminContent() {
   const changePlan = useMutation({
     mutationFn: (v: { userId: string; plan: AppPlan }) => adminApi.updatePlan(v.userId, v.plan),
     onSuccess: () => { toast.success("Plan mis à jour"); invalidate(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const activatePlan = useMutation({
@@ -142,7 +143,7 @@ function AdminContent() {
       invalidate();
       qc.invalidateQueries({ queryKey: ["admin-activations", v.userId] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const toggleSuspend = useMutation({
@@ -151,26 +152,26 @@ function AdminContent() {
       toast.success(v.suspendre ? "Compte suspendu" : "Compte réactivé");
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const resetPwd = useMutation({
     mutationFn: (v: { userId: string; newPassword: string }) => adminApi.resetPassword(v.userId, v.newPassword),
     onSuccess: () => toast.success("Mot de passe réinitialisé"),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const sendResetEmail = useMutation({
     mutationFn: (userId: string) =>
       adminApi.sendPasswordResetEmail(userId, `${window.location.origin}/reset-password`),
     onSuccess: (r) => toast.success(`Lien de réinitialisation envoyé à ${r.email}`),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const delAcc = useMutation({
     mutationFn: (userId: string) => adminApi.deleteUser(userId),
     onSuccess: () => { toast.success("Compte supprimé"); invalidate(); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const [pwdTarget, setPwdTarget] = useState<AdminUser | null>(null);

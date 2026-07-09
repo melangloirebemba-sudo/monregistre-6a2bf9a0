@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { toFrench } from "@/lib/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -617,7 +618,7 @@ function DeletionRequestsSection() {
       qc.invalidateQueries({ queryKey: ["admin", "deletion-requests"] });
       qc.invalidateQueries({ queryKey: ["admin-stats"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   const markTreated = useMutation({
@@ -635,7 +636,7 @@ function DeletionRequestsSection() {
       toast.success("Demande marquée comme traitée.");
       qc.invalidateQueries({ queryKey: ["admin", "deletion-requests"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(toFrench(e)),
   });
 
   if (isLoading && data.length === 0) return null;
