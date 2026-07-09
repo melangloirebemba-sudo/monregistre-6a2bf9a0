@@ -129,7 +129,19 @@ function EcolesPage() {
         <div className="space-y-3">
           <ul className="space-y-3">
             {paged.map((e) => (
-              <li key={e.id} className="card-elevated p-4">
+              <li
+                key={e.id}
+                className="card-elevated cursor-pointer p-4 transition hover:bg-cream-deep/40"
+                onClick={() => setViewing(e)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(ev) => {
+                  if (ev.key === "Enter" || ev.key === " ") {
+                    ev.preventDefault();
+                    setViewing(e);
+                  }
+                }}
+              >
                 <div className="flex items-start gap-3">
                   <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold/15 text-foreground">
                     <SchoolIcon className="h-5 w-5" />
@@ -161,14 +173,14 @@ function EcolesPage() {
                   </div>
                   <div className="flex flex-col gap-1">
                     <button
-                      onClick={() => { setEditing(e); setOpen(true); }}
+                      onClick={(ev) => { ev.stopPropagation(); setEditing(e); setOpen(true); }}
                       className="rounded-md p-1.5 text-muted-foreground hover:bg-cream-deep hover:text-foreground"
                       aria-label="Modifier"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => setToDelete(e)}
+                      onClick={(ev) => { ev.stopPropagation(); setToDelete(e); }}
                       className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       aria-label="Supprimer"
                     >
