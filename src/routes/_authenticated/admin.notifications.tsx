@@ -188,6 +188,27 @@ function AdminNotificationsPage() {
     qc.invalidateQueries({ queryKey: ["admin-scheduled-notifications"] });
   };
 
+  // Realtime : refléter en direct les nouvelles diffusions, les changements de
+  // statut (envoyée/échec/annulée) et les lectures des destinataires.
+  useEffect(() => {
+    const ch = supabase
+      .channel(`admin-notifications-realtime:${Math.random().toString(36).slice(2)}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "scheduled_notifications" },
+        () => qc.invalidateQueries({ queryKey: ["admin-scheduled-notifications"] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_notifications" },
+        () => qc.invalidateQueries({ queryKey: ["broadcast-readers"] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [qc]);
+
   const submitting = useMutation({
     mutationFn: async () => {
       const payload = {
