@@ -36,7 +36,9 @@ export const Route = createFileRoute("/_authenticated/mon-profil")({
 
 function MonProfilPage() {
   const { data: profil } = useQuery(profilQueryOptions());
+  const { data: planCap } = useQuery(planCapabilitiesQO());
   const qc = useQueryClient();
+
 
   const [prenom, setPrenom] = useState("");
   const [nomFamille, setNomFamille] = useState("");
