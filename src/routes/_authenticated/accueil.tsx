@@ -23,14 +23,7 @@ import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/li
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
 import { SyncHistoryCard } from "@/components/app/sync-history-card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useOfflineStatus } from "@/hooks/use-offline-status";
+import { openSyncDialog } from "@/components/app/sync-queue-dialog";
 import { useSyncProgress } from "@/hooks/use-sync-progress";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
