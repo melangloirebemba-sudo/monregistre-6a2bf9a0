@@ -188,44 +188,85 @@ const DEFAULT_STALE = 2 * 60_000;
 // Données de référence rarement modifiées : plus long TTL, moins de refetch inutiles.
 const REF_STALE = 10 * 60_000;
 
+// Hydrate les jointures depuis SQLite (eleves/classes/ecoles/periodes)
+// pour reproduire la forme attendue par l'UI même hors ligne.
+async function hydrateEleveJoin<T extends { eleve_id: string }>(
+  rows: T[],
+): Promise<Array<T & { eleve: { nom: string; prenom: string; classe_id: string } | null }>> {
+  if (rows.length === 0) return [];
+  const ids = Array.from(new Set(rows.map((r) => r.eleve_id)));
+  const eleves = await mirrorSelect<{ id: string; nom: string; prenom: string; classe_id: string }>(
+    "eleves",
+  );
+  const byId = new Map(eleves.filter((e) => ids.includes(e.id)).map((e) => [e.id, e]));
+  return rows.map((r) => ({
+    ...r,
+    eleve: byId.get(r.eleve_id)
+      ? {
+          nom: byId.get(r.eleve_id)!.nom,
+          prenom: byId.get(r.eleve_id)!.prenom,
+          classe_id: byId.get(r.eleve_id)!.classe_id,
+        }
+      : null,
+  }));
+}
+
 export const absencesQO = (opts: { classeId?: string; eleveId?: string } = {}) =>
   queryOptions({
     queryKey: ["absences", opts.classeId ?? "-", opts.eleveId ?? "-"],
     staleTime: DEFAULT_STALE,
     gcTime: 10 * 60_000,
-    queryFn: async (): Promise<
-      Array<Absence & { eleve: { nom: string; prenom: string; classe_id: string } | null }>
-    > => {
-      // Filtre côté DB via jointure inner quand une classe est demandée.
-      const rel = opts.classeId ? "eleve:eleves!inner(nom, prenom, classe_id)" : "eleve:eleves(nom, prenom, classe_id)";
-      let q = supabase
-        .from("absences")
-        .select(`*, ${rel}`)
-        .order("date", { ascending: false });
-      if (opts.eleveId) q = q.eq("eleve_id", opts.eleveId);
-      if (opts.classeId) q = q.eq("eleve.classe_id", opts.classeId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as Array<
-        Absence & { eleve: { nom: string; prenom: string; classe_id: string } | null }
-      >;
-    },
+    queryFn: async () =>
+      netThenMirror(
+        "absences",
+        async () => {
+          const rel = opts.classeId
+            ? "eleve:eleves!inner(nom, prenom, classe_id)"
+            : "eleve:eleves(nom, prenom, classe_id)";
+          let q = supabase.from("absences").select(`*, ${rel}`).order("date", { ascending: false });
+          if (opts.eleveId) q = q.eq("eleve_id", opts.eleveId);
+          if (opts.classeId) q = q.eq("eleve.classe_id", opts.classeId);
+          const { data, error } = await q;
+          if (error) throw error;
+          return (data ?? []) as Array<
+            Absence & { eleve: { nom: string; prenom: string; classe_id: string } | null }
+          >;
+        },
+        (data) => stripJoins(data as unknown as Record<string, unknown>[]),
+        async () => {
+          const where: Record<string, unknown> = {};
+          if (opts.eleveId) where.eleve_id = opts.eleveId;
+          const rows = await mirrorSelect<Absence>("absences", {
+            where,
+            orderBy: "date",
+            orderDir: "DESC",
+          });
+          const filtered = opts.classeId
+            ? (
+                await hydrateEleveJoin(rows)
+              ).filter((r) => r.eleve?.classe_id === opts.classeId)
+            : await hydrateEleveJoin(rows);
+          return filtered;
+        },
+      ),
   });
-
 
 export const ecolesQO = () =>
   queryOptions({
     queryKey: ["ecoles"],
     staleTime: REF_STALE,
     gcTime: 30 * 60_000,
-    queryFn: async (): Promise<Ecole[]> => {
-      const { data, error } = await supabase
-        .from("ecoles")
-        .select("*")
-        .order("nom");
-      if (error) throw error;
-      return data as Ecole[];
-    },
+    queryFn: async () =>
+      netThenMirror(
+        "ecoles",
+        async () => {
+          const { data, error } = await supabase.from("ecoles").select("*").order("nom");
+          if (error) throw error;
+          return data as Ecole[];
+        },
+        (d) => d as unknown as Record<string, unknown>[],
+        async () => mirrorSelect<Ecole>("ecoles", { orderBy: "nom" }),
+      ),
   });
 
 export const classesQO = (ecoleId?: string) =>
@@ -233,15 +274,25 @@ export const classesQO = (ecoleId?: string) =>
     queryKey: ["classes", ecoleId ?? "all"],
     staleTime: REF_STALE,
     gcTime: 30 * 60_000,
-    queryFn: async (): Promise<Classe[]> => {
-      const annee = await getAnneeActive();
-      let q = supabase.from("classes").select("*").order("nom");
-      if (ecoleId) q = q.eq("ecole_id", ecoleId);
-      if (annee) q = q.or(`annee_scolaire.eq.${annee},annee_scolaire.is.null`);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as Classe[];
-    },
+    queryFn: async () =>
+      netThenMirror(
+        "classes",
+        async () => {
+          const annee = await getAnneeActive();
+          let q = supabase.from("classes").select("*").order("nom");
+          if (ecoleId) q = q.eq("ecole_id", ecoleId);
+          if (annee) q = q.or(`annee_scolaire.eq.${annee},annee_scolaire.is.null`);
+          const { data, error } = await q;
+          if (error) throw error;
+          return data as Classe[];
+        },
+        (d) => d as unknown as Record<string, unknown>[],
+        async () => {
+          const where: Record<string, unknown> = {};
+          if (ecoleId) where.ecole_id = ecoleId;
+          return mirrorSelect<Classe>("classes", { where, orderBy: "nom" });
+        },
+      ),
   });
 
 export const elevesQO = (classeId?: string) =>
@@ -249,13 +300,23 @@ export const elevesQO = (classeId?: string) =>
     queryKey: ["eleves", classeId ?? "all"],
     staleTime: DEFAULT_STALE,
     gcTime: 15 * 60_000,
-    queryFn: async (): Promise<Eleve[]> => {
-      let q = supabase.from("eleves").select("*").order("nom");
-      if (classeId) q = q.eq("classe_id", classeId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as Eleve[];
-    },
+    queryFn: async () =>
+      netThenMirror(
+        "eleves",
+        async () => {
+          let q = supabase.from("eleves").select("*").order("nom");
+          if (classeId) q = q.eq("classe_id", classeId);
+          const { data, error } = await q;
+          if (error) throw error;
+          return data as Eleve[];
+        },
+        (d) => d as unknown as Record<string, unknown>[],
+        async () => {
+          const where: Record<string, unknown> = {};
+          if (classeId) where.classe_id = classeId;
+          return mirrorSelect<Eleve>("eleves", { where, orderBy: "nom" });
+        },
+      ),
   });
 
 export const periodesQO = () =>
@@ -263,35 +324,59 @@ export const periodesQO = () =>
     queryKey: ["periodes"],
     staleTime: REF_STALE,
     gcTime: 30 * 60_000,
-    queryFn: async (): Promise<Periode[]> => {
-      const annee = await getAnneeActive();
-      let q = supabase.from("periodes").select("*").order("ordre");
-      if (annee) q = q.eq("annee_scolaire", annee);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as Periode[];
-    },
+    queryFn: async () =>
+      netThenMirror(
+        "periodes",
+        async () => {
+          const annee = await getAnneeActive();
+          let q = supabase.from("periodes").select("*").order("ordre");
+          if (annee) q = q.eq("annee_scolaire", annee);
+          const { data, error } = await q;
+          if (error) throw error;
+          return data as Periode[];
+        },
+        (d) => d as unknown as Record<string, unknown>[],
+        async () => mirrorSelect<Periode>("periodes", { orderBy: "ordre" }),
+      ),
   });
-
-
 
 export const notesQO = (opts: { classeId?: string; eleveId?: string; periodeId?: string } = {}) =>
   queryOptions({
     queryKey: ["notes", opts.classeId ?? "-", opts.eleveId ?? "-", opts.periodeId ?? "-"],
     staleTime: DEFAULT_STALE,
-    queryFn: async (): Promise<Array<Note & { eleve: { nom: string; prenom: string; classe_id: string } | null }>> => {
-      const rel = opts.classeId ? "eleve:eleves!inner(nom, prenom, classe_id)" : "eleve:eleves(nom, prenom, classe_id)";
-      let q = supabase
-        .from("notes")
-        .select(`*, ${rel}`)
-        .order("date", { ascending: false });
-      if (opts.eleveId) q = q.eq("eleve_id", opts.eleveId);
-      if (opts.periodeId) q = q.eq("periode_id", opts.periodeId);
-      if (opts.classeId) q = q.eq("eleve.classe_id", opts.classeId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as Array<Note & { eleve: { nom: string; prenom: string; classe_id: string } | null }>;
-    },
+    queryFn: async () =>
+      netThenMirror(
+        "notes",
+        async () => {
+          const rel = opts.classeId
+            ? "eleve:eleves!inner(nom, prenom, classe_id)"
+            : "eleve:eleves(nom, prenom, classe_id)";
+          let q = supabase.from("notes").select(`*, ${rel}`).order("date", { ascending: false });
+          if (opts.eleveId) q = q.eq("eleve_id", opts.eleveId);
+          if (opts.periodeId) q = q.eq("periode_id", opts.periodeId);
+          if (opts.classeId) q = q.eq("eleve.classe_id", opts.classeId);
+          const { data, error } = await q;
+          if (error) throw error;
+          return (data ?? []) as Array<
+            Note & { eleve: { nom: string; prenom: string; classe_id: string } | null }
+          >;
+        },
+        (data) => stripJoins(data as unknown as Record<string, unknown>[]),
+        async () => {
+          const where: Record<string, unknown> = {};
+          if (opts.eleveId) where.eleve_id = opts.eleveId;
+          if (opts.periodeId) where.periode_id = opts.periodeId;
+          const rows = await mirrorSelect<Note>("notes", {
+            where,
+            orderBy: "date",
+            orderDir: "DESC",
+          });
+          const hydrated = await hydrateEleveJoin(rows);
+          return opts.classeId
+            ? hydrated.filter((r) => r.eleve?.classe_id === opts.classeId)
+            : hydrated;
+        },
+      ),
   });
 
 export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =>
@@ -299,35 +384,101 @@ export const creneauxQO = (opts: { ecoleId?: string; classeId?: string } = {}) =
     queryKey: ["creneaux", opts.ecoleId ?? "-", opts.classeId ?? "-"],
     staleTime: REF_STALE,
     gcTime: 30 * 60_000,
-    queryFn: async (): Promise<Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>> => {
-      let q = supabase
-        .from("creneaux")
-        .select("*, classe:classes(nom, code), ecole:ecoles(nom)")
-        .order("jour_semaine")
-        .order("heure_debut");
-      if (opts.ecoleId) q = q.eq("ecole_id", opts.ecoleId);
-      if (opts.classeId) q = q.eq("classe_id", opts.classeId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as Array<Creneau & { classe: { nom: string; code: string } | null; ecole: { nom: string } | null }>;
-    },
+    queryFn: async () =>
+      netThenMirror(
+        "creneaux",
+        async () => {
+          let q = supabase
+            .from("creneaux")
+            .select("*, classe:classes(nom, code), ecole:ecoles(nom)")
+            .order("jour_semaine")
+            .order("heure_debut");
+          if (opts.ecoleId) q = q.eq("ecole_id", opts.ecoleId);
+          if (opts.classeId) q = q.eq("classe_id", opts.classeId);
+          const { data, error } = await q;
+          if (error) throw error;
+          return (data ?? []) as Array<
+            Creneau & {
+              classe: { nom: string; code: string } | null;
+              ecole: { nom: string } | null;
+            }
+          >;
+        },
+        (d) => stripJoins(d as unknown as Record<string, unknown>[]),
+        async () => {
+          const where: Record<string, unknown> = {};
+          if (opts.ecoleId) where.ecole_id = opts.ecoleId;
+          if (opts.classeId) where.classe_id = opts.classeId;
+          const rows = await mirrorSelect<Creneau>("creneaux", {
+            where,
+            orderBy: "jour_semaine",
+          });
+          const classes = await mirrorSelect<Classe>("classes");
+          const ecoles = await mirrorSelect<Ecole>("ecoles");
+          const cById = new Map(classes.map((c) => [c.id, c]));
+          const eById = new Map(ecoles.map((e) => [e.id, e]));
+          return rows.map((r) => ({
+            ...r,
+            classe: cById.get(r.classe_id)
+              ? { nom: cById.get(r.classe_id)!.nom, code: cById.get(r.classe_id)!.code }
+              : null,
+            ecole: eById.get(r.ecole_id) ? { nom: eById.get(r.ecole_id)!.nom } : null,
+          }));
+        },
+      ),
   });
 
 export const sequencesQO = (opts: { classeId?: string; periodeId?: string } = {}) =>
   queryOptions({
     queryKey: ["sequences", opts.classeId ?? "-", opts.periodeId ?? "-"],
     staleTime: DEFAULT_STALE,
-    queryFn: async (): Promise<Array<Sequence & { classe: { nom: string; code: string; ecole_id: string } | null; periode: { label: string } | null }>> => {
-      let q = supabase
-        .from("sequences_programme")
-        .select("*, classe:classes(nom, code, ecole_id), periode:periodes(label)")
-        .order("ordre");
-      if (opts.classeId) q = q.eq("classe_id", opts.classeId);
-      if (opts.periodeId) q = q.eq("periode_id", opts.periodeId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as Array<Sequence & { classe: { nom: string; code: string; ecole_id: string } | null; periode: { label: string } | null }>;
-    },
+    queryFn: async () =>
+      netThenMirror(
+        "sequences_programme",
+        async () => {
+          let q = supabase
+            .from("sequences_programme")
+            .select("*, classe:classes(nom, code, ecole_id), periode:periodes(label)")
+            .order("ordre");
+          if (opts.classeId) q = q.eq("classe_id", opts.classeId);
+          if (opts.periodeId) q = q.eq("periode_id", opts.periodeId);
+          const { data, error } = await q;
+          if (error) throw error;
+          return (data ?? []) as Array<
+            Sequence & {
+              classe: { nom: string; code: string; ecole_id: string } | null;
+              periode: { label: string } | null;
+            }
+          >;
+        },
+        (d) => stripJoins(d as unknown as Record<string, unknown>[]),
+        async () => {
+          const where: Record<string, unknown> = {};
+          if (opts.classeId) where.classe_id = opts.classeId;
+          if (opts.periodeId) where.periode_id = opts.periodeId;
+          const rows = await mirrorSelect<Sequence>("sequences_programme", {
+            where,
+            orderBy: "ordre",
+          });
+          const classes = await mirrorSelect<Classe>("classes");
+          const periodes = await mirrorSelect<Periode>("periodes");
+          const cById = new Map(classes.map((c) => [c.id, c]));
+          const pById = new Map(periodes.map((p) => [p.id, p]));
+          return rows.map((r) => ({
+            ...r,
+            classe: cById.get(r.classe_id)
+              ? {
+                  nom: cById.get(r.classe_id)!.nom,
+                  code: cById.get(r.classe_id)!.code,
+                  ecole_id: cById.get(r.classe_id)!.ecole_id,
+                }
+              : null,
+            periode: r.periode_id && pById.get(r.periode_id)
+              ? { label: pById.get(r.periode_id)!.label }
+              : null,
+          }));
+        },
+      ),
   });
 
 export async function requireUserId(): Promise<string> {
