@@ -101,16 +101,22 @@ function DiagnosticOfflinePage() {
     void refresh();
     const un1 = subscribeOfflineQueue(() => void refresh());
     const un2 = subscribeQueueMutation(() => void refresh());
+    const unSim = subscribeSimulatedOffline((v) => {
+      setSimOffline(v);
+      void refresh();
+    });
     const on = () => void refresh();
     window.addEventListener("online", on);
     window.addEventListener("offline", on);
     return () => {
       un1();
       un2();
+      unSim();
       window.removeEventListener("online", on);
       window.removeEventListener("offline", on);
     };
   }, [refresh]);
+
 
   const runProbe = useCallback(async () => {
     try {
