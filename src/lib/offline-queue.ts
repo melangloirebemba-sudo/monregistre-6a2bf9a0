@@ -353,9 +353,13 @@ async function applyOptimisticMirror(
 
 function isNetworkError(err: unknown): boolean {
   if (!err) return false;
+  if (typeof navigator !== "undefined" && !navigator.onLine) return true;
   const msg = err instanceof Error ? err.message : String(err);
-  return /network|failed to fetch|offline|timeout/i.test(msg);
+  // Supabase renvoie parfois "TypeError: Load failed", "fetch failed",
+  // "AbortError", ou des codes PostgREST vides quand le tunnel est HS.
+  return /network|failed to fetch|fetch failed|offline|timeout|load failed|networkerror|abort/i.test(msg);
 }
+
 
 /**
  * Detects a conflict on update/delete: fetches the current server row and
