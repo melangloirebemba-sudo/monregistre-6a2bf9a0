@@ -65,6 +65,8 @@ function AccueilPage() {
   const { data: periodes = [] } = useQuery(periodesQO());
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const { online, syncing, pending } = useOfflineStatus();
+
 
   const reminderPrefs = useReminderPrefs();
 
