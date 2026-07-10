@@ -65,6 +65,7 @@ function AccueilPage() {
   const { data: periodes = [] } = useQuery(periodesQO());
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const { online, syncing, pending } = useOfflineStatus();
 
 
