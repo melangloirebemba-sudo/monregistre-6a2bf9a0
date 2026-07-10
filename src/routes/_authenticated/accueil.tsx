@@ -73,7 +73,14 @@ function AccueilPage() {
   const { data: absences = [] } = useQuery(absencesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
 
-  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const [salutation, setSalutation] = useState<string>(() => getSalutation(new Date().getHours()));
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setSalutation(getSalutation(new Date().getHours()));
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
   
   const { online, syncing, pending } = useOfflineStatus();
   const syncProgress = useSyncProgress();
