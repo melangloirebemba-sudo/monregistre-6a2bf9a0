@@ -147,6 +147,28 @@ function DiagnosticOfflinePage() {
         </p>
       </div>
 
+      <Card className={simOffline ? "border-amber-500/60 bg-amber-500/5" : undefined}>
+        <CardContent className="flex items-center justify-between gap-3 py-3">
+          <div className="flex items-start gap-3">
+            <PlugZap className={`h-5 w-5 mt-0.5 ${simOffline ? "text-amber-600" : "text-muted-foreground"}`} />
+            <div>
+              <div className="font-medium text-sm">Mode hors-ligne simulé</div>
+              <div className="text-xs text-muted-foreground">
+                Force toutes les écritures à passer par la file IndexedDB, sans couper le réseau réel.
+              </div>
+            </div>
+          </div>
+          <Switch
+            checked={simOffline}
+            onCheckedChange={(v) => {
+              setSimulatedOffline(v);
+              toast.info(v ? "Mode hors-ligne simulé activé" : "Mode hors-ligne simulé désactivé");
+            }}
+          />
+        </CardContent>
+      </Card>
+
+
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={() => void refresh()} disabled={loading}>
           <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
