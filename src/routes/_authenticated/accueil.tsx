@@ -24,6 +24,7 @@ import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from
 import { SyncStatusCard } from "@/components/app/sync-status-card";
 import { SyncHistoryCard } from "@/components/app/sync-history-card";
 import { openSyncDialog } from "@/components/app/sync-queue-dialog";
+import { useOfflineStatus } from "@/hooks/use-offline-status";
 import { useSyncProgress } from "@/hooks/use-sync-progress";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
