@@ -169,6 +169,42 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
+  // Reconnexion automatique : dès que la connexion revient (web ou natif),
+  // on relance les loaders et on invalide le cache Query pour resynchroniser
+  // les données et les mises à jour. Sur mobile, l'écouteur natif est plus
+  // fiable que les évènements navigateur.
+  useEffect(() => {
+    const resync = () => {
+      // Rafraîchit la session (renouvelle le token si nécessaire) puis les données.
+      void supabase.auth.getSession().catch(() => {});
+      router.invalidate();
+      queryClient.invalidateQueries();
+    };
+    window.addEventListener("online", resync);
+
+    let removeNativeListener: (() => void) | undefined;
+    void (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform()) return;
+        const { Network } = await import("@capacitor/network");
+        const listener = await Network.addListener("networkStatusChange", (s) => {
+          if (s.connected) resync();
+        });
+        removeNativeListener = () => {
+          void listener.remove();
+        };
+      } catch {
+        // @capacitor/network indisponible (web) — les évènements navigateur suffisent.
+      }
+    })();
+
+    return () => {
+      window.removeEventListener("online", resync);
+      removeNativeListener?.();
+    };
+  }, [router, queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
