@@ -22,6 +22,13 @@ import { useMemo, useState } from "react";
 import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
@@ -65,6 +72,7 @@ function AccueilPage() {
   const { data: periodes = [] } = useQuery(periodesQO());
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const { online, syncing, pending } = useOfflineStatus();
 
 
@@ -302,17 +310,15 @@ function AccueilPage() {
               </span>
             ))}
             {(!online || pending > 0 || syncing) && (
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur ${
+              <button
+                type="button"
+                onClick={() => setSyncDialogOpen(true)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur transition hover:brightness-110 ${
                   !online
                     ? "border-white/20 bg-white/10 text-ink-foreground"
                     : "border-gold-soft/40 bg-gold-soft/15 text-gold-soft"
                 }`}
-                title={
-                  !online
-                    ? "Vous êtes hors ligne — vos modifications seront envoyées à la reconnexion."
-                    : `${pending} écriture(s) en attente de synchronisation`
-                }
+                title="Voir les écritures en attente"
               >
                 {!online ? (
                   <CloudOff className="h-3.5 w-3.5" />
@@ -324,7 +330,7 @@ function AccueilPage() {
                   : syncing
                     ? `Synchronisation… ${pending}`
                     : `${pending} en attente`}
-              </span>
+              </button>
             )}
           </div>
         </div>
@@ -529,6 +535,32 @@ function AccueilPage() {
           programmées.
         </p>
       </section>
+
+      <SyncQueueDialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen} />
     </div>
   );
 }
+
+function SyncQueueDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Écritures en attente</DialogTitle>
+          <DialogDescription>
+            Vos modifications réalisées hors ligne sont mises en file et envoyées
+            automatiquement dès le retour de la connexion.
+          </DialogDescription>
+        </DialogHeader>
+        <SyncStatusCard />
+      </DialogContent>
+    </Dialog>
+  );
+}
+

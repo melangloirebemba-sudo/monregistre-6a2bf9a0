@@ -19,6 +19,7 @@ import { hydrateAppSettings } from "@/lib/app-settings";
 import { InstallPwaPrompt } from "@/components/app/install-pwa-prompt";
 import { AppUpdateNotifier } from "@/components/app/app-update-notifier";
 import { CapacitorLiveUpdater } from "@/components/app/capacitor-live-updater";
+import { SyncToaster } from "@/components/app/sync-toaster";
 
 function NotFoundComponent() {
   return (
@@ -215,6 +216,7 @@ function RootComponent() {
       <InstallPwaPrompt />
       <AppUpdateNotifier />
       <CapacitorLiveUpdater />
+      <SyncToaster />
       <Toaster />
     </QueryClientProvider>
   );
