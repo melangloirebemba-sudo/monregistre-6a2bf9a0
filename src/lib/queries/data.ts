@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mirrorSelect, mirrorUpsert, type SqliteTable } from "@/lib/sqlite";
+import { hasPendingForTable } from "@/lib/offline-queue";
 
 // Fallback natif hors ligne : lit dans le miroir SQLite si l'appel réseau
 // échoue et rejoue les données servies dans le miroir sinon.
@@ -14,7 +15,24 @@ async function netThenMirror<T>(
     const result = await net();
     if (table) {
       const rows = extract(result);
-      if (rows.length > 0) void mirrorUpsert(table, rows).catch(() => {});
+      if (rows.length > 0) {
+        try {
+          await mirrorUpsert(table, rows);
+        } catch {
+          /* ignore */
+        }
+      }
+      // Si des écritures sont encore en attente pour cette table, la réponse
+      // serveur ne contient pas les lignes optimistes locales — on renvoie le
+      // miroir (qui inclut les écritures enfilées) pour que l'utilisateur
+      // voit immédiatement ce qu'il vient d'enregistrer.
+      try {
+        if (await hasPendingForTable(table)) {
+          return await fallback();
+        }
+      } catch {
+        /* ignore */
+      }
     }
     return result;
   } catch (err) {
@@ -26,6 +44,7 @@ async function netThenMirror<T>(
     }
   }
 }
+
 
 // Extrait uniquement les colonnes plates (élimine les objets de jointure)
 // pour l'upsert dans SQLite.
