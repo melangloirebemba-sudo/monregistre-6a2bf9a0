@@ -358,19 +358,22 @@ async function doFlush(): Promise<void> {
 
   syncing = true;
   notify();
+  const startedAt = Date.now();
+  const total = items.length;
+  let done = 0;
+  let failed = 0;
   try {
     for (const item of items) {
       try {
         await runWrite(item);
         await removeItem(item.id);
+        done += 1;
         notify();
       } catch (err) {
         if (isNetworkError(err)) {
           // Stop the flush; will retry on next online event
           break;
         }
-        // Non-network error: increment attempts, keep in queue for visibility.
-        // After 5 attempts drop to avoid an infinite loop.
         const next: QueuedWrite = {
           ...item,
           attempts: item.attempts + 1,
@@ -381,12 +384,58 @@ async function doFlush(): Promise<void> {
         } else {
           await putItem(next);
         }
+        failed += 1;
         notify();
       }
     }
   } finally {
     syncing = false;
+    recordSyncHistory({ startedAt, finishedAt: Date.now(), total, done, failed });
     notify();
+  }
+}
+
+export interface SyncHistoryEntry {
+  startedAt: number;
+  finishedAt: number;
+  total: number;
+  done: number;
+  failed: number;
+}
+
+const HISTORY_KEY = "monregistre.syncHistory";
+const HISTORY_MAX = 10;
+
+export function readSyncHistory(): SyncHistoryEntry[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? (arr as SyncHistoryEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearSyncHistory(): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.removeItem(HISTORY_KEY);
+    notify();
+  } catch {
+    /* ignore */
+  }
+}
+
+function recordSyncHistory(entry: SyncHistoryEntry) {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const cur = readSyncHistory();
+    const next = [entry, ...cur].slice(0, HISTORY_MAX);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore */
   }
 }
 
