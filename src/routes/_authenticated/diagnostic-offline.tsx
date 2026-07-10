@@ -15,7 +15,7 @@ import {
 } from "@/lib/offline-queue";
 import { mirrorSelect } from "@/lib/sqlite";
 import { SQLITE_TABLES, type SqliteTable } from "@/lib/sqlite/schema";
-import { HardDrive, RefreshCw, Wifi, WifiOff, Database, CheckCircle2, XCircle, PlugZap } from "lucide-react";
+import { HardDrive, RefreshCw, Wifi, WifiOff, Database, CheckCircle2, XCircle, PlugZap, CloudUpload } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   isSimulatedOffline,
