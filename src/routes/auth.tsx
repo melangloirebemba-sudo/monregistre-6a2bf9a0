@@ -142,17 +142,10 @@ function SignInForm({ onDone }: { onDone: () => void }) {
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? "Connexion…" : "Se connecter"}
       </Button>
-      <p className="text-center text-xs">
-        <Link
-          to="/reset-password"
-          className="text-teal underline-offset-2 hover:underline"
-        >
-          Mot de passe oublié ?
-        </Link>
-      </p>
     </form>
   );
 }
+
 
 function SignUpForm({ onDone }: { onDone: () => void }) {
   const [nom, setNom] = useState("");
