@@ -269,13 +269,22 @@ export async function enqueueWrite(
 
   if (online) {
     try {
-      const data = await runWrite(input);
+      // Course avec un timeout court : si le serveur ne répond pas rapidement
+      // (Wi-Fi captif, coupure silencieuse, DNS bloqué…), on bascule en file
+      // locale au lieu de laisser le formulaire figé.
+      const data = await Promise.race([
+        runWrite(input),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("network timeout")), 6000),
+        ),
+      ]);
       return { queued: false, data };
     } catch (err) {
       if (!isNetworkError(err)) throw err;
       // fall through to queue
     }
   }
+
 
   const userId = await currentUserId();
   // Optimistic local mirror : injecte immédiatement dans IndexedDB pour que les
