@@ -148,8 +148,23 @@ async function getCachedUserId(): Promise<string | null> {
   if (_userIdCache && now - _userIdCache.at < REF_TTL) return _userIdCache.value;
   if (_userIdCache?.p) return _userIdCache.p;
   const p = (async () => {
-    const { data } = await supabase.auth.getUser();
-    const v = data.user?.id ?? null;
+    // getSession() lit le token depuis le localStorage — fonctionne hors ligne.
+    // On l'essaie d'abord pour ne jamais bloquer la sauvegarde offline.
+    let v: string | null = null;
+    try {
+      const { data: s } = await supabase.auth.getSession();
+      v = s.session?.user?.id ?? null;
+    } catch {
+      /* ignore */
+    }
+    if (!v) {
+      try {
+        const { data } = await supabase.auth.getUser();
+        v = data.user?.id ?? null;
+      } catch {
+        /* offline : on garde v = null */
+      }
+    }
     _userIdCache = { value: v, at: Date.now() };
     return v;
   })();
