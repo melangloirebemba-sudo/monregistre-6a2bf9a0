@@ -412,10 +412,44 @@ export function flushQueue(): Promise<void> {
   return flushChain;
 }
 
+// Retry avec backoff exponentiel quand un flush se termine avec des échecs
+// non-réseau ou est interrompu par une coupure. Redémarré à chaque nouvel
+// évènement online / networkStatusChange.
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let retryDelay = 0;
+const RETRY_MIN = 5_000;
+const RETRY_MAX = 60_000;
+
+function scheduleRetry(reason: "network" | "error") {
+  if (typeof window === "undefined") return;
+  if (retryTimer) clearTimeout(retryTimer);
+  retryDelay = retryDelay === 0 ? RETRY_MIN : Math.min(retryDelay * 2, RETRY_MAX);
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      // pas de réseau : on attendra l'event 'online'
+      return;
+    }
+    void flushQueue();
+  }, retryDelay);
+  void reason;
+}
+
+function resetRetryBackoff() {
+  retryDelay = 0;
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+}
+
 async function doFlush(): Promise<void> {
   if (typeof navigator !== "undefined" && !navigator.onLine) return;
   const items = await listQueue();
-  if (items.length === 0) return;
+  if (items.length === 0) {
+    resetRetryBackoff();
+    return;
+  }
 
   syncing = true;
   notify();
@@ -423,6 +457,7 @@ async function doFlush(): Promise<void> {
   const total = items.length;
   let done = 0;
   let failed = 0;
+  let interruptedByNetwork = false;
   try {
     for (const item of items) {
       try {
@@ -432,7 +467,7 @@ async function doFlush(): Promise<void> {
         notify();
       } catch (err) {
         if (isNetworkError(err)) {
-          // Stop the flush; will retry on next online event
+          interruptedByNetwork = true;
           break;
         }
         const next: QueuedWrite = {
@@ -454,7 +489,16 @@ async function doFlush(): Promise<void> {
     recordSyncHistory({ startedAt, finishedAt: Date.now(), total, done, failed });
     notify();
   }
+
+  // Planifie un retry si des lignes restent à envoyer.
+  const remaining = await pendingCount();
+  if (remaining > 0) {
+    scheduleRetry(interruptedByNetwork ? "network" : "error");
+  } else {
+    resetRetryBackoff();
+  }
 }
+
 
 export interface SyncHistoryEntry {
   startedAt: number;
