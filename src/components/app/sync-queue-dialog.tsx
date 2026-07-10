@@ -40,7 +40,10 @@ export function SyncQueueDialog() {
             automatiquement dès le retour de la connexion.
           </DialogDescription>
         </DialogHeader>
-        <SyncStatusCard />
+        <div className="space-y-3">
+          <SyncStatusCard />
+          <PendingPdfsCard />
+        </div>
       </DialogContent>
     </Dialog>
   );
