@@ -73,6 +73,7 @@ function AccueilPage() {
   const { data: absences = [] } = useQuery(absencesQO());
   const { data: periodes = [] } = useQuery(periodesQO());
 
+  const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [salutation, setSalutation] = useState<string>(() => getSalutation(new Date().getHours()));
   useEffect(() => {
     const id = window.setInterval(() => {
