@@ -1,14 +1,27 @@
+import { isEffectivelyOnline } from "@/lib/simulated-offline";
+import { enqueuePendingPdf, deletePendingPdf, type PendingPdf } from "./pending";
+
 /**
- * Sauvegarde/partage un PDF en s'adaptant à la plateforme.
- * - Web : déclenche un téléchargement classique via une balise <a download>.
- * - Mobile natif (Capacitor) : écrit le fichier dans le dossier Documents
- *   de l'appareil puis ouvre la feuille de partage native. En cas d'échec,
- *   fallback web.
+ * Sauvegarde/partage un PDF en s'adaptant à la plateforme et à l'état réseau.
+ * - Hors ligne : le PDF est stocké dans IndexedDB (`pending_pdfs`) et pourra
+ *   être partagé/téléchargé depuis la modale de synchronisation.
+ * - En ligne, Web : téléchargement classique via <a download>.
+ * - En ligne, Mobile natif (Capacitor) : écriture dans Documents puis feuille
+ *   de partage native. Si l'écriture native échoue, fallback web.
  */
-export async function savePdfBlob(blob: Blob, filename: string): Promise<void> {
+export async function savePdfBlob(blob: Blob, filename: string, label?: string): Promise<void> {
   const safeName = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
 
-  // Détection Capacitor natif
+  // Hors ligne (ou hors ligne simulé) → mise en file
+  if (!isEffectivelyOnline()) {
+    await enqueuePendingPdf(blob, safeName, label);
+    return;
+  }
+
+  await deliverPdf(blob, safeName);
+}
+
+async function deliverPdf(blob: Blob, safeName: string): Promise<void> {
   let isNative = false;
   try {
     const { Capacitor } = await import("@capacitor/core");
@@ -38,17 +51,14 @@ export async function savePdfBlob(blob: Blob, filename: string): Promise<void> {
           dialogTitle: "Enregistrer ou partager le PDF",
         });
       } catch {
-        // L'utilisateur a annulé le partage — le fichier est déjà écrit
-        // dans Documents et reste accessible.
+        // L'utilisateur a annulé le partage — le fichier reste dans Documents.
       }
       return;
     } catch (err) {
       console.warn("[pdf] enregistrement natif impossible, fallback web", err);
-      // fallback web ci-dessous
     }
   }
 
-  // Fallback web : téléchargement classique
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -60,13 +70,18 @@ export async function savePdfBlob(blob: Blob, filename: string): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/** Rejoue un PDF mis en file d'attente (partage / téléchargement). */
+export async function deliverPendingPdf(item: PendingPdf): Promise<void> {
+  await deliverPdf(item.blob, item.filename);
+  await deletePendingPdf(item.id);
+}
+
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error ?? new Error("read error"));
     reader.onload = () => {
       const result = reader.result as string;
-      // result = "data:application/pdf;base64,XXXX"
       const idx = result.indexOf(",");
       resolve(idx >= 0 ? result.slice(idx + 1) : result);
     };
