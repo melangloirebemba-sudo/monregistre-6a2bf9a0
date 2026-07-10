@@ -7,6 +7,8 @@ import {
   subscribeQueueMutation,
   wireOfflineAutoFlush,
 } from "@/lib/offline-queue";
+import { isSimulatedOffline, subscribeSimulatedOffline } from "@/lib/simulated-offline";
+
 
 // Map une table Supabase vers la clé racine des queries associées.
 const TABLE_TO_QUERY_KEY: Record<string, string> = {
