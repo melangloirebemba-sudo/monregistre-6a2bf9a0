@@ -24,6 +24,7 @@ import { Route as AuthenticatedFacturationRouteImport } from './routes/_authenti
 import { Route as AuthenticatedEmploiDuTempsRouteImport } from './routes/_authenticated/emploi-du-temps'
 import { Route as AuthenticatedElevesRouteImport } from './routes/_authenticated/eleves'
 import { Route as AuthenticatedEcolesRouteImport } from './routes/_authenticated/ecoles'
+import { Route as AuthenticatedDiagnosticOfflineRouteImport } from './routes/_authenticated/diagnostic-offline'
 import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
 import { Route as AuthenticatedAnneesScolairesRouteImport } from './routes/_authenticated/annees-scolaires'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -123,6 +124,12 @@ const AuthenticatedEcolesRoute = AuthenticatedEcolesRouteImport.update({
   path: '/ecoles',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDiagnosticOfflineRoute =
+  AuthenticatedDiagnosticOfflineRouteImport.update({
+    id: '/diagnostic-offline',
+    path: '/diagnostic-offline',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClassesRoute = AuthenticatedClassesRouteImport.update({
   id: '/classes',
   path: '/classes',
@@ -252,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/classes': typeof AuthenticatedClassesRoute
+  '/diagnostic-offline': typeof AuthenticatedDiagnosticOfflineRoute
   '/ecoles': typeof AuthenticatedEcolesRoute
   '/eleves': typeof AuthenticatedElevesRoute
   '/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
@@ -288,6 +296,7 @@ export interface FileRoutesByTo {
   '/accueil': typeof AuthenticatedAccueilRoute
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/classes': typeof AuthenticatedClassesRoute
+  '/diagnostic-offline': typeof AuthenticatedDiagnosticOfflineRoute
   '/ecoles': typeof AuthenticatedEcolesRoute
   '/eleves': typeof AuthenticatedElevesRoute
   '/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
@@ -327,6 +336,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
   '/_authenticated/classes': typeof AuthenticatedClassesRoute
+  '/_authenticated/diagnostic-offline': typeof AuthenticatedDiagnosticOfflineRoute
   '/_authenticated/ecoles': typeof AuthenticatedEcolesRoute
   '/_authenticated/eleves': typeof AuthenticatedElevesRoute
   '/_authenticated/emploi-du-temps': typeof AuthenticatedEmploiDuTempsRoute
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/annees-scolaires'
     | '/classes'
+    | '/diagnostic-offline'
     | '/ecoles'
     | '/eleves'
     | '/emploi-du-temps'
@@ -402,6 +413,7 @@ export interface FileRouteTypes {
     | '/accueil'
     | '/annees-scolaires'
     | '/classes'
+    | '/diagnostic-offline'
     | '/ecoles'
     | '/eleves'
     | '/emploi-du-temps'
@@ -440,6 +452,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/annees-scolaires'
     | '/_authenticated/classes'
+    | '/_authenticated/diagnostic-offline'
     | '/_authenticated/ecoles'
     | '/_authenticated/eleves'
     | '/_authenticated/emploi-du-temps'
@@ -585,6 +598,13 @@ declare module '@tanstack/react-router' {
       path: '/ecoles'
       fullPath: '/ecoles'
       preLoaderRoute: typeof AuthenticatedEcolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/diagnostic-offline': {
+      id: '/_authenticated/diagnostic-offline'
+      path: '/diagnostic-offline'
+      fullPath: '/diagnostic-offline'
+      preLoaderRoute: typeof AuthenticatedDiagnosticOfflineRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/classes': {
@@ -815,6 +835,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAnneesScolairesRoute: typeof AuthenticatedAnneesScolairesRoute
   AuthenticatedClassesRoute: typeof AuthenticatedClassesRoute
+  AuthenticatedDiagnosticOfflineRoute: typeof AuthenticatedDiagnosticOfflineRoute
   AuthenticatedEcolesRoute: typeof AuthenticatedEcolesRoute
   AuthenticatedElevesRoute: typeof AuthenticatedElevesRoute
   AuthenticatedEmploiDuTempsRoute: typeof AuthenticatedEmploiDuTempsRoute
@@ -834,6 +855,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedAnneesScolairesRoute: AuthenticatedAnneesScolairesRoute,
   AuthenticatedClassesRoute: AuthenticatedClassesRoute,
+  AuthenticatedDiagnosticOfflineRoute: AuthenticatedDiagnosticOfflineRoute,
   AuthenticatedEcolesRoute: AuthenticatedEcolesRoute,
   AuthenticatedElevesRoute: AuthenticatedElevesRoute,
   AuthenticatedEmploiDuTempsRoute: AuthenticatedEmploiDuTempsRoute,
@@ -867,13 +889,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

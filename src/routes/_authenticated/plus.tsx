@@ -13,7 +13,8 @@ import {
   LifeBuoy,
   CalendarX,
   Receipt,
-} from "lucide-react";
+  HardDrive,
+
 import { currentUserRolesQO } from "@/lib/queries/admin";
 
 export const Route = createFileRoute("/_authenticated/plus")({
