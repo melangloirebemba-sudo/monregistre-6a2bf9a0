@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CloudOff, RefreshCw, CheckCircle2, Wifi, AlertTriangle, Trash2 } from "lucide-react";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
+import { useSyncProgress } from "@/hooks/use-sync-progress";
 import {
   flushQueue,
   listQueue,
