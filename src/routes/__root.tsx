@@ -20,6 +20,7 @@ import { InstallPwaPrompt } from "@/components/app/install-pwa-prompt";
 import { AppUpdateNotifier } from "@/components/app/app-update-notifier";
 import { CapacitorLiveUpdater } from "@/components/app/capacitor-live-updater";
 import { SyncToaster } from "@/components/app/sync-toaster";
+import { SyncQueueDialog } from "@/components/app/sync-queue-dialog";
 
 function NotFoundComponent() {
   return (
