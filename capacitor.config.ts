@@ -27,9 +27,10 @@ const config: CapacitorConfig = {
       backgroundColor: '#1a1a2e',
     },
     CapacitorUpdater: {
-      // À configurer : URL de ton serveur Capgo self-hosted (ou le cloud
-      // Capgo si tu préfères cette option). Voir INSTRUCTIONS.md.
-      autoUpdate: true,
+      // Mode manuel : pas de serveur Capgo — le bundle web est récupéré
+      // depuis les Releases GitHub par src/lib/live-update.ts.
+      autoUpdate: false,
+      appReadyTimeout: 10000,
     },
   },
 };

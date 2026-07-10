@@ -15,6 +15,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -38,6 +40,24 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Package live-update bundle
+        id: bundle
+        run: |
+          VERSION="web-$(git rev-list --count HEAD)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          cd dist/client
+          zip -r ../../monregistre-web-bundle.zip . -x '.*'
+          cd ../..
+
+      - name: Publish live-update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bundle.outputs.version }}
+          name: ${{ steps.bundle.outputs.version }}
+          make_latest: true
+          files: monregistre-web-bundle.zip
+          body: Bundle de mise à jour live (contenu web uniquement) — généré automatiquement.
 
       - name: Grant execute permission to gradlew
         run: chmod +x android/gradlew

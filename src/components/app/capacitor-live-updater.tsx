@@ -1,17 +1,22 @@
 import { useEffect } from "react";
+import { checkForLiveUpdate } from "@/lib/live-update";
 
 /**
- * Vérifie et applique les mises à jour "live" (OTA) via Capgo au démarrage
- * de l'app native, puis à chaque reprise depuis l'arrière-plan.
+ * Vérifie et applique les mises à jour "live" (OTA) au démarrage de l'app
+ * native, puis à chaque reprise depuis l'arrière-plan et à la reconnexion
+ * réseau.
+ *
+ * Le bundle web est hébergé gratuitement sur une Release GitHub (publiée
+ * automatiquement par la CI), pas sur un serveur Capgo dédié — voir
+ * src/lib/live-update.ts pour le détail du mécanisme.
  *
  * Étapes :
  *  1. notifyAppReady() — confirme que le bundle courant est sain (désamorce
  *     le rollback automatique de Capgo).
- *  2. getLatest() — interroge le serveur configuré pour connaître le dernier
- *     bundle disponible.
- *  3. Si un nouveau bundle est proposé, on le télécharge puis on l'active
- *     immédiatement via set() → la webview recharge automatiquement sur la
- *     nouvelle version.
+ *  2. checkForLiveUpdate() — compare avec la dernière Release GitHub, et si
+ *     une version plus récente existe, la télécharge et la programme pour
+ *     la prochaine reprise de l'app (jamais d'interruption de la session
+ *     en cours).
  *
  * Sur le web (ou si le plugin est indisponible), le composant ne fait rien.
  */
@@ -19,47 +24,7 @@ export function CapacitorLiveUpdater() {
   useEffect(() => {
     let cancelled = false;
     let removeResume: (() => void) | null = null;
-
-    const checkAndApply = async () => {
-      try {
-        const { Capacitor } = await import("@capacitor/core");
-        if (!Capacitor.isNativePlatform()) return;
-        const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
-        if (cancelled) return;
-
-        const latest = (await CapacitorUpdater.getLatest().catch(() => null)) as
-          | { version?: string; url?: string; error?: string }
-          | null;
-        if (!latest || cancelled) return;
-
-        // Pas de nouvelle version disponible.
-        if (latest.error || !latest.version || !latest.url) return;
-
-        // Évite de re-télécharger le bundle déjà actif.
-        try {
-          const current = (await CapacitorUpdater.current()) as
-            | { bundle?: { version?: string } }
-            | undefined;
-          if (current?.bundle?.version && current.bundle.version === latest.version) {
-            return;
-          }
-        } catch {
-          // ignore — on tente le téléchargement dans le doute
-        }
-
-        const bundle = await CapacitorUpdater.download({
-          version: latest.version,
-          url: latest.url,
-        });
-
-        if (cancelled || !bundle?.id) return;
-
-        // Applique immédiatement : la webview recharge sur le nouveau bundle.
-        await CapacitorUpdater.set({ id: bundle.id });
-      } catch {
-        // Plugin indisponible ou erreur réseau — silencieux.
-      }
-    };
+    let removeNetworkListener: (() => void) | null = null;
 
     void (async () => {
       try {
@@ -67,20 +32,35 @@ export function CapacitorLiveUpdater() {
         if (!Capacitor.isNativePlatform()) return;
         const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
         if (cancelled) return;
+
         await CapacitorUpdater.notifyAppReady().catch(() => {});
-        await checkAndApply();
+        await checkForLiveUpdate();
 
         // Re-vérifie chaque fois que l'app revient au premier plan.
         try {
           const { App } = await import("@capacitor/app");
           const handle = await App.addListener("appStateChange", (state) => {
-            if (state.isActive) void checkAndApply();
+            if (state.isActive) void checkForLiveUpdate();
           });
           removeResume = () => {
             void handle.remove();
           };
         } catch {
           // @capacitor/app absent — pas de listener de reprise.
+        }
+
+        // Re-vérifie aussi dès que le réseau revient (utile après une longue
+        // session hors ligne).
+        try {
+          const { Network } = await import("@capacitor/network");
+          const netHandle = await Network.addListener("networkStatusChange", (s) => {
+            if (s.connected) void checkForLiveUpdate();
+          });
+          removeNetworkListener = () => {
+            void netHandle.remove();
+          };
+        } catch {
+          // @capacitor/network absent.
         }
       } catch {
         // Silencieux sur le web.
@@ -90,6 +70,7 @@ export function CapacitorLiveUpdater() {
     return () => {
       cancelled = true;
       removeResume?.();
+      removeNetworkListener?.();
     };
   }, []);
 
