@@ -1,5 +1,43 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { mirrorSelect, mirrorUpsert, type SqliteTable } from "@/lib/sqlite";
+
+// Fallback natif hors ligne : lit dans le miroir SQLite si l'appel réseau
+// échoue et rejoue les données servies dans le miroir sinon.
+async function netThenMirror<T>(
+  table: SqliteTable | null,
+  net: () => Promise<T>,
+  extract: (data: T) => Record<string, unknown>[],
+  fallback: () => Promise<T>,
+): Promise<T> {
+  try {
+    const result = await net();
+    if (table) {
+      const rows = extract(result);
+      if (rows.length > 0) void mirrorUpsert(table, rows).catch(() => {});
+    }
+    return result;
+  } catch (err) {
+    // Réseau/serveur KO : bascule sur SQLite local si disponible.
+    try {
+      return await fallback();
+    } catch {
+      throw err;
+    }
+  }
+}
+
+// Extrait uniquement les colonnes plates (élimine les objets de jointure)
+// pour l'upsert dans SQLite.
+function stripJoins(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  return rows.map((r) => {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(r)) {
+      if (v === null || typeof v !== "object" || Array.isArray(v)) out[k] = v;
+    }
+    return out;
+  });
+}
 
 export interface Ecole {
   id: string;
