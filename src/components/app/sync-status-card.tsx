@@ -64,6 +64,7 @@ function entityLabel(table: string): string {
  */
 export function SyncStatusCard({ className = "" }: { className?: string }) {
   const { online, syncing, pending } = useOfflineStatus();
+  const progress = useSyncProgress();
   const [items, setItems] = useState<QueuedWrite[]>([]);
   const [lastSync, setLastSync] = useState<number | null>(() => readLastSync());
   const [, setTick] = useState(0);
