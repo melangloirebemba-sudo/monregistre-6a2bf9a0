@@ -4,8 +4,22 @@ import {
   pendingCount,
   isSyncing,
   subscribeOfflineQueue,
+  subscribeQueueMutation,
   wireOfflineAutoFlush,
 } from "@/lib/offline-queue";
+
+// Map une table Supabase vers la clé racine des queries associées.
+const TABLE_TO_QUERY_KEY: Record<string, string> = {
+  ecoles: "ecoles",
+  classes: "classes",
+  eleves: "eleves",
+  periodes: "periodes",
+  creneaux: "creneaux",
+  sequences_programme: "sequences",
+  notes: "notes",
+  absences: "absences",
+  annees_scolaires: "annees",
+};
 
 export interface OfflineStatus {
   online: boolean;
