@@ -20,6 +20,10 @@ export const anneesScolairesQO = () =>
     queryKey: ["annees_scolaires"],
     staleTime: 30_000,
     queryFn: async (): Promise<AnneeScolaire[]> => {
+      // Hors ligne : conserver la liste en cache pour éviter un faux "vide".
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        throw new Error("offline");
+      }
       const { data, error } = await supabase
         .from("annees_scolaires")
         .select("*")
