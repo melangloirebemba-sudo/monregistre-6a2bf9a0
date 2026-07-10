@@ -302,17 +302,15 @@ function AccueilPage() {
               </span>
             ))}
             {(!online || pending > 0 || syncing) && (
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur ${
+              <button
+                type="button"
+                onClick={() => setSyncDialogOpen(true)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur transition hover:brightness-110 ${
                   !online
                     ? "border-white/20 bg-white/10 text-ink-foreground"
                     : "border-gold-soft/40 bg-gold-soft/15 text-gold-soft"
                 }`}
-                title={
-                  !online
-                    ? "Vous êtes hors ligne — vos modifications seront envoyées à la reconnexion."
-                    : `${pending} écriture(s) en attente de synchronisation`
-                }
+                title="Voir les écritures en attente"
               >
                 {!online ? (
                   <CloudOff className="h-3.5 w-3.5" />
@@ -324,7 +322,7 @@ function AccueilPage() {
                   : syncing
                     ? `Synchronisation… ${pending}`
                     : `${pending} en attente`}
-              </span>
+              </button>
             )}
           </div>
         </div>
