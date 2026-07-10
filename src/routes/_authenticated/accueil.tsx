@@ -579,26 +579,4 @@ function AccueilPage() {
   );
 }
 
-function SyncQueueDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Écritures en attente</DialogTitle>
-          <DialogDescription>
-            Vos modifications réalisées hors ligne sont mises en file et envoyées
-            automatiquement dès le retour de la connexion.
-          </DialogDescription>
-        </DialogHeader>
-        <SyncStatusCard />
-      </DialogContent>
-    </Dialog>
-  );
-}
 
