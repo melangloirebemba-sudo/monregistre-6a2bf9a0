@@ -22,6 +22,13 @@ import { useMemo, useState } from "react";
 import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
