@@ -253,7 +253,7 @@ function AccueilPage() {
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <div className="text-[11px] uppercase tracking-[0.2em] text-ink-foreground/60">
-                Bonjour
+                {salutation}
               </div>
               <h1 className="mt-1 truncate font-display text-3xl font-semibold text-ink-foreground">
                 {nom}
