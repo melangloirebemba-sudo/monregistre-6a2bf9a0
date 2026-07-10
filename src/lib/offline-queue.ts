@@ -265,7 +265,7 @@ export async function enqueueWrite(
   | { queued: false; data: unknown }
   | { queued: true; id: string }
 > {
-  const online = typeof navigator === "undefined" ? true : navigator.onLine;
+  const online = (typeof navigator === "undefined" ? true : navigator.onLine) && !isSimulatedOffline();
 
   if (online) {
     try {
