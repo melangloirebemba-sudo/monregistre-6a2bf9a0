@@ -276,7 +276,7 @@ export async function enqueueWrite(
   }
 
   const userId = await currentUserId();
-  // Optimistic local mirror : injecte immédiatement dans SQLite pour que les
+  // Optimistic local mirror : injecte immédiatement dans IndexedDB pour que les
   // listes affichent la donnée comme si le serveur avait répondu.
   const enriched = await applyOptimisticMirror(input, userId);
   const item: QueuedWrite = {
@@ -293,7 +293,7 @@ export async function enqueueWrite(
 }
 
 /**
- * Applique l'écriture au miroir SQLite avant que le serveur ne réponde.
+ * Applique l'écriture au miroir IndexedDB avant que le serveur ne réponde.
  * Retourne l'input possiblement enrichi (id/user_id/timestamps générés
  * côté client) afin que le rejeu envoie exactement la même ligne.
  */
@@ -335,7 +335,7 @@ async function applyOptimisticMirror(
       return input;
     }
   } catch {
-    /* SQLite indisponible — silencieux. */
+    /* IndexedDB indisponible — silencieux. */
   }
   return input;
 }
@@ -426,8 +426,8 @@ async function runWrite(input: EnqueueInput): Promise<unknown> {
   return null;
 }
 
-// Propage l'écriture serveur au miroir SQLite local (Android natif).
-// No-op sur web / si la table n'est pas mirrorée.
+// Propage l'écriture serveur au miroir IndexedDB local.
+// No-op si la table n'est pas mirrorée.
 const MIRRORED_TABLES = new Set([
   "ecoles", "classes", "eleves", "periodes", "creneaux",
   "sequences_programme", "notes", "absences", "annees_scolaires",
@@ -449,7 +449,7 @@ async function mirrorToSqlite(
     const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
     if (rows.length > 0) await mod.mirrorUpsert(table as any, rows);
   } catch {
-    // SQLite indisponible — silencieux (web ou plugin absent).
+    // IndexedDB indisponible — silencieux.
   }
 }
 
