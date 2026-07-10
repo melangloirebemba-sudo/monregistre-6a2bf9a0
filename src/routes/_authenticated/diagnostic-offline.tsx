@@ -137,6 +137,35 @@ function DiagnosticOfflinePage() {
     }
   }, [refresh]);
 
+  const syncNow = useCallback(async () => {
+    const online = typeof navigator === "undefined" ? true : navigator.onLine;
+    if (isSimulatedOffline()) {
+      toast.info("Désactivez d'abord le mode hors-ligne simulé pour synchroniser.");
+      return;
+    }
+    if (online) {
+      toast.info("Synchronisation en cours…");
+      try {
+        await flushQueue();
+        toast.success("File synchronisée");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Échec de la synchronisation");
+      }
+      await refresh();
+      return;
+    }
+    // Hors ligne réel : on arme un déclencheur unique dès le retour du réseau.
+    toast.info("Hors ligne — la synchronisation démarrera dès le retour de la connexion.");
+    const onOnline = () => {
+      window.removeEventListener("online", onOnline);
+      toast.info("Connexion rétablie — synchronisation…");
+      void flushQueue().finally(() => {
+        void refresh();
+      });
+    };
+    window.addEventListener("online", onOnline);
+  }, [refresh]);
+
   return (
     <div className="px-5 pb-10 pt-5 space-y-4">
       <div>
@@ -178,8 +207,14 @@ function DiagnosticOfflinePage() {
           <HardDrive className="mr-1.5 h-4 w-4" />
           Écrire une sonde
         </Button>
-        <Button size="sm" variant="secondary" onClick={() => void flushQueue()} disabled={!diag?.online}>
-          Rejouer la file
+        <Button
+          size="sm"
+          variant="default"
+          onClick={() => void syncNow()}
+          disabled={(diag?.pending ?? 0) === 0}
+        >
+          <CloudUpload className="mr-1.5 h-4 w-4" />
+          Synchroniser maintenant
         </Button>
       </div>
 
