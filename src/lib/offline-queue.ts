@@ -252,6 +252,7 @@ export async function enqueueWrite(
   };
   await putItem(item);
   notify();
+  notifyMutation(input.table);
   return { queued: true, id: item.id };
 }
 
