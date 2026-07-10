@@ -218,6 +218,7 @@ function RootComponent() {
       <AppUpdateNotifier />
       <CapacitorLiveUpdater />
       <SyncToaster />
+      <SyncQueueDialog />
       <Toaster />
     </QueryClientProvider>
   );
