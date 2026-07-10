@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CloudOff, RefreshCw, CheckCircle2, Wifi, AlertTriangle, Trash2 } from "lucide-react";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
+import { useSyncProgress } from "@/hooks/use-sync-progress";
 import {
   flushQueue,
   listQueue,
@@ -63,6 +64,7 @@ function entityLabel(table: string): string {
  */
 export function SyncStatusCard({ className = "" }: { className?: string }) {
   const { online, syncing, pending } = useOfflineStatus();
+  const progress = useSyncProgress();
   const [items, setItems] = useState<QueuedWrite[]>([]);
   const [lastSync, setLastSync] = useState<number | null>(() => readLastSync());
   const [, setTick] = useState(0);
@@ -174,6 +176,57 @@ export function SyncStatusCard({ className = "" }: { className?: string }) {
           </button>
         )}
       </header>
+
+      {progress.active && progress.total > 0 && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="inline-flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              Synchronisation en cours
+            </span>
+            <span className="tabular-nums text-muted-foreground">
+              {progress.done} / {progress.total}
+              {progress.failed > 0 && (
+                <span className="ml-1 text-destructive">
+                  · {progress.failed} échec{progress.failed > 1 ? "s" : ""}
+                </span>
+              )}
+            </span>
+          </div>
+          <div
+            className="h-1.5 w-full overflow-hidden rounded-full bg-amber-500/15"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={progress.total}
+            aria-valuenow={progress.done}
+          >
+            <div
+              className="h-full rounded-full bg-amber-500 transition-[width] duration-500 ease-out"
+              style={{
+                width: `${Math.min(100, Math.round((progress.done / Math.max(1, progress.total)) * 100))}%`,
+              }}
+            />
+          </div>
+          {progress.currentTable && (
+            <div className="truncate text-[11px] text-muted-foreground">
+              Étape :{" "}
+              <span className="font-medium text-foreground">
+                {opLabel(progress.currentOp ?? "")} {entityLabel(progress.currentTable)}
+              </span>
+              {progress.currentLabel && (
+                <span className="text-muted-foreground/80"> · {progress.currentLabel}</span>
+              )}
+            </div>
+          )}
+          {progress.lastError && (
+            <div className="truncate text-[11px] text-destructive">
+              Dernière erreur : {progress.lastError}
+            </div>
+          )}
+        </div>
+      )}
+
+
 
       <dl className="grid grid-cols-2 gap-3 text-sm">
         <div>

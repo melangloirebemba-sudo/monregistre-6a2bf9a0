@@ -57,6 +57,26 @@ const mutationListeners = new Set<MutationListener>();
 let syncing = false;
 let flushChain: Promise<void> = Promise.resolve();
 
+export interface FlushProgress {
+  active: boolean;
+  total: number;
+  done: number;
+  failed: number;
+  /** Item en cours de traitement */
+  currentTable?: string;
+  currentOp?: QueueOp;
+  currentLabel?: string;
+  /** Dernière erreur non-réseau observée dans le cycle */
+  lastError?: string;
+  lastErrorTable?: string;
+}
+
+let flushProgress: FlushProgress = { active: false, total: 0, done: 0, failed: 0 };
+
+export function getFlushProgress(): FlushProgress {
+  return flushProgress;
+}
+
 function notify() {
   for (const l of listeners) l();
 }
@@ -466,28 +486,38 @@ async function doFlush(): Promise<void> {
   }
 
   syncing = true;
-  notify();
   const startedAt = Date.now();
   const total = items.length;
   let done = 0;
   let failed = 0;
   let interruptedByNetwork = false;
+  flushProgress = { active: true, total, done, failed };
+  notify();
   try {
     for (const item of items) {
+      flushProgress = {
+        ...flushProgress,
+        currentTable: item.table,
+        currentOp: item.op,
+        currentLabel: item.label,
+      };
+      notify();
       try {
         await runWrite(item);
         await removeItem(item.id);
         done += 1;
+        flushProgress = { ...flushProgress, done };
         notify();
       } catch (err) {
         if (isNetworkError(err)) {
           interruptedByNetwork = true;
           break;
         }
+        const message = err instanceof Error ? err.message : String(err);
         const next: QueuedWrite = {
           ...item,
           attempts: item.attempts + 1,
-          lastError: err instanceof Error ? err.message : String(err),
+          lastError: message,
         };
         if (next.attempts >= 5) {
           await removeItem(item.id);
@@ -495,11 +525,24 @@ async function doFlush(): Promise<void> {
           await putItem(next);
         }
         failed += 1;
+        flushProgress = {
+          ...flushProgress,
+          failed,
+          lastError: message,
+          lastErrorTable: item.table,
+        };
         notify();
       }
     }
   } finally {
     syncing = false;
+    flushProgress = {
+      ...flushProgress,
+      active: false,
+      currentTable: undefined,
+      currentOp: undefined,
+      currentLabel: undefined,
+    };
     recordSyncHistory({ startedAt, finishedAt: Date.now(), total, done, failed });
     notify();
   }
