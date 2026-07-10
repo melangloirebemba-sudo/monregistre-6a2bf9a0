@@ -18,7 +18,13 @@ import {
   CloudOff,
   RefreshCw,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+function getSalutation(h: number): string {
+  if (h < 12) return "Bonjour";
+  if (h < 16) return "Salut";
+  return "Bonsoir";
+}
 import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
@@ -68,6 +74,14 @@ function AccueilPage() {
   const { data: periodes = [] } = useQuery(periodesQO());
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const [salutation, setSalutation] = useState<string>(() => getSalutation(new Date().getHours()));
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setSalutation(getSalutation(new Date().getHours()));
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
   
   const { online, syncing, pending } = useOfflineStatus();
   const syncProgress = useSyncProgress();
@@ -239,7 +253,7 @@ function AccueilPage() {
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
               <div className="text-[11px] uppercase tracking-[0.2em] text-ink-foreground/60">
-                Bonjour
+                {salutation}
               </div>
               <h1 className="mt-1 truncate font-display text-3xl font-semibold text-ink-foreground">
                 {nom}
