@@ -216,6 +216,7 @@ function RootComponent() {
       <InstallPwaPrompt />
       <AppUpdateNotifier />
       <CapacitorLiveUpdater />
+      <SyncToaster />
       <Toaster />
     </QueryClientProvider>
   );
