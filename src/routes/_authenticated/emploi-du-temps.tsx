@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { CalendarDays, Plus, Pencil, Trash2, MapPin } from "lucide-react";
 import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 import {
   classesQO,
   ecolesQO,
@@ -132,11 +132,20 @@ function EmploiDuTempsPage() {
         salle: salle.trim() || null,
       };
       if (edit) {
-        const { error } = await supabase.from("creneaux").update(payload).eq("id", edit.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "creneaux",
+          op: "update",
+          payload,
+          match: { id: edit.id },
+          label: "Modifier un créneau",
+        });
       } else {
-        const { error } = await supabase.from("creneaux").insert(payload);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "creneaux",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID() },
+          label: "Ajouter un créneau",
+        });
       }
     },
     onSuccess: () => {
@@ -149,8 +158,12 @@ function EmploiDuTempsPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("creneaux").delete().eq("id", id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "creneaux",
+        op: "delete",
+        match: { id },
+        label: "Supprimer un créneau",
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["creneaux"] });

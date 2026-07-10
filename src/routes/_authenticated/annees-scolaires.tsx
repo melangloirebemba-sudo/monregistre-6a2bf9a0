@@ -13,7 +13,8 @@ import {
 import { anneesScolairesQO, activerAnnee, type AnneeScolaire, type StatutAnnee } from "@/lib/queries/annees";
 import { profilQueryOptions } from "@/lib/queries/profil";
 import { requireUserId } from "@/lib/queries/data";
-import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
+import { mirrorSelect } from "@/lib/sqlite";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,18 +63,23 @@ function AnneesPage() {
 
   const archive = useMutation({
     mutationFn: async (a: AnneeScolaire) => {
-      const { error } = await supabase
-        .from("annees_scolaires")
-        .update({ statut: "archivee" })
-        .eq("id", a.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "annees_scolaires",
+        op: "update",
+        payload: { statut: "archivee" },
+        match: { id: a.id },
+        label: `Archiver ${a.libelle}`,
+      });
       // Si c'était l'année active du profil, la vider
       if (profil?.annee_active === a.libelle) {
         const uid = await requireUserId();
-        await supabase
-          .from("profils_enseignant")
-          .update({ annee_active: "" })
-          .eq("user_id", uid);
+        await enqueueWrite({
+          table: "profils_enseignant",
+          op: "update",
+          payload: { annee_active: "" },
+          match: { user_id: uid },
+          label: "Réinitialiser l'année active du profil",
+        });
       }
     },
     onSuccess: () => {
@@ -85,11 +91,12 @@ function AnneesPage() {
 
   const del = useMutation({
     mutationFn: async (a: AnneeScolaire) => {
-      const { error } = await supabase
-        .from("annees_scolaires")
-        .delete()
-        .eq("id", a.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "annees_scolaires",
+        op: "delete",
+        match: { id: a.id },
+        label: `Supprimer ${a.libelle}`,
+      });
     },
     onSuccess: () => {
       toast.success("Année supprimée");
@@ -249,29 +256,46 @@ function AnneeDialog({
         notes: notes.trim() || null,
       };
       if (statut === "active") {
-        await supabase
-          .from("annees_scolaires")
-          .update({ statut: "archivee" })
-          .eq("user_id", user_id)
-          .eq("statut", "active");
+        // Désactive individuellement chaque année actuellement active (par id)
+        // pour un reflet correct du miroir local hors ligne.
+        const currentlyActive = await mirrorSelect<AnneeScolaire>("annees_scolaires", {
+          where: { user_id, statut: "active" },
+        }).catch(() => [] as AnneeScolaire[]);
+        for (const a of currentlyActive) {
+          if (a.id === annee?.id) continue;
+          await enqueueWrite({
+            table: "annees_scolaires",
+            op: "update",
+            payload: { statut: "archivee" },
+            match: { id: a.id },
+            label: `Archiver ${a.libelle}`,
+          });
+        }
       }
       if (annee) {
-        const { error } = await supabase
-          .from("annees_scolaires")
-          .update(payload)
-          .eq("id", annee.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "annees_scolaires",
+          op: "update",
+          payload,
+          match: { id: annee.id },
+          label: `Modifier ${payload.libelle}`,
+        });
       } else {
-        const { error } = await supabase
-          .from("annees_scolaires")
-          .insert({ ...payload, user_id });
-        if (error) throw error;
+        await enqueueWrite({
+          table: "annees_scolaires",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID(), user_id },
+          label: `Créer ${payload.libelle}`,
+        });
       }
       if (statut === "active") {
-        await supabase
-          .from("profils_enseignant")
-          .update({ annee_active: lib })
-          .eq("user_id", user_id);
+        await enqueueWrite({
+          table: "profils_enseignant",
+          op: "update",
+          payload: { annee_active: lib },
+          match: { user_id },
+          label: "Mettre à jour l'année active du profil",
+        });
       }
     },
     onSuccess: () => {

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Plus, Pencil, Trash2, CheckCircle2, PlayCircle, Clock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 import {
   classesQO,
   ecolesQO,
@@ -199,11 +199,20 @@ function ProgressionPage() {
         notes_libres: f.notes_libres.trim() || null,
       };
       if (edit) {
-        const { error } = await supabase.from("sequences_programme").update(payload).eq("id", edit.id);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "sequences_programme",
+          op: "update",
+          payload,
+          match: { id: edit.id },
+          label: `Modifier ${payload.titre}`,
+        });
       } else {
-        const { error } = await supabase.from("sequences_programme").insert(payload);
-        if (error) throw error;
+        await enqueueWrite({
+          table: "sequences_programme",
+          op: "insert",
+          payload: { ...payload, id: crypto.randomUUID() },
+          label: `Ajouter ${payload.titre}`,
+        });
       }
     },
     onSuccess: () => {
@@ -216,8 +225,12 @@ function ProgressionPage() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("sequences_programme").delete().eq("id", id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "sequences_programme",
+        op: "delete",
+        match: { id },
+        label: "Supprimer une séquence",
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sequences"] });
@@ -234,8 +247,13 @@ function ProgressionPage() {
       if (eff === "terminee") return;
       if (eff === "en_cours") update = { statut: "terminee", date_traitee: new Date().toISOString().slice(0, 10) };
       else update = { statut: "en_cours" };
-      const { error } = await supabase.from("sequences_programme").update(update).eq("id", s.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "sequences_programme",
+        op: "update",
+        payload: update,
+        match: { id: s.id },
+        label: "Avancer une séquence",
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sequences"] }),
     onError: (e: Error) => toast.error(toFrench(e)),

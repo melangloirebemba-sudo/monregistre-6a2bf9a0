@@ -17,6 +17,7 @@ import {
 import { profilQueryOptions, planCapabilitiesQO, type Profil, type PlanCapabilities } from "@/lib/queries/profil";
 import { periodesQO, requireUserId, type Periode } from "@/lib/queries/data";
 import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,14 +88,19 @@ function ParametresPage() {
       if (!label) throw new Error("Nom obligatoire");
       const user_id = await requireUserId();
       const ordre = periodes.length + 1;
-      const { error } = await supabase.from("periodes").insert({
-        user_id,
-        label,
-        ordre,
-        annee_scolaire: annee || new Date().getFullYear() + "",
-        active: periodes.length === 0,
+      await enqueueWrite({
+        table: "periodes",
+        op: "insert",
+        payload: {
+          id: crypto.randomUUID(),
+          user_id,
+          label,
+          ordre,
+          annee_scolaire: annee || new Date().getFullYear() + "",
+          active: periodes.length === 0,
+        },
+        label: `Ajouter la période ${label}`,
       });
-      if (error) throw error;
     },
     onSuccess: () => {
       setNewPeriode("");
@@ -106,11 +112,26 @@ function ParametresPage() {
 
   const togglePeriode = useMutation({
     mutationFn: async (p: Periode) => {
-      const uid = await requireUserId();
-      const { error: e1 } = await supabase.from("periodes").update({ active: false }).eq("user_id", uid);
-      if (e1) throw e1;
-      const { error: e2 } = await supabase.from("periodes").update({ active: true }).eq("id", p.id);
-      if (e2) throw e2;
+      // Désactive individuellement chaque période actuellement active (par id)
+      // pour que le miroir local hors-ligne reflète correctement chaque ligne.
+      for (const other of periodes) {
+        if (other.active && other.id !== p.id) {
+          await enqueueWrite({
+            table: "periodes",
+            op: "update",
+            payload: { active: false },
+            match: { id: other.id },
+            label: `Désactiver ${other.label}`,
+          });
+        }
+      }
+      await enqueueWrite({
+        table: "periodes",
+        op: "update",
+        payload: { active: true },
+        match: { id: p.id },
+        label: `Activer ${p.label}`,
+      });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["periodes"] }),
     onError: (e: Error) => toast.error(toFrench(e)),
@@ -118,8 +139,12 @@ function ParametresPage() {
 
   const delPeriode = useMutation({
     mutationFn: async (p: Periode) => {
-      const { error } = await supabase.from("periodes").delete().eq("id", p.id);
-      if (error) throw error;
+      await enqueueWrite({
+        table: "periodes",
+        op: "delete",
+        match: { id: p.id },
+        label: `Supprimer ${p.label}`,
+      });
     },
     onSuccess: () => {
       toast.success("Période supprimée");
@@ -136,10 +161,17 @@ function ParametresPage() {
         : ["1er semestre", "2ème semestre"];
       const anneeVal = annee || new Date().getFullYear() + "";
       const rows = labels.map((label, i) => ({
+        id: crypto.randomUUID(),
         user_id, label, ordre: i + 1, annee_scolaire: anneeVal, active: i === 0,
       }));
-      const { error } = await supabase.from("periodes").insert(rows);
-      if (error) throw error;
+      for (const row of rows) {
+        await enqueueWrite({
+          table: "periodes",
+          op: "insert",
+          payload: row,
+          label: `Ajouter la période ${row.label}`,
+        });
+      }
     },
     onSuccess: () => {
       toast.success("Périodes créées");
