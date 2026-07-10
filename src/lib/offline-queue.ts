@@ -548,8 +548,14 @@ let autoWired = false;
 export function wireOfflineAutoFlush(onFlushed?: () => void): () => void {
   if (typeof window === "undefined") return () => {};
   const handler = async () => {
+    resetRetryBackoff();
     await flushQueue();
     onFlushed?.();
+  };
+  const visibilityHandler = () => {
+    if (document.visibilityState === "visible" && navigator.onLine) {
+      void handler();
+    }
   };
 
   // Écoute Capacitor Network en plus des events navigateur (WebView Android
@@ -571,20 +577,29 @@ export function wireOfflineAutoFlush(onFlushed?: () => void): () => void {
     }
   })();
 
-  if (!autoWired) {
+  const attach = () => {
     window.addEventListener("online", handler);
+    window.addEventListener("focus", handler);
+    document.addEventListener("visibilitychange", visibilityHandler);
+  };
+  const detach = () => {
+    window.removeEventListener("online", handler);
+    window.removeEventListener("focus", handler);
+    document.removeEventListener("visibilitychange", visibilityHandler);
+    removeNetworkListener?.();
+  };
+
+  if (!autoWired) {
+    attach();
     autoWired = true;
     // Attempt an initial flush at boot in case network is already up.
     void handler();
     return () => {
-      window.removeEventListener("online", handler);
-      removeNetworkListener?.();
+      detach();
       autoWired = false;
     };
   }
-  window.addEventListener("online", handler);
-  return () => {
-    window.removeEventListener("online", handler);
-    removeNetworkListener?.();
-  };
+  attach();
+  return detach;
 }
+
