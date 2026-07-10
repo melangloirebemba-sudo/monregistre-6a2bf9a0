@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
+import { PendingPdfsCard } from "@/components/app/pending-pdfs-card";
 
 export const OPEN_SYNC_DIALOG_EVENT = "monregistre:open-sync-dialog";
 
@@ -39,7 +40,10 @@ export function SyncQueueDialog() {
             automatiquement dès le retour de la connexion.
           </DialogDescription>
         </DialogHeader>
-        <SyncStatusCard />
+        <div className="space-y-3">
+          <SyncStatusCard />
+          <PendingPdfsCard />
+        </div>
       </DialogContent>
     </Dialog>
   );
