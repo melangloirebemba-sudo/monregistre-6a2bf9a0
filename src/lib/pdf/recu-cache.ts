@@ -183,18 +183,19 @@ export function ensureRecuPDF(
 }
 
 
-/** Trigger a browser download from the cached blob. Returns false if not ready. */
+/** Trigger a browser download (or native share) from the cached blob.
+ *  Returns false if not ready. */
 export function downloadCachedRecu(id: string): boolean {
   const entry = cache.get(id);
   if (!entry?.blob || !entry.filename) return false;
-  const url = entry.url ?? URL.createObjectURL(entry.blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = entry.filename;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  void (async () => {
+    try {
+      const { savePdfBlob } = await import("./save");
+      await savePdfBlob(entry.blob!, entry.filename!);
+    } catch (err) {
+      console.warn("[recu-pdf] download failed", err);
+    }
+  })();
   return true;
 }
 

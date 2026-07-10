@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfBlob } from "./save";
 import { moyennePonderee } from "@/lib/format";
 import type { Note, Eleve, Classe, Ecole, Periode } from "@/lib/queries/data";
 
@@ -26,7 +27,7 @@ function appreciation(moy: number | null, echelle: number): string {
   return "Insuffisant";
 }
 
-export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
+export async function generateClasseRapportPDF(ctx: ClasseRapportContext) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const echelle = ctx.echelle ?? 20;
   const pageW = doc.internal.pageSize.getWidth();
@@ -220,5 +221,6 @@ export function generateClasseRapportPDF(ctx: ClasseRapportContext) {
   const name = `rapport_${ctx.classe?.nom ?? "classe"}_${ctx.periode?.label ?? ""}`
     .replace(/\s+/g, "-")
     .replace(/[^\w\-]/g, "");
-  doc.save(`${name}.pdf`);
+  const blob = doc.output("blob") as Blob;
+  await savePdfBlob(blob, `${name}.pdf`);
 }

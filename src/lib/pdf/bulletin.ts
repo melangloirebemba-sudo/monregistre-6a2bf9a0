@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfBlob } from "./save";
 import { moyennePonderee } from "@/lib/format";
 import type { Note, Eleve, Classe, Ecole, Periode } from "@/lib/queries/data";
 
@@ -14,7 +15,7 @@ export interface BulletinContext {
   moyenneClasse?: number | null;
 }
 
-export function generateBulletinPDF(ctx: BulletinContext) {
+export async function generateBulletinPDF(ctx: BulletinContext) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const echelle = ctx.echelle ?? 20;
   const pageW = doc.internal.pageSize.getWidth();
@@ -157,5 +158,6 @@ export function generateBulletinPDF(ctx: BulletinContext) {
   const name = `bulletin_${ctx.eleve.nom}_${ctx.eleve.prenom}_${ctx.periode?.label ?? ""}`
     .replace(/\s+/g, "-")
     .replace(/[^\w\-]/g, "");
-  doc.save(`${name}.pdf`);
+  const blob = doc.output("blob") as Blob;
+  await savePdfBlob(blob, `${name}.pdf`);
 }

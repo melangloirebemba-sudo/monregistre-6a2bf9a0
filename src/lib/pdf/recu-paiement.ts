@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { savePdfBlob } from "./save";
 import { formatMontantXAF, type RecuPaiementContext } from "./recu-paiement-shared";
 
 export { formatMontantXAF, type RecuPaiementContext };
@@ -138,8 +139,9 @@ export function buildRecuPaiementPDFBlob(
   return { blob, filename: recuFilename(ctx) };
 }
 
-export function generateRecuPaiementPDF(ctx: RecuPaiementContext) {
+export async function generateRecuPaiementPDF(ctx: RecuPaiementContext) {
   const doc = buildDoc(ctx);
-  doc.save(recuFilename(ctx));
+  const blob = doc.output("blob") as Blob;
+  await savePdfBlob(blob, recuFilename(ctx));
 }
 
