@@ -269,13 +269,22 @@ export async function enqueueWrite(
 
   if (online) {
     try {
-      const data = await runWrite(input);
+      // Course avec un timeout court : si le serveur ne répond pas rapidement
+      // (Wi-Fi captif, coupure silencieuse, DNS bloqué…), on bascule en file
+      // locale au lieu de laisser le formulaire figé.
+      const data = await Promise.race([
+        runWrite(input),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("network timeout")), 6000),
+        ),
+      ]);
       return { queued: false, data };
     } catch (err) {
       if (!isNetworkError(err)) throw err;
       // fall through to queue
     }
   }
+
 
   const userId = await currentUserId();
   // Optimistic local mirror : injecte immédiatement dans IndexedDB pour que les
@@ -344,9 +353,13 @@ async function applyOptimisticMirror(
 
 function isNetworkError(err: unknown): boolean {
   if (!err) return false;
+  if (typeof navigator !== "undefined" && !navigator.onLine) return true;
   const msg = err instanceof Error ? err.message : String(err);
-  return /network|failed to fetch|offline|timeout/i.test(msg);
+  // Supabase renvoie parfois "TypeError: Load failed", "fetch failed",
+  // "AbortError", ou des codes PostgREST vides quand le tunnel est HS.
+  return /network|failed to fetch|fetch failed|offline|timeout|load failed|networkerror|abort/i.test(msg);
 }
+
 
 /**
  * Detects a conflict on update/delete: fetches the current server row and
