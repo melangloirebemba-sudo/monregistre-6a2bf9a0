@@ -222,5 +222,6 @@ export async function generateClasseRapportPDF(ctx: ClasseRapportContext) {
     .replace(/\s+/g, "-")
     .replace(/[^\w\-]/g, "");
   const blob = doc.output("blob") as Blob;
-  await savePdfBlob(blob, `${name}.pdf`);
+  const label = `Rapport de classe — ${ctx.classe?.nom ?? "classe"}${ctx.periode?.label ? " · " + ctx.periode.label : ""}`;
+  await savePdfBlob(blob, `${name}.pdf`, label);
 }
