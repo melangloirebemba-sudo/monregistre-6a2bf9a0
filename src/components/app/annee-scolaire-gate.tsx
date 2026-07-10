@@ -29,7 +29,11 @@ export function AnneeScolaireGate() {
 
   const noProfilYear = !profil?.annee_active || !profil.annee_active.trim();
   const hasActive = annees.some((a) => a.statut === "active");
-  const needsChoice = !profilLoading && !anneesLoading && (noProfilYear || !hasActive);
+  const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
+  // Hors ligne : ne pas afficher le sélecteur d'année (les requêtes peuvent
+  // échouer ou renvoyer vide et déclencher un faux positif).
+  const needsChoice =
+    !isOffline && !profilLoading && !anneesLoading && (noProfilYear || !hasActive);
 
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(needsChoice), [needsChoice]);

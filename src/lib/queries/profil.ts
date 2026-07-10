@@ -81,6 +81,11 @@ export function planCapabilitiesQO() {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async (): Promise<PlanCapabilities> => {
+      // Hors ligne : conserver les dernières capacités connues plutôt que
+      // de basculer sur le plan gratuit par défaut.
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        throw new Error("offline");
+      }
       const fallback: PlanCapabilities = {
         plan: "gratuit", storedPlan: "gratuit", isAdmin: false,
         bulletins_pdf: false, rapports: false, progression: false,
@@ -155,6 +160,10 @@ export function profilQueryOptions() {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async (): Promise<Profil | null> => {
+      // Hors ligne : préserver le profil en cache (évite un état "vide").
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        throw new Error("offline");
+      }
       const { data: userRes } = await supabase.auth.getUser();
       if (!userRes.user) return null;
       const { data, error } = await supabase
