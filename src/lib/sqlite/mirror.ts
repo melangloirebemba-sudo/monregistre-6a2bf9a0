@@ -99,7 +99,7 @@ export async function mirrorSelect<T>(
     `SELECT * FROM ${table} ${whereSql} ${orderSql}`,
     values,
   );
-  return rows.map(fromSqlRow);
+  return rows.map((r) => fromSqlRow(r as unknown as Record<string, unknown>)) as unknown as T[];
 }
 
 export async function sqliteHasData(table: SqliteTable): Promise<boolean> {
