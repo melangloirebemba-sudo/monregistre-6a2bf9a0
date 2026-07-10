@@ -301,6 +301,31 @@ function AccueilPage() {
                 {b.label}
               </span>
             ))}
+            {(!online || pending > 0 || syncing) && (
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur ${
+                  !online
+                    ? "border-white/20 bg-white/10 text-ink-foreground"
+                    : "border-gold-soft/40 bg-gold-soft/15 text-gold-soft"
+                }`}
+                title={
+                  !online
+                    ? "Vous êtes hors ligne — vos modifications seront envoyées à la reconnexion."
+                    : `${pending} écriture(s) en attente de synchronisation`
+                }
+              >
+                {!online ? (
+                  <CloudOff className="h-3.5 w-3.5" />
+                ) : (
+                  <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+                )}
+                {!online
+                  ? `Hors ligne${pending > 0 ? ` · ${pending} en attente` : ""}`
+                  : syncing
+                    ? `Synchronisation… ${pending}`
+                    : `${pending} en attente`}
+              </span>
+            )}
           </div>
         </div>
       </section>
