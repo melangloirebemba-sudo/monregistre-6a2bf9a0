@@ -142,6 +142,6 @@ export function buildRecuPaiementPDFBlob(
 export async function generateRecuPaiementPDF(ctx: RecuPaiementContext) {
   const doc = buildDoc(ctx);
   const blob = doc.output("blob") as Blob;
-  await savePdfBlob(blob, recuFilename(ctx));
+  await savePdfBlob(blob, recuFilename(ctx), "Reçu de paiement");
 }
 
