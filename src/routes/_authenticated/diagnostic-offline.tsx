@@ -85,6 +85,8 @@ function formatBytes(n?: number): string {
 function DiagnosticOfflinePage() {
   const [diag, setDiag] = useState<Diag | null>(null);
   const [loading, setLoading] = useState(false);
+  const [simOffline, setSimOffline] = useState<boolean>(() => isSimulatedOffline());
+
 
   const refresh = useCallback(async () => {
     setLoading(true);
