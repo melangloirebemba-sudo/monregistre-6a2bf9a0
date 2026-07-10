@@ -243,60 +243,98 @@ export function SyncStatusCard({ className = "" }: { className?: string }) {
         </div>
       </dl>
 
-      {items.length > 0 && (
-        <div className="rounded-lg border border-border bg-background/40 p-2">
-          <div className="mb-1.5 px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            Détail des actions
-          </div>
-          <ul className="max-h-64 space-y-1 overflow-y-auto text-xs">
-            {items.map((it) => {
-              const hasError = it.attempts > 0 && !!it.lastError;
-              const status = hasError
-                ? { label: "Échec", tone: "text-destructive bg-destructive/10 border-destructive/30" }
-                : syncing
-                  ? { label: "Synchronisation…", tone: "text-amber-700 bg-amber-500/10 border-amber-500/30 dark:text-amber-400" }
-                  : { label: "En attente", tone: "text-muted-foreground bg-foreground/5 border-border" };
-              return (
-                <li
-                  key={it.id}
-                  className="flex items-start justify-between gap-2 rounded-md border border-border/60 bg-card px-2 py-1.5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-medium text-foreground">{opLabel(it.op)}</span>
-                      <span className="text-muted-foreground">{entityLabel(it.table)}</span>
-                      {it.label && (
-                        <span className="truncate text-muted-foreground/80">· {it.label}</span>
-                      )}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-                      <span>{formatTime(it.createdAt)}</span>
-                      {it.attempts > 0 && (
-                        <span>
-                          · {it.attempts} essai{it.attempts > 1 ? "s" : ""}
-                        </span>
-                      )}
-                    </div>
-                    {hasError && (
-                      <div className="mt-0.5 truncate text-[10px] text-destructive/80">
-                        {it.lastError}
-                      </div>
-                    )}
-                  </div>
-                  <span
+      {(() => {
+        const displayItems: Array<{
+          id: string;
+          table: string;
+          op: string;
+          label?: string;
+          createdAt: number;
+          attempts: number;
+          lastError?: string;
+          status: "pending" | "running" | "ok" | "failed";
+        }> = progress.active
+          ? progress.items.map((it) => ({ ...it }))
+          : items.map((it) => ({
+              id: it.id,
+              table: it.table,
+              op: it.op,
+              label: it.label,
+              createdAt: it.createdAt,
+              attempts: it.attempts,
+              lastError: it.lastError,
+              status: it.attempts > 0 && it.lastError ? "failed" : "pending",
+            }));
+        if (displayItems.length === 0) return null;
+        const remaining = Math.max(0, progress.total - progress.done - progress.failed);
+        return (
+          <div className="rounded-lg border border-border bg-background/40 p-2">
+            <div className="mb-1.5 flex items-center justify-between px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              <span>{progress.active ? "Écritures en cours de synchronisation" : "Détail des actions"}</span>
+              {progress.active && (
+                <span className="normal-case tracking-normal text-muted-foreground/80">
+                  {progress.done} ok · {progress.failed} échec{progress.failed > 1 ? "s" : ""} · {remaining} en attente
+                </span>
+              )}
+            </div>
+            <ul className="max-h-64 space-y-1 overflow-y-auto text-xs">
+              {displayItems.map((it) => {
+                const status =
+                  it.status === "ok"
+                    ? { label: "OK", tone: "text-teal bg-teal/10 border-teal/30" }
+                    : it.status === "running"
+                      ? { label: "En cours…", tone: "text-amber-700 bg-amber-500/10 border-amber-500/30 dark:text-amber-400" }
+                      : it.status === "failed"
+                        ? { label: "Échec", tone: "text-destructive bg-destructive/10 border-destructive/30" }
+                        : { label: "En attente", tone: "text-muted-foreground bg-foreground/5 border-border" };
+                const hasError = !!it.lastError && it.status !== "ok";
+                return (
+                  <li
+                    key={it.id}
                     className={[
-                      "shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
-                      status.tone,
+                      "flex items-start justify-between gap-2 rounded-md border px-2 py-1.5",
+                      it.status === "running"
+                        ? "border-amber-500/40 bg-amber-500/5"
+                        : it.status === "ok"
+                          ? "border-teal/30 bg-teal/5"
+                          : "border-border/60 bg-card",
                     ].join(" ")}
                   >
-                    {status.label}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-medium text-foreground">{opLabel(it.op)}</span>
+                        <span className="text-muted-foreground">{entityLabel(it.table)}</span>
+                        {it.label && (
+                          <span className="truncate text-muted-foreground/80">· {it.label}</span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <span>{formatTime(it.createdAt)}</span>
+                        {it.attempts > 0 && (
+                          <span>· {it.attempts} essai{it.attempts > 1 ? "s" : ""}</span>
+                        )}
+                      </div>
+                      {hasError && (
+                        <div className="mt-0.5 truncate text-[10px] text-destructive/80">
+                          {it.lastError}
+                        </div>
+                      )}
+                    </div>
+                    <span
+                      className={[
+                        "shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+                        status.tone,
+                      ].join(" ")}
+                    >
+                      {status.label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
 
 
       {errored.length > 0 && (

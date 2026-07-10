@@ -4,6 +4,7 @@ import {
   isSyncing,
   pendingCount,
   subscribeOfflineQueue,
+  type FlushItemSnapshot,
   type QueueOp,
 } from "@/lib/offline-queue";
 
@@ -25,9 +26,11 @@ export interface SyncProgress {
   /** dernière erreur rencontrée dans le cycle */
   lastError?: string;
   lastErrorTable?: string;
+  /** liste des écritures du cycle avec leur statut */
+  items: FlushItemSnapshot[];
 }
 
-const EMPTY: SyncProgress = { active: false, done: 0, total: 0, failed: 0 };
+const EMPTY: SyncProgress = { active: false, done: 0, total: 0, failed: 0, items: [] };
 
 /**
  * Suit la progression d'un cycle de synchronisation en s'appuyant sur
@@ -47,8 +50,6 @@ export function useSyncProgress(): SyncProgress {
       const active = isSyncing() || fp.active;
       if (cancelled) return;
       if (active) {
-        // borne haute observée pour bien afficher la progression même si
-        // de nouvelles écritures s'ajoutent en cours de route.
         totalRef.current = Math.max(totalRef.current, fp.total, pending + fp.done);
         const total = totalRef.current;
         const done = Math.max(0, Math.min(total, fp.done));
@@ -62,6 +63,7 @@ export function useSyncProgress(): SyncProgress {
           currentLabel: fp.currentLabel,
           lastError: fp.lastError,
           lastErrorTable: fp.lastErrorTable,
+          items: fp.items ?? [],
         });
       } else {
         totalRef.current = 0;
@@ -81,3 +83,4 @@ export function useSyncProgress(): SyncProgress {
 
   return state;
 }
+

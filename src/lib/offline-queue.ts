@@ -57,21 +57,37 @@ const mutationListeners = new Set<MutationListener>();
 let syncing = false;
 let flushChain: Promise<void> = Promise.resolve();
 
+export type FlushItemStatus = "pending" | "running" | "ok" | "failed";
+
+export interface FlushItemSnapshot {
+  id: string;
+  table: string;
+  op: QueueOp;
+  label?: string;
+  createdAt: number;
+  status: FlushItemStatus;
+  attempts: number;
+  lastError?: string;
+}
+
 export interface FlushProgress {
   active: boolean;
   total: number;
   done: number;
   failed: number;
   /** Item en cours de traitement */
+  currentId?: string;
   currentTable?: string;
   currentOp?: QueueOp;
   currentLabel?: string;
   /** Dernière erreur non-réseau observée dans le cycle */
   lastError?: string;
   lastErrorTable?: string;
+  /** Liste des écritures traitées ou en attente durant le cycle courant */
+  items: FlushItemSnapshot[];
 }
 
-let flushProgress: FlushProgress = { active: false, total: 0, done: 0, failed: 0 };
+let flushProgress: FlushProgress = { active: false, total: 0, done: 0, failed: 0, items: [] };
 
 export function getFlushProgress(): FlushProgress {
   return flushProgress;
@@ -491,26 +507,47 @@ async function doFlush(): Promise<void> {
   let done = 0;
   let failed = 0;
   let interruptedByNetwork = false;
-  flushProgress = { active: true, total, done, failed };
+  const snapshots: FlushItemSnapshot[] = items.map((it) => ({
+    id: it.id,
+    table: it.table,
+    op: it.op,
+    label: it.label,
+    createdAt: it.createdAt,
+    attempts: it.attempts,
+    lastError: it.lastError,
+    status: it.attempts > 0 && it.lastError ? "failed" : "pending",
+  }));
+  const updateSnap = (id: string, patch: Partial<FlushItemSnapshot>) => {
+    const idx = snapshots.findIndex((s) => s.id === id);
+    if (idx >= 0) snapshots[idx] = { ...snapshots[idx], ...patch };
+  };
+  flushProgress = { active: true, total, done, failed, items: snapshots.slice() };
   notify();
   try {
     for (const item of items) {
+      updateSnap(item.id, { status: "running" });
       flushProgress = {
         ...flushProgress,
+        currentId: item.id,
         currentTable: item.table,
         currentOp: item.op,
         currentLabel: item.label,
+        items: snapshots.slice(),
       };
       notify();
       try {
         await runWrite(item);
         await removeItem(item.id);
         done += 1;
-        flushProgress = { ...flushProgress, done };
+        updateSnap(item.id, { status: "ok" });
+        flushProgress = { ...flushProgress, done, items: snapshots.slice() };
         notify();
       } catch (err) {
         if (isNetworkError(err)) {
           interruptedByNetwork = true;
+          updateSnap(item.id, { status: "pending" });
+          flushProgress = { ...flushProgress, items: snapshots.slice() };
+          notify();
           break;
         }
         const message = err instanceof Error ? err.message : String(err);
@@ -525,11 +562,17 @@ async function doFlush(): Promise<void> {
           await putItem(next);
         }
         failed += 1;
+        updateSnap(item.id, {
+          status: "failed",
+          attempts: next.attempts,
+          lastError: message,
+        });
         flushProgress = {
           ...flushProgress,
           failed,
           lastError: message,
           lastErrorTable: item.table,
+          items: snapshots.slice(),
         };
         notify();
       }
@@ -539,6 +582,7 @@ async function doFlush(): Promise<void> {
     flushProgress = {
       ...flushProgress,
       active: false,
+      currentId: undefined,
       currentTable: undefined,
       currentOp: undefined,
       currentLabel: undefined,
