@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { savePdfBlob } from "./save";
 import { moyennePonderee } from "@/lib/format";
 import type { Note, Eleve, Classe, Ecole, Periode } from "@/lib/queries/data";
 
