@@ -75,26 +75,41 @@ export function SyncStatusInline({ className = "" }: { className?: string }) {
   }
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => {
+        void import("@/components/app/sync-queue-dialog").then((m) => m.openSyncDialog());
+      }}
       role="status"
       aria-live="polite"
+      aria-label="Voir la file d'écritures en attente"
       className={[
-        "flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
+        "flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors hover:brightness-110",
         tone,
         className,
       ].join(" ")}
     >
       <Icon className={["h-3.5 w-3.5", syncing ? "animate-spin" : ""].join(" ")} />
-      <span className="flex-1">{label}</span>
+      <span className="flex-1 text-left">{label}</span>
       {showRetry && (
-        <button
-          type="button"
-          onClick={() => void flushQueue()}
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            void flushQueue();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.stopPropagation();
+              void flushQueue();
+            }
+          }}
           className="rounded-full bg-foreground/10 px-2 py-0.5 text-[11px] hover:bg-foreground/20"
         >
           Réessayer
-        </button>
+        </span>
       )}
-    </div>
+    </button>
   );
 }
