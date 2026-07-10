@@ -3,9 +3,23 @@ import { toast } from "sonner";
 import {
   listQueue,
   subscribeOfflineQueue,
+  subscribeOfflineConflicts,
   isSyncing,
   type QueuedWrite,
 } from "@/lib/offline-queue";
+
+// Étiquettes lisibles pour les tables concernées par un conflit.
+const TABLE_LABELS: Record<string, string> = {
+  eleves: "un élève",
+  classes: "une classe",
+  ecoles: "une école",
+  notes: "une note",
+  absences: "une absence",
+  periodes: "une période",
+  creneaux: "un créneau",
+  sequences_programme: "une séquence",
+  annees_scolaires: "une année scolaire",
+};
 
 /**
  * Écoute la file d'attente hors ligne et affiche un toast lorsqu'une
