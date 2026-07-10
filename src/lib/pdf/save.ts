@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { isEffectivelyOnline } from "@/lib/simulated-offline";
 import { enqueuePendingPdf, deletePendingPdf, type PendingPdf } from "./pending";
 
@@ -12,9 +13,11 @@ import { enqueuePendingPdf, deletePendingPdf, type PendingPdf } from "./pending"
 export async function savePdfBlob(blob: Blob, filename: string, label?: string): Promise<void> {
   const safeName = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
 
-  // Hors ligne (ou hors ligne simulé) → mise en file
   if (!isEffectivelyOnline()) {
     await enqueuePendingPdf(blob, safeName, label);
+    toast.success("PDF mis en file d'attente", {
+      description: "Il sera partageable dès le retour de la connexion.",
+    });
     return;
   }
 
