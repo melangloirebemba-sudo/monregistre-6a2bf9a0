@@ -30,6 +30,33 @@ function formatRelative(ts: number): string {
   return `il y a ${d} j`;
 }
 
+function formatTime(ts: number): string {
+  try {
+    return new Date(ts).toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+const TABLE_LABELS: Record<string, string> = {
+  ecoles: "École",
+  classes: "Classe",
+  eleves: "Élève",
+  notes: "Note",
+  absences: "Absence",
+  periodes: "Période",
+  creneaux: "Créneau",
+  sequences_programme: "Séquence",
+  annees_scolaires: "Année scolaire",
+};
+
+function entityLabel(table: string): string {
+  return TABLE_LABELS[table] ?? table;
+}
+
 /**
  * Carte détaillée du statut de synchronisation hors-ligne.
  * Affiche: état réseau, file en attente, dernière synchro, erreurs éventuelles.
