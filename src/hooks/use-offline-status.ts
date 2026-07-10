@@ -87,6 +87,7 @@ export function useOfflineStatus(): OfflineStatus {
 
     return () => {
       unsub();
+      unsubMut();
       teardown();
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
