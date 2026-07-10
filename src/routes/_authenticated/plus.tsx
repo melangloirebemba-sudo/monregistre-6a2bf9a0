@@ -35,6 +35,8 @@ const baseItems = [
   { to: "/facturation", label: "Facturation & paiements", desc: "Reçus, plan, renouvellement", icon: Receipt },
   { to: "/parametres", label: "Paramètres", desc: "Année scolaire, notation, périodes", icon: Settings },
   { to: "/support", label: "Support & aide", desc: "WhatsApp, e-mail, FAQ", icon: LifeBuoy },
+  { to: "/diagnostic-offline", label: "Diagnostic hors-ligne", desc: "Vérifier IndexedDB et la file", icon: HardDrive },
+
 ] as const;
 
 
