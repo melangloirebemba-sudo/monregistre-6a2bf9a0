@@ -111,5 +111,40 @@ export function SyncToaster() {
     };
   }, []);
 
+  // Notifie l'utilisateur au retour en ligne s'il reste des PDF en file d'attente.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let notified = false;
+    const check = async () => {
+      if (!navigator.onLine) {
+        notified = false;
+        return;
+      }
+      const n = await countPendingPdfs();
+      if (n > 0 && !notified) {
+        notified = true;
+        toast.info(
+          n === 1
+            ? "1 PDF est prêt à être partagé"
+            : `${n} PDF sont prêts à être partagés`,
+          {
+            action: {
+              label: "Ouvrir",
+              onClick: () => openSyncDialog(),
+            },
+          },
+        );
+      }
+    };
+    void check();
+    const onOnline = () => void check();
+    window.addEventListener("online", onOnline);
+    const unsub = subscribePendingPdfs(() => void check());
+    return () => {
+      window.removeEventListener("online", onOnline);
+      unsub();
+    };
+  }, []);
+
   return null;
 }
