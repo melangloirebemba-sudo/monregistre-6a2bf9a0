@@ -171,7 +171,7 @@ export function AppShell({ children }: AppShellProps) {
       {/* Zone principale */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* Top bar mobile/tablet */}
-        <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 lg:hidden">
+        <header className="topbar-ink sticky top-0 z-30 flex items-center justify-between px-5 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] lg:hidden lg:pt-3">
           <div className="flex min-w-0 items-center gap-2">
             {(() => {
               const rootRoutes = ["/accueil", "/", "/ecoles", "/classes", "/eleves", "/plus", "/admin"];
