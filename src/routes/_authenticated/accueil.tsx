@@ -22,6 +22,7 @@ import { useMemo, useState } from "react";
 import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
+import { SyncHistoryCard } from "@/components/app/sync-history-card";
 import {
   Dialog,
   DialogContent,
@@ -522,6 +523,7 @@ function AccueilPage() {
         </section>
       )}
 
+      <SyncHistoryCard className="mt-6" />
       <SyncStatusCard className="mt-6" />
 
       {/* Grille menu */}
