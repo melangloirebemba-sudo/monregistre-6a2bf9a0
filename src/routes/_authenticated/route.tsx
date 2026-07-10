@@ -9,17 +9,59 @@ import { SuspendedGate } from "@/components/app/suspended-gate";
 import { PlanUpgradeNotice } from "@/components/app/plan-upgrade-notice";
 import { currentUserRolesQO } from "@/lib/queries/admin";
 
+const OFFLINE_SESSION_KEY = "mr-offline-session-anchor";
+const OFFLINE_GRACE_MS = 72 * 60 * 60 * 1000; // 72h
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
+
+    // 1) Hors ligne : on s'appuie sur la session locale (persistée par Supabase
+    //    dans localStorage) et sur un ancrage temporel de 72h max.
+    if (isOffline) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const anchorRaw = typeof localStorage !== "undefined" ? localStorage.getItem(OFFLINE_SESSION_KEY) : null;
+      const anchor = anchorRaw ? Number(anchorRaw) : 0;
+      const withinGrace = anchor > 0 && Date.now() - anchor < OFFLINE_GRACE_MS;
+      if (sessionData.session?.user && withinGrace) {
+        return { user: sessionData.session.user };
+      }
       throw redirect({
         to: "/auth",
         search: { next: location.pathname + location.searchStr },
       });
     }
-    return { user: data.user };
+
+    // 2) En ligne : validation forte via l'API Auth.
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        throw redirect({
+          to: "/auth",
+          search: { next: location.pathname + location.searchStr },
+        });
+      }
+      // Rafraîchit l'ancrage 72h à chaque succès en ligne.
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(OFFLINE_SESSION_KEY, String(Date.now()));
+      }
+      return { user: data.user };
+    } catch (err) {
+      // Erreur réseau alors que navigator.onLine mentait : on retente en mode offline.
+      if (err && typeof err === "object" && "to" in (err as object)) throw err;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const anchorRaw = typeof localStorage !== "undefined" ? localStorage.getItem(OFFLINE_SESSION_KEY) : null;
+      const anchor = anchorRaw ? Number(anchorRaw) : 0;
+      const withinGrace = anchor > 0 && Date.now() - anchor < OFFLINE_GRACE_MS;
+      if (sessionData.session?.user && withinGrace) {
+        return { user: sessionData.session.user };
+      }
+      throw redirect({
+        to: "/auth",
+        search: { next: location.pathname + location.searchStr },
+      });
+    }
   },
   component: AuthenticatedLayout,
 });
