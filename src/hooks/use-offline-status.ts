@@ -82,10 +82,11 @@ export function useOfflineStatus(): OfflineStatus {
         if (!Capacitor.isNativePlatform()) return;
         const { Network } = await import("@capacitor/network");
         const status = await Network.getStatus();
-        setOnline(status.connected);
+        setOnline(status.connected && !isSimulatedOffline());
         const listener = await Network.addListener("networkStatusChange", (s) => {
-          setOnline(s.connected);
+          setOnline(s.connected && !isSimulatedOffline());
         });
+
         removeNetworkListener = () => {
           void listener.remove();
         };
