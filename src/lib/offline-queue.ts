@@ -50,8 +50,10 @@ const STORE = "writes";
 
 type Listener = () => void;
 type ConflictListener = (e: ConflictEvent) => void;
+type MutationListener = (table: string) => void;
 const listeners = new Set<Listener>();
 const conflictListeners = new Set<ConflictListener>();
+const mutationListeners = new Set<MutationListener>();
 let syncing = false;
 let flushChain: Promise<void> = Promise.resolve();
 
@@ -61,6 +63,10 @@ function notify() {
 
 function notifyConflict(e: ConflictEvent) {
   for (const l of conflictListeners) l(e);
+}
+
+function notifyMutation(table: string) {
+  for (const l of mutationListeners) l(table);
 }
 
 export function subscribeOfflineQueue(fn: Listener): () => void {
@@ -74,6 +80,13 @@ export function subscribeOfflineConflicts(fn: ConflictListener): () => void {
   conflictListeners.add(fn);
   return () => {
     conflictListeners.delete(fn);
+  };
+}
+
+export function subscribeQueueMutation(fn: MutationListener): () => void {
+  mutationListeners.add(fn);
+  return () => {
+    mutationListeners.delete(fn);
   };
 }
 
@@ -239,6 +252,7 @@ export async function enqueueWrite(
   };
   await putItem(item);
   notify();
+  notifyMutation(input.table);
   return { queued: true, id: item.id };
 }
 
