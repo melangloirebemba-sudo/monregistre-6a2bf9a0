@@ -181,6 +181,8 @@ function RootComponent() {
       void supabase.auth.getSession().catch(() => {});
       router.invalidate();
       queryClient.invalidateQueries();
+      // Pull incrémental SQLite pour ramener les changements serveur récents.
+      void import("@/lib/sqlite").then((m) => m.syncAllTables(true)).catch(() => {});
     };
     window.addEventListener("online", resync);
 
