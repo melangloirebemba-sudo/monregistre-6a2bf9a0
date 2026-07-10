@@ -582,6 +582,7 @@ async function doFlush(): Promise<void> {
     flushProgress = {
       ...flushProgress,
       active: false,
+      currentId: undefined,
       currentTable: undefined,
       currentOp: undefined,
       currentLabel: undefined,
