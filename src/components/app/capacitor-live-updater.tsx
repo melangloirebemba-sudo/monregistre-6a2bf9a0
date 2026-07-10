@@ -1,37 +1,95 @@
 import { useEffect } from "react";
 
 /**
- * Initialise les mises à jour "live" (OTA) via Capgo sur l'app native.
- * Ne fait rien sur le web (où c'est le service worker / AppUpdateNotifier
- * qui gère les mises à jour).
+ * Vérifie et applique les mises à jour "live" (OTA) via Capgo au démarrage
+ * de l'app native, puis à chaque reprise depuis l'arrière-plan.
  *
- * Fonctionnement :
- *  - Au démarrage, on notifie Capgo que le bundle actuel s'est chargé sans
- *    planter (sinon Capgo revient automatiquement à la version précédente
- *    après quelques secondes — filet de sécurité anti mise-à-jour cassée).
- *  - Capgo vérifie en tâche de fond s'il existe un nouveau bundle JS/CSS sur
- *    le serveur configuré, le télécharge, et l'applique au prochain
- *    redémarrage de l'app (ou immédiatement selon la configuration choisie).
+ * Étapes :
+ *  1. notifyAppReady() — confirme que le bundle courant est sain (désamorce
+ *     le rollback automatique de Capgo).
+ *  2. getLatest() — interroge le serveur configuré pour connaître le dernier
+ *     bundle disponible.
+ *  3. Si un nouveau bundle est proposé, on le télécharge puis on l'active
+ *     immédiatement via set() → la webview recharge automatiquement sur la
+ *     nouvelle version.
+ *
+ * Sur le web (ou si le plugin est indisponible), le composant ne fait rien.
  */
 export function CapacitorLiveUpdater() {
   useEffect(() => {
     let cancelled = false;
+    let removeResume: (() => void) | null = null;
+
+    const checkAndApply = async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform()) return;
+        const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
+        if (cancelled) return;
+
+        const latest = (await CapacitorUpdater.getLatest().catch(() => null)) as
+          | { version?: string; url?: string; error?: string }
+          | null;
+        if (!latest || cancelled) return;
+
+        // Pas de nouvelle version disponible.
+        if (latest.error || !latest.version || !latest.url) return;
+
+        // Évite de re-télécharger le bundle déjà actif.
+        try {
+          const current = (await CapacitorUpdater.current()) as
+            | { bundle?: { version?: string } }
+            | undefined;
+          if (current?.bundle?.version && current.bundle.version === latest.version) {
+            return;
+          }
+        } catch {
+          // ignore — on tente le téléchargement dans le doute
+        }
+
+        const bundle = await CapacitorUpdater.download({
+          version: latest.version,
+          url: latest.url,
+        });
+
+        if (cancelled || !bundle?.id) return;
+
+        // Applique immédiatement : la webview recharge sur le nouveau bundle.
+        await CapacitorUpdater.set({ id: bundle.id });
+      } catch {
+        // Plugin indisponible ou erreur réseau — silencieux.
+      }
+    };
+
     void (async () => {
       try {
         const { Capacitor } = await import("@capacitor/core");
         if (!Capacitor.isNativePlatform()) return;
         const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
         if (cancelled) return;
-        // Confirme que le bundle actuel est sain (annule le rollback auto).
-        await CapacitorUpdater.notifyAppReady();
-        // Vérifie s'il existe une mise à jour disponible.
-        await CapacitorUpdater.getLatest();
+        await CapacitorUpdater.notifyAppReady().catch(() => {});
+        await checkAndApply();
+
+        // Re-vérifie chaque fois que l'app revient au premier plan.
+        try {
+          const { App } = await import("@capacitor/app");
+          const handle = await App.addListener("appStateChange", (state) => {
+            if (state.isActive) void checkAndApply();
+          });
+          removeResume = () => {
+            void handle.remove();
+          };
+        } catch {
+          // @capacitor/app absent — pas de listener de reprise.
+        }
       } catch {
-        // @capgo/capacitor-updater indisponible (web) — pas d'action nécessaire.
+        // Silencieux sur le web.
       }
     })();
+
     return () => {
       cancelled = true;
+      removeResume?.();
     };
   }, []);
 
