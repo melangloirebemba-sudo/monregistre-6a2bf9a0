@@ -90,9 +90,22 @@ export function SyncToaster() {
     const unsub = subscribeOfflineQueue(() => {
       void handle();
     });
+    const unsubConflict = subscribeOfflineConflicts((e) => {
+      const label = TABLE_LABELS[e.table] ?? "un enregistrement";
+      if (e.resolution === "client-applied") {
+        toast.warning(
+          `Conflit sur ${label} — votre version locale a été appliquée (modifié aussi côté serveur).`,
+        );
+      } else {
+        toast.warning(
+          `Conflit sur ${label} — la version serveur a été conservée.`,
+        );
+      }
+    });
     return () => {
       cancelled = true;
       unsub();
+      unsubConflict();
     };
   }, []);
 
