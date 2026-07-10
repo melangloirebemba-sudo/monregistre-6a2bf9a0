@@ -27,17 +27,19 @@ export function CapacitorLiveUpdater() {
         const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
         if (cancelled) return;
 
-        const latest = await CapacitorUpdater.getLatest().catch(() => null);
+        const latest = (await CapacitorUpdater.getLatest().catch(() => null)) as
+          | { version?: string; url?: string; error?: string }
+          | null;
         if (!latest || cancelled) return;
 
         // Pas de nouvelle version disponible.
-        // @ts-expect-error — champs runtime renvoyés par Capgo
         if (latest.error || !latest.version || !latest.url) return;
 
         // Évite de re-télécharger le bundle déjà actif.
         try {
-          const current = await CapacitorUpdater.current();
-          // @ts-expect-error
+          const current = (await CapacitorUpdater.current()) as
+            | { bundle?: { version?: string } }
+            | undefined;
           if (current?.bundle?.version && current.bundle.version === latest.version) {
             return;
           }
@@ -46,11 +48,10 @@ export function CapacitorLiveUpdater() {
         }
 
         const bundle = await CapacitorUpdater.download({
-          // @ts-expect-error
           version: latest.version,
-          // @ts-expect-error
           url: latest.url,
         });
+
         if (cancelled || !bundle?.id) return;
 
         // Applique immédiatement : la webview recharge sur le nouveau bundle.
