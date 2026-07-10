@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mirrorSelect, mirrorUpsert, type SqliteTable } from "@/lib/sqlite";
 import { hasPendingForTable } from "@/lib/offline-queue";
+import { isEffectivelyOnline } from "@/lib/simulated-offline";
 
 // Fallback hors ligne : lit dans le miroir IndexedDB si l'appel réseau échoue
 // et rejoue les données servies dans le miroir sinon.
@@ -11,6 +12,15 @@ async function netThenMirror<T>(
   extract: (data: T) => Record<string, unknown>[],
   fallback: () => Promise<T>,
 ): Promise<T> {
+  // Hors ligne (réel ou simulé) : on sert directement le miroir IndexedDB
+  // pour que les écritures optimistes soient visibles instantanément.
+  if (!isEffectivelyOnline()) {
+    try {
+      return await fallback();
+    } catch {
+      /* pas de miroir dispo — on tente le réseau en dernier recours */
+    }
+  }
   try {
     const result = await net();
     if (table) {
