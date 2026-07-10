@@ -57,21 +57,37 @@ const mutationListeners = new Set<MutationListener>();
 let syncing = false;
 let flushChain: Promise<void> = Promise.resolve();
 
+export type FlushItemStatus = "pending" | "running" | "ok" | "failed";
+
+export interface FlushItemSnapshot {
+  id: string;
+  table: string;
+  op: QueueOp;
+  label?: string;
+  createdAt: number;
+  status: FlushItemStatus;
+  attempts: number;
+  lastError?: string;
+}
+
 export interface FlushProgress {
   active: boolean;
   total: number;
   done: number;
   failed: number;
   /** Item en cours de traitement */
+  currentId?: string;
   currentTable?: string;
   currentOp?: QueueOp;
   currentLabel?: string;
   /** Dernière erreur non-réseau observée dans le cycle */
   lastError?: string;
   lastErrorTable?: string;
+  /** Liste des écritures traitées ou en attente durant le cycle courant */
+  items: FlushItemSnapshot[];
 }
 
-let flushProgress: FlushProgress = { active: false, total: 0, done: 0, failed: 0 };
+let flushProgress: FlushProgress = { active: false, total: 0, done: 0, failed: 0, items: [] };
 
 export function getFlushProgress(): FlushProgress {
   return flushProgress;
