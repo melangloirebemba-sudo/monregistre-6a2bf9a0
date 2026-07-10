@@ -523,6 +523,7 @@ function AccueilPage() {
         </section>
       )}
 
+      <SyncHistoryCard className="mt-6" />
       <SyncStatusCard className="mt-6" />
 
       {/* Grille menu */}
