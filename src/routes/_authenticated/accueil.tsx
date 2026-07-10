@@ -74,6 +74,7 @@ function AccueilPage() {
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const { online, syncing, pending } = useOfflineStatus();
+  const syncProgress = useSyncProgress();
 
 
   const reminderPrefs = useReminderPrefs();
