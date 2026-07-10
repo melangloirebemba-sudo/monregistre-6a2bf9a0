@@ -62,10 +62,15 @@ export function useOfflineStatus(): OfflineStatus {
       void qc.invalidateQueries();
     });
 
-    const onOnline = () => setOnline(true);
+    const onOnline = () => setOnline(!isSimulatedOffline());
     const onOffline = () => setOnline(false);
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
+    const unsubSim = subscribeSimulatedOffline((sim) => {
+      if (sim) setOnline(false);
+      else setOnline(typeof navigator === "undefined" ? true : navigator.onLine);
+    });
+
 
     // Sur l'app native (Capacitor), les événements navigateur online/offline
     // sont parfois peu fiables dans la WebView Android — on s'appuie en plus
