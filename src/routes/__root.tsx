@@ -156,6 +156,8 @@ function RootComponent() {
     registerServiceWorker();
     applyTheme(getStoredTheme());
     void hydrateAppSettings();
+    // Seed / sync incrémentale SQLite (Android natif uniquement — no-op sur web).
+    void import("@/lib/sqlite").then((m) => m.syncAllTables()).catch(() => {});
   }, []);
 
   useEffect(() => {
