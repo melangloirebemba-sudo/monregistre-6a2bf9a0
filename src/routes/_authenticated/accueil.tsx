@@ -15,11 +15,14 @@ import {
   Bell,
   CalendarX,
   AlertTriangle,
+  CloudOff,
+  RefreshCw,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
+import { useOfflineStatus } from "@/hooks/use-offline-status";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
 import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
