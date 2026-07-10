@@ -154,6 +154,16 @@ export async function pendingCount(): Promise<number> {
   }
 }
 
+/**
+ * Retourne `true` si au moins une écriture est encore en attente pour la table.
+ * Utilisé côté lecture pour préférer le miroir SQLite (qui contient l'écriture
+ * optimiste) tant que le serveur n'a pas confirmé.
+ */
+export async function hasPendingForTable(table: string): Promise<boolean> {
+  const items = await listQueue();
+  return items.some((it) => it.table === table);
+}
+
 async function putItem(item: QueuedWrite): Promise<void> {
   const store = await txStore("readwrite");
   await new Promise<void>((resolve, reject) => {
