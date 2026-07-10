@@ -15,7 +15,7 @@ export interface BulletinContext {
   moyenneClasse?: number | null;
 }
 
-export function generateBulletinPDF(ctx: BulletinContext) {
+export async function generateBulletinPDF(ctx: BulletinContext) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const echelle = ctx.echelle ?? 20;
   const pageW = doc.internal.pageSize.getWidth();
