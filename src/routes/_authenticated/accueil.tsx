@@ -309,7 +309,7 @@ function AccueilPage() {
             {(!online || pending > 0 || syncing) && (
               <button
                 type="button"
-                onClick={() => setSyncDialogOpen(true)}
+                onClick={() => openSyncDialog()}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur transition hover:brightness-110 ${
                   !online
                     ? "border-white/20 bg-white/10 text-ink-foreground"
@@ -334,7 +334,7 @@ function AccueilPage() {
           {syncProgress.active && syncProgress.total > 0 && (
             <button
               type="button"
-              onClick={() => setSyncDialogOpen(true)}
+              onClick={() => openSyncDialog()}
               className="mt-4 block w-full rounded-xl border border-white/15 bg-white/5 p-3 text-left backdrop-blur transition hover:bg-white/10"
               aria-label="Voir le détail de la synchronisation"
             >
