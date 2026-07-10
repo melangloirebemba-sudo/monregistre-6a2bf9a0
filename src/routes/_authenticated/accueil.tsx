@@ -18,7 +18,13 @@ import {
   CloudOff,
   RefreshCw,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+function getSalutation(h: number): string {
+  if (h < 12) return "Bonjour";
+  if (h < 16) return "Salut";
+  return "Bonsoir";
+}
 import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/lib/queries/profil";
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
