@@ -30,6 +30,33 @@ function formatRelative(ts: number): string {
   return `il y a ${d} j`;
 }
 
+function formatTime(ts: number): string {
+  try {
+    return new Date(ts).toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+const TABLE_LABELS: Record<string, string> = {
+  ecoles: "École",
+  classes: "Classe",
+  eleves: "Élève",
+  notes: "Note",
+  absences: "Absence",
+  periodes: "Période",
+  creneaux: "Créneau",
+  sequences_programme: "Séquence",
+  annees_scolaires: "Année scolaire",
+};
+
+function entityLabel(table: string): string {
+  return TABLE_LABELS[table] ?? table;
+}
+
 /**
  * Carte détaillée du statut de synchronisation hors-ligne.
  * Affiche: état réseau, file en attente, dernière synchro, erreurs éventuelles.
@@ -162,6 +189,62 @@ export function SyncStatusCard({ className = "" }: { className?: string }) {
           </dd>
         </div>
       </dl>
+
+      {items.length > 0 && (
+        <div className="rounded-lg border border-border bg-background/40 p-2">
+          <div className="mb-1.5 px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Détail des actions
+          </div>
+          <ul className="max-h-64 space-y-1 overflow-y-auto text-xs">
+            {items.map((it) => {
+              const hasError = it.attempts > 0 && !!it.lastError;
+              const status = hasError
+                ? { label: "Échec", tone: "text-destructive bg-destructive/10 border-destructive/30" }
+                : syncing
+                  ? { label: "Synchronisation…", tone: "text-amber-700 bg-amber-500/10 border-amber-500/30 dark:text-amber-400" }
+                  : { label: "En attente", tone: "text-muted-foreground bg-foreground/5 border-border" };
+              return (
+                <li
+                  key={it.id}
+                  className="flex items-start justify-between gap-2 rounded-md border border-border/60 bg-card px-2 py-1.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-medium text-foreground">{opLabel(it.op)}</span>
+                      <span className="text-muted-foreground">{entityLabel(it.table)}</span>
+                      {it.label && (
+                        <span className="truncate text-muted-foreground/80">· {it.label}</span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <span>{formatTime(it.createdAt)}</span>
+                      {it.attempts > 0 && (
+                        <span>
+                          · {it.attempts} essai{it.attempts > 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
+                    {hasError && (
+                      <div className="mt-0.5 truncate text-[10px] text-destructive/80">
+                        {it.lastError}
+                      </div>
+                    )}
+                  </div>
+                  <span
+                    className={[
+                      "shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+                      status.tone,
+                    ].join(" ")}
+                  >
+                    {status.label}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
 
       {errored.length > 0 && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2">

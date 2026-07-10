@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
+import { useSyncProgress } from "@/hooks/use-sync-progress";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
 import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
@@ -74,6 +75,7 @@ function AccueilPage() {
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const { online, syncing, pending } = useOfflineStatus();
+  const syncProgress = useSyncProgress();
 
 
   const reminderPrefs = useReminderPrefs();
@@ -333,8 +335,42 @@ function AccueilPage() {
               </button>
             )}
           </div>
+
+          {syncProgress.active && syncProgress.total > 0 && (
+            <button
+              type="button"
+              onClick={() => setSyncDialogOpen(true)}
+              className="mt-4 block w-full rounded-xl border border-white/15 bg-white/5 p-3 text-left backdrop-blur transition hover:bg-white/10"
+              aria-label="Voir le détail de la synchronisation"
+            >
+              <div className="mb-1.5 flex items-center justify-between text-xs text-ink-foreground/90">
+                <span className="inline-flex items-center gap-1.5 font-medium">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Synchronisation en cours…
+                </span>
+                <span className="tabular-nums text-ink-foreground">
+                  {syncProgress.done} / {syncProgress.total}
+                </span>
+              </div>
+              <div
+                className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={syncProgress.total}
+                aria-valuenow={syncProgress.done}
+              >
+                <div
+                  className="h-full rounded-full bg-gold-soft transition-[width] duration-500 ease-out"
+                  style={{
+                    width: `${Math.min(100, Math.round((syncProgress.done / Math.max(1, syncProgress.total)) * 100))}%`,
+                  }}
+                />
+              </div>
+            </button>
+          )}
         </div>
       </section>
+
 
       {/* Actions rapides */}
       <section className="mt-6">
