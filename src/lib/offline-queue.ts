@@ -8,6 +8,8 @@
 // The queue is per-user (scoped by auth user id) and survives reloads.
 
 import { supabase } from "@/integrations/supabase/client";
+import { isSimulatedOffline } from "@/lib/simulated-offline";
+
 
 export type QueueOp = "insert" | "update" | "delete";
 export type ConflictStrategy = "client-wins" | "server-wins" | "merge";
@@ -263,7 +265,7 @@ export async function enqueueWrite(
   | { queued: false; data: unknown }
   | { queued: true; id: string }
 > {
-  const online = typeof navigator === "undefined" ? true : navigator.onLine;
+  const online = (typeof navigator === "undefined" ? true : navigator.onLine) && !isSimulatedOffline();
 
   if (online) {
     try {
@@ -495,6 +497,8 @@ function resetRetryBackoff() {
 
 async function doFlush(): Promise<void> {
   if (typeof navigator !== "undefined" && !navigator.onLine) return;
+  if (isSimulatedOffline()) return;
+
   const items = await listQueue();
   if (items.length === 0) {
     resetRetryBackoff();

@@ -7,6 +7,8 @@ import {
   subscribeQueueMutation,
   wireOfflineAutoFlush,
 } from "@/lib/offline-queue";
+import { isSimulatedOffline, subscribeSimulatedOffline } from "@/lib/simulated-offline";
+
 
 // Map une table Supabase vers la clé racine des queries associées.
 const TABLE_TO_QUERY_KEY: Record<string, string> = {
@@ -29,9 +31,11 @@ export interface OfflineStatus {
 
 export function useOfflineStatus(): OfflineStatus {
   const qc = useQueryClient();
-  const [online, setOnline] = useState<boolean>(() =>
-    typeof navigator === "undefined" ? true : navigator.onLine,
-  );
+  const [online, setOnline] = useState<boolean>(() => {
+    if (isSimulatedOffline()) return false;
+    return typeof navigator === "undefined" ? true : navigator.onLine;
+  });
+
   const [pending, setPending] = useState(0);
   const [syncing, setSyncing] = useState(false);
 
@@ -58,10 +62,15 @@ export function useOfflineStatus(): OfflineStatus {
       void qc.invalidateQueries();
     });
 
-    const onOnline = () => setOnline(true);
+    const onOnline = () => setOnline(!isSimulatedOffline());
     const onOffline = () => setOnline(false);
     window.addEventListener("online", onOnline);
     window.addEventListener("offline", onOffline);
+    const unsubSim = subscribeSimulatedOffline((sim) => {
+      if (sim) setOnline(false);
+      else setOnline(typeof navigator === "undefined" ? true : navigator.onLine);
+    });
+
 
     // Sur l'app native (Capacitor), les événements navigateur online/offline
     // sont parfois peu fiables dans la WebView Android — on s'appuie en plus
@@ -73,10 +82,11 @@ export function useOfflineStatus(): OfflineStatus {
         if (!Capacitor.isNativePlatform()) return;
         const { Network } = await import("@capacitor/network");
         const status = await Network.getStatus();
-        setOnline(status.connected);
+        setOnline(status.connected && !isSimulatedOffline());
         const listener = await Network.addListener("networkStatusChange", (s) => {
-          setOnline(s.connected);
+          setOnline(s.connected && !isSimulatedOffline());
         });
+
         removeNetworkListener = () => {
           void listener.remove();
         };
@@ -89,10 +99,12 @@ export function useOfflineStatus(): OfflineStatus {
       unsub();
       unsubMut();
       teardown();
+      unsubSim();
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
       removeNetworkListener?.();
     };
+
   }, [qc]);
 
   return { online, syncing, pending };

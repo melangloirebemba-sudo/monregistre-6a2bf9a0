@@ -15,7 +15,14 @@ import {
 } from "@/lib/offline-queue";
 import { mirrorSelect } from "@/lib/sqlite";
 import { SQLITE_TABLES, type SqliteTable } from "@/lib/sqlite/schema";
-import { HardDrive, RefreshCw, Wifi, WifiOff, Database, CheckCircle2, XCircle } from "lucide-react";
+import { HardDrive, RefreshCw, Wifi, WifiOff, Database, CheckCircle2, XCircle, PlugZap } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  isSimulatedOffline,
+  setSimulatedOffline,
+  subscribeSimulatedOffline,
+} from "@/lib/simulated-offline";
+
 
 export const Route = createFileRoute("/_authenticated/diagnostic-offline")({
   head: () => ({ meta: [{ title: "Diagnostic hors-ligne — MonRegistre" }] }),
@@ -78,6 +85,8 @@ function formatBytes(n?: number): string {
 function DiagnosticOfflinePage() {
   const [diag, setDiag] = useState<Diag | null>(null);
   const [loading, setLoading] = useState(false);
+  const [simOffline, setSimOffline] = useState<boolean>(() => isSimulatedOffline());
+
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -92,16 +101,22 @@ function DiagnosticOfflinePage() {
     void refresh();
     const un1 = subscribeOfflineQueue(() => void refresh());
     const un2 = subscribeQueueMutation(() => void refresh());
+    const unSim = subscribeSimulatedOffline((v) => {
+      setSimOffline(v);
+      void refresh();
+    });
     const on = () => void refresh();
     window.addEventListener("online", on);
     window.addEventListener("offline", on);
     return () => {
       un1();
       un2();
+      unSim();
       window.removeEventListener("online", on);
       window.removeEventListener("offline", on);
     };
   }, [refresh]);
+
 
   const runProbe = useCallback(async () => {
     try {
@@ -131,6 +146,28 @@ function DiagnosticOfflinePage() {
           Vérifiez que vos écritures sont enregistrées en IndexedDB pendant une coupure réseau.
         </p>
       </div>
+
+      <Card className={simOffline ? "border-amber-500/60 bg-amber-500/5" : undefined}>
+        <CardContent className="flex items-center justify-between gap-3 py-3">
+          <div className="flex items-start gap-3">
+            <PlugZap className={`h-5 w-5 mt-0.5 ${simOffline ? "text-amber-600" : "text-muted-foreground"}`} />
+            <div>
+              <div className="font-medium text-sm">Mode hors-ligne simulé</div>
+              <div className="text-xs text-muted-foreground">
+                Force toutes les écritures à passer par la file IndexedDB, sans couper le réseau réel.
+              </div>
+            </div>
+          </div>
+          <Switch
+            checked={simOffline}
+            onCheckedChange={(v) => {
+              setSimulatedOffline(v);
+              toast.info(v ? "Mode hors-ligne simulé activé" : "Mode hors-ligne simulé désactivé");
+            }}
+          />
+        </CardContent>
+      </Card>
+
 
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={() => void refresh()} disabled={loading}>
