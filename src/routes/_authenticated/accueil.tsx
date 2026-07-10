@@ -23,13 +23,7 @@ import { countsQueryOptions, profilQueryOptions, planCapabilitiesQO } from "@/li
 import { creneauxQO, classesQO, notesQO, absencesQO, periodesQO, ecolesQO } from "@/lib/queries/data";
 import { SyncStatusCard } from "@/components/app/sync-status-card";
 import { SyncHistoryCard } from "@/components/app/sync-history-card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { openSyncDialog } from "@/components/app/sync-queue-dialog";
 import { useOfflineStatus } from "@/hooks/use-offline-status";
 import { useSyncProgress } from "@/hooks/use-sync-progress";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
@@ -74,7 +68,7 @@ function AccueilPage() {
   const { data: periodes = [] } = useQuery(periodesQO());
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
-  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  
   const { online, syncing, pending } = useOfflineStatus();
   const syncProgress = useSyncProgress();
 
@@ -315,7 +309,7 @@ function AccueilPage() {
             {(!online || pending > 0 || syncing) && (
               <button
                 type="button"
-                onClick={() => setSyncDialogOpen(true)}
+                onClick={() => openSyncDialog()}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur transition hover:brightness-110 ${
                   !online
                     ? "border-white/20 bg-white/10 text-ink-foreground"
@@ -340,7 +334,7 @@ function AccueilPage() {
           {syncProgress.active && syncProgress.total > 0 && (
             <button
               type="button"
-              onClick={() => setSyncDialogOpen(true)}
+              onClick={() => openSyncDialog()}
               className="mt-4 block w-full rounded-xl border border-white/15 bg-white/5 p-3 text-left backdrop-blur transition hover:bg-white/10"
               aria-label="Voir le détail de la synchronisation"
             >
@@ -574,31 +568,9 @@ function AccueilPage() {
         </p>
       </section>
 
-      <SyncQueueDialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen} />
+      
     </div>
   );
 }
 
-function SyncQueueDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Écritures en attente</DialogTitle>
-          <DialogDescription>
-            Vos modifications réalisées hors ligne sont mises en file et envoyées
-            automatiquement dès le retour de la connexion.
-          </DialogDescription>
-        </DialogHeader>
-        <SyncStatusCard />
-      </DialogContent>
-    </Dialog>
-  );
-}
 
