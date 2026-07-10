@@ -497,6 +497,8 @@ function resetRetryBackoff() {
 
 async function doFlush(): Promise<void> {
   if (typeof navigator !== "undefined" && !navigator.onLine) return;
+  if (isSimulatedOffline()) return;
+
   const items = await listQueue();
   if (items.length === 0) {
     resetRetryBackoff();
