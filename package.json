@@ -7,6 +7,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:mobile": "vite build --config vite.config.mobile.ts",
+    "postbuild:mobile": "node -e \"require('fs').copyFileSync('dist/client/_shell.html','dist/client/index.html')\"",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

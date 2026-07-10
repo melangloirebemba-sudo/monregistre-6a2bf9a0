@@ -32,3 +32,4 @@ dist-ssr
 *.sw?
 *.keystore
 monregistre-capacitor-android.patch
+*.patch
