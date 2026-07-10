@@ -44,6 +44,14 @@ export function useOfflineStatus(): OfflineStatus {
     const unsub = subscribeOfflineQueue(() => {
       void refresh();
     });
+    // Dès qu'une écriture est mise en file hors ligne, on invalide la query
+    // correspondante pour que la liste affichée reflète immédiatement le
+    // miroir SQLite (qui contient déjà la ligne optimiste).
+    const unsubMut = subscribeQueueMutation((table) => {
+      const key = TABLE_TO_QUERY_KEY[table];
+      if (!key) return;
+      void qc.invalidateQueries({ queryKey: [key] });
+    });
     const teardown = wireOfflineAutoFlush(() => {
       // After a successful flush, refresh all queries so the UI reflects
       // server state.
