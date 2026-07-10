@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { mirrorSelect, mirrorUpsert, type SqliteTable } from "@/lib/sqlite";
 import { hasPendingForTable } from "@/lib/offline-queue";
 
-// Fallback natif hors ligne : lit dans le miroir SQLite si l'appel réseau
-// échoue et rejoue les données servies dans le miroir sinon.
+// Fallback hors ligne : lit dans le miroir IndexedDB si l'appel réseau échoue
+// et rejoue les données servies dans le miroir sinon.
 async function netThenMirror<T>(
   table: SqliteTable | null,
   net: () => Promise<T>,
@@ -36,7 +36,7 @@ async function netThenMirror<T>(
     }
     return result;
   } catch (err) {
-    // Réseau/serveur KO : bascule sur SQLite local si disponible.
+    // Réseau/serveur KO : bascule sur IndexedDB local si disponible.
     try {
       return await fallback();
     } catch {
@@ -47,7 +47,7 @@ async function netThenMirror<T>(
 
 
 // Extrait uniquement les colonnes plates (élimine les objets de jointure)
-// pour l'upsert dans SQLite.
+// pour l'upsert dans le miroir IndexedDB.
 function stripJoins(rows: Record<string, unknown>[]): Record<string, unknown>[] {
   return rows.map((r) => {
     const out: Record<string, unknown> = {};
@@ -222,7 +222,7 @@ const DEFAULT_STALE = 2 * 60_000;
 // Données de référence rarement modifiées : plus long TTL, moins de refetch inutiles.
 const REF_STALE = 10 * 60_000;
 
-// Hydrate les jointures depuis SQLite (eleves/classes/ecoles/periodes)
+// Hydrate les jointures depuis IndexedDB (eleves/classes/ecoles/periodes)
 // pour reproduire la forme attendue par l'UI même hors ligne.
 async function hydrateEleveJoin<T extends { eleve_id: string }>(
   rows: T[],

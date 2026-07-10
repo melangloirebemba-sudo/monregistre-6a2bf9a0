@@ -158,7 +158,7 @@ function RootComponent() {
     registerServiceWorker();
     applyTheme(getStoredTheme());
     void hydrateAppSettings();
-    // Seed / sync incrémentale SQLite (Android natif uniquement — no-op sur web).
+    // Seed / sync incrémentale du miroir IndexedDB local.
     void import("@/lib/sqlite").then((m) => m.syncAllTables()).catch(() => {});
   }, []);
 
@@ -183,7 +183,7 @@ function RootComponent() {
       void supabase.auth.getSession().catch(() => {});
       router.invalidate();
       queryClient.invalidateQueries();
-      // Pull incrémental SQLite pour ramener les changements serveur récents.
+      // Pull incrémental IndexedDB pour ramener les changements serveur récents.
       void import("@/lib/sqlite").then((m) => m.syncAllTables(true)).catch(() => {});
     };
     window.addEventListener("online", resync);

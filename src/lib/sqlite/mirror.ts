@@ -1,8 +1,8 @@
-// Upsert / read helpers pour le miroir SQLite local.
-// Chaque table est stockée avec les colonnes déclarées dans schema.ts.
-// Les valeurs booléennes sont converties en 0/1 pour SQLite.
+// Miroir local IndexedDB-first.
+// On conserve les mêmes exports que l'ancien miroir SQLite afin que les
+// queries, la file hors-ligne et l'UI restent inchangées. IndexedDB fonctionne
+// dans le navigateur, la PWA et la WebView mobile sans dépendre du plugin natif.
 
-import { getDb, sqliteQuery, isSqliteAvailable } from "./db";
 import type { SqliteTable } from "./schema";
 
 // Colonnes miroir par table (dans l'ordre du INSERT). L'ordre importe :
@@ -20,6 +20,40 @@ const TABLE_COLUMNS: Record<SqliteTable, string[]> = {
 };
 
 const BOOL_COLUMNS = new Set(["active", "justifiee", "archived"]);
+
+const DB_NAME = "monregistre-local-mirror";
+const DB_VERSION = 1;
+const STORE = "rows";
+
+interface StoredMirrorRow {
+  key: string;
+  table: SqliteTable;
+  id: string;
+  row: Record<string, unknown>;
+}
+
+function rowKey(table: SqliteTable, id: string): string {
+  return `${table}:${id}`;
+}
+
+function openMirrorDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === "undefined") {
+      reject(new Error("IndexedDB unavailable"));
+      return;
+    }
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        const store = db.createObjectStore(STORE, { keyPath: "key" });
+        store.createIndex("table", "table");
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error ?? new Error("IndexedDB open failed"));
+  });
+}
 
 function toSqlValue(col: string, v: unknown): unknown {
   if (v === undefined) return null;
@@ -44,37 +78,91 @@ export async function mirrorUpsert(
   table: SqliteTable,
   rows: Record<string, unknown>[],
 ): Promise<void> {
-  if (!(await isSqliteAvailable()) || rows.length === 0) return;
-  const db = await getDb();
-  if (!db) return;
-  const cols = TABLE_COLUMNS[table];
-  const placeholders = cols.map(() => "?").join(",");
-  const updateSet = cols
-    .filter((c) => c !== "id")
-    .map((c) => `${c} = excluded.${c}`)
-    .join(", ");
-  const sql = `INSERT INTO ${table} (${cols.join(",")}) VALUES (${placeholders})
-               ON CONFLICT(id) DO UPDATE SET ${updateSet}`;
+  if (rows.length === 0) return;
   try {
-    for (const row of rows) {
-      const values = cols.map((c) => toSqlValue(c, row[c]));
-      await db.run(sql, values);
-    }
+    const db = await openMirrorDb();
+    const cols = TABLE_COLUMNS[table];
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      const store = tx.objectStore(STORE);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("IndexedDB mirror upsert failed"));
+      tx.onabort = () => reject(tx.error ?? new Error("IndexedDB mirror upsert aborted"));
+
+      for (const row of rows) {
+        const id = row.id;
+        if (typeof id !== "string" || !id) continue;
+        const normalized: Record<string, unknown> = {};
+        for (const col of cols) normalized[col] = toSqlValue(col, row[col]);
+        const item: StoredMirrorRow = {
+          key: rowKey(table, id),
+          table,
+          id,
+          row: normalized,
+        };
+        store.put(item);
+      }
+    });
   } catch (err) {
-    console.warn(`[sqlite] mirrorUpsert(${table}) failed`, err);
+    console.warn(`[indexeddb] mirrorUpsert(${table}) failed`, err);
   }
 }
 
 /** Supprime une ligne du miroir (utile après un delete réussi côté serveur). */
 export async function mirrorDelete(table: SqliteTable, id: string): Promise<void> {
-  if (!(await isSqliteAvailable())) return;
-  const db = await getDb();
-  if (!db) return;
   try {
-    await db.run(`DELETE FROM ${table} WHERE id = ?`, [id]);
+    const db = await openMirrorDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).delete(rowKey(table, id));
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("IndexedDB mirror delete failed"));
+      tx.onabort = () => reject(tx.error ?? new Error("IndexedDB mirror delete aborted"));
+    });
   } catch (err) {
-    console.warn(`[sqlite] mirrorDelete(${table}) failed`, err);
+    console.warn(`[indexeddb] mirrorDelete(${table}) failed`, err);
   }
+}
+
+async function readTableRows(table: SqliteTable): Promise<Record<string, unknown>[]> {
+  try {
+    const db = await openMirrorDb();
+    return await new Promise((resolve, reject) => {
+      const rows: Record<string, unknown>[] = [];
+      const tx = db.transaction(STORE, "readonly");
+      const req = tx.objectStore(STORE).index("table").openCursor(IDBKeyRange.only(table));
+      req.onsuccess = () => {
+        const cur = req.result;
+        if (!cur) {
+          resolve(rows);
+          return;
+        }
+        const item = cur.value as StoredMirrorRow;
+        rows.push(fromSqlRow(item.row));
+        cur.continue();
+      };
+      req.onerror = () => reject(req.error ?? new Error("IndexedDB mirror read failed"));
+    });
+  } catch (err) {
+    console.warn(`[indexeddb] readTableRows(${table}) failed`, err);
+    return [];
+  }
+}
+
+function matchesWhere(row: Record<string, unknown>, where: Record<string, unknown>): boolean {
+  for (const [k, v] of Object.entries(where)) {
+    if (v === undefined || v === null) continue;
+    if (row[k] !== toSqlValue(k, v)) return false;
+  }
+  return true;
+}
+
+function compareValues(a: unknown, b: unknown): number {
+  if (a === b) return 0;
+  if (a === null || a === undefined) return 1;
+  if (b === null || b === undefined) return -1;
+  if (typeof a === "number" && typeof b === "number") return a - b;
+  return String(a).localeCompare(String(b), "fr", { numeric: true, sensitivity: "base" });
 }
 
 /** Sélection générique — used by les read-fallbacks dans data.ts. */
@@ -86,23 +174,16 @@ export async function mirrorSelect<T>(
     orderDir?: "ASC" | "DESC";
   } = {},
 ): Promise<T[]> {
-  const clauses: string[] = [];
-  const values: unknown[] = [];
-  for (const [k, v] of Object.entries(opts.where ?? {})) {
-    if (v === undefined || v === null) continue;
-    clauses.push(`${k} = ?`);
-    values.push(toSqlValue(k, v));
+  let rows = await readTableRows(table);
+  rows = rows.filter((row) => matchesWhere(row, opts.where ?? {}));
+  if (opts.orderBy) {
+    const dir = opts.orderDir === "DESC" ? -1 : 1;
+    rows = rows.slice().sort((a, b) => compareValues(a[opts.orderBy!], b[opts.orderBy!]) * dir);
   }
-  const whereSql = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-  const orderSql = opts.orderBy ? `ORDER BY ${opts.orderBy} ${opts.orderDir ?? "ASC"}` : "";
-  const rows = await sqliteQuery<T>(
-    `SELECT * FROM ${table} ${whereSql} ${orderSql}`,
-    values,
-  );
-  return rows.map((r) => fromSqlRow(r as unknown as Record<string, unknown>)) as unknown as T[];
+  return rows as T[];
 }
 
 export async function sqliteHasData(table: SqliteTable): Promise<boolean> {
-  const rows = await sqliteQuery<{ n: number }>(`SELECT COUNT(*) as n FROM ${table}`);
-  return (rows[0]?.n ?? 0) > 0;
+  const rows = await mirrorSelect(table);
+  return rows.length > 0;
 }
