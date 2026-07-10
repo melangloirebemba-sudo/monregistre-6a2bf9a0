@@ -7,6 +7,8 @@ import {
   isSyncing,
   type QueuedWrite,
 } from "@/lib/offline-queue";
+import { countPendingPdfs, subscribePendingPdfs } from "@/lib/pdf/pending";
+import { openSyncDialog } from "@/components/app/sync-queue-dialog";
 
 // Étiquettes lisibles pour les tables concernées par un conflit.
 const TABLE_LABELS: Record<string, string> = {
