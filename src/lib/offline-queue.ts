@@ -288,6 +288,7 @@ async function runWrite(input: EnqueueInput): Promise<unknown> {
   if (op === "insert") {
     const { data, error } = await from.insert(payload ?? {}).select();
     if (error) throw error;
+    void mirrorToSqlite(table, "insert", data);
     return data;
   }
 
@@ -302,6 +303,7 @@ async function runWrite(input: EnqueueInput): Promise<unknown> {
     for (const [k, v] of Object.entries(match ?? {})) q = q.eq(k, v);
     const { data, error } = await q.select();
     if (error) throw error;
+    void mirrorToSqlite(table, "update", data);
     return data;
   }
   // delete
@@ -309,7 +311,35 @@ async function runWrite(input: EnqueueInput): Promise<unknown> {
   for (const [k, v] of Object.entries(match ?? {})) q = q.eq(k, v);
   const { error } = await q;
   if (error) throw error;
+  void mirrorToSqlite(table, "delete", null, match);
   return null;
+}
+
+// Propage l'écriture serveur au miroir SQLite local (Android natif).
+// No-op sur web / si la table n'est pas mirrorée.
+const MIRRORED_TABLES = new Set([
+  "ecoles", "classes", "eleves", "periodes", "creneaux",
+  "sequences_programme", "notes", "absences", "annees_scolaires",
+]);
+async function mirrorToSqlite(
+  table: string,
+  op: QueueOp,
+  data: unknown,
+  match?: Record<string, unknown>,
+): Promise<void> {
+  if (!MIRRORED_TABLES.has(table)) return;
+  try {
+    const mod = await import("@/lib/sqlite");
+    if (op === "delete") {
+      const id = (match?.id as string | undefined) ?? null;
+      if (id) await mod.mirrorDelete(table as any, id);
+      return;
+    }
+    const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
+    if (rows.length > 0) await mod.mirrorUpsert(table as any, rows);
+  } catch {
+    // SQLite indisponible — silencieux (web ou plugin absent).
+  }
 }
 
 /**
