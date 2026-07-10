@@ -159,5 +159,6 @@ export async function generateBulletinPDF(ctx: BulletinContext) {
     .replace(/\s+/g, "-")
     .replace(/[^\w\-]/g, "");
   const blob = doc.output("blob") as Blob;
-  await savePdfBlob(blob, `${name}.pdf`);
+  const label = `Bulletin — ${ctx.eleve.prenom} ${ctx.eleve.nom}${ctx.periode?.label ? " · " + ctx.periode.label : ""}`;
+  await savePdfBlob(blob, `${name}.pdf`, label);
 }
