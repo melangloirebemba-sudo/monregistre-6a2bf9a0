@@ -217,16 +217,67 @@ export async function enqueueWrite(
   }
 
   const userId = await currentUserId();
+  // Optimistic local mirror : injecte immédiatement dans SQLite pour que les
+  // listes affichent la donnée comme si le serveur avait répondu.
+  const enriched = await applyOptimisticMirror(input, userId);
   const item: QueuedWrite = {
     id: makeId(),
     createdAt: Date.now(),
     userId,
     attempts: 0,
-    ...input,
+    ...enriched,
   };
   await putItem(item);
   notify();
   return { queued: true, id: item.id };
+}
+
+/**
+ * Applique l'écriture au miroir SQLite avant que le serveur ne réponde.
+ * Retourne l'input possiblement enrichi (id/user_id/timestamps générés
+ * côté client) afin que le rejeu envoie exactement la même ligne.
+ */
+async function applyOptimisticMirror(
+  input: EnqueueInput,
+  userId: string | null,
+): Promise<EnqueueInput> {
+  if (!MIRRORED_TABLES.has(input.table)) return input;
+  try {
+    const mod = await import("@/lib/sqlite");
+    const now = new Date().toISOString();
+    if (input.op === "insert") {
+      const payload: Record<string, unknown> = { ...(input.payload ?? {}) };
+      if (!payload.id) {
+        payload.id = typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : makeId();
+      }
+      if (!payload.user_id && userId) payload.user_id = userId;
+      if (!payload.created_at) payload.created_at = now;
+      if (!payload.updated_at) payload.updated_at = now;
+      await mod.mirrorUpsert(input.table as any, [payload]);
+      return { ...input, payload };
+    }
+    if (input.op === "update") {
+      const id = (input.match?.id as string | undefined) ?? (input.payload?.id as string | undefined);
+      if (id) {
+        // Fusionne avec la ligne existante pour ne pas écraser les colonnes absentes.
+        const rows = await mod.mirrorSelect<Record<string, unknown>>(input.table as any, { where: { id } });
+        const existing = rows[0] ?? {};
+        const merged = { ...existing, ...(input.payload ?? {}), id, updated_at: now };
+        await mod.mirrorUpsert(input.table as any, [merged]);
+      }
+      return input;
+    }
+    if (input.op === "delete") {
+      const id = input.match?.id as string | undefined;
+      if (id) await mod.mirrorDelete(input.table as any, id);
+      return input;
+    }
+  } catch {
+    /* SQLite indisponible — silencieux. */
+  }
+  return input;
 }
 
 function isNetworkError(err: unknown): boolean {
