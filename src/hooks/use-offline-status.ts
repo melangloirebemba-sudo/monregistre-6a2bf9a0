@@ -31,9 +31,11 @@ export interface OfflineStatus {
 
 export function useOfflineStatus(): OfflineStatus {
   const qc = useQueryClient();
-  const [online, setOnline] = useState<boolean>(() =>
-    typeof navigator === "undefined" ? true : navigator.onLine,
-  );
+  const [online, setOnline] = useState<boolean>(() => {
+    if (isSimulatedOffline()) return false;
+    return typeof navigator === "undefined" ? true : navigator.onLine;
+  });
+
   const [pending, setPending] = useState(0);
   const [syncing, setSyncing] = useState(false);
 
