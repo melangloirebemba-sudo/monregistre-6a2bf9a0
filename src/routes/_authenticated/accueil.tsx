@@ -345,6 +345,9 @@ function AccueilPage() {
                 </span>
                 <span className="tabular-nums text-ink-foreground">
                   {syncProgress.done} / {syncProgress.total}
+                  {syncProgress.failed > 0 && (
+                    <span className="ml-1 text-red-200">· {syncProgress.failed} échec{syncProgress.failed > 1 ? "s" : ""}</span>
+                  )}
                 </span>
               </div>
               <div
@@ -361,6 +364,33 @@ function AccueilPage() {
                   }}
                 />
               </div>
+              {(syncProgress.currentTable || syncProgress.lastError) && (
+                <div className="mt-1.5 space-y-0.5 text-[11px] text-ink-foreground/80">
+                  {syncProgress.currentTable && (
+                    <div className="truncate">
+                      Étape :{" "}
+                      <span className="font-medium">
+                        {syncProgress.currentOp === "insert"
+                          ? "Ajout"
+                          : syncProgress.currentOp === "update"
+                            ? "Modif."
+                            : syncProgress.currentOp === "delete"
+                              ? "Suppr."
+                              : ""}{" "}
+                        {syncProgress.currentTable}
+                      </span>
+                      {syncProgress.currentLabel && (
+                        <span className="text-ink-foreground/70"> · {syncProgress.currentLabel}</span>
+                      )}
+                    </div>
+                  )}
+                  {syncProgress.lastError && (
+                    <div className="truncate text-red-200">
+                      Dernière erreur : {syncProgress.lastError}
+                    </div>
+                  )}
+                </div>
+              )}
             </button>
           )}
         </div>
