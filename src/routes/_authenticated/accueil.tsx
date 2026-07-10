@@ -574,7 +574,7 @@ function AccueilPage() {
         </p>
       </section>
 
-      <SyncQueueDialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen} />
+      
     </div>
   );
 }
