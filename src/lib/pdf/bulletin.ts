@@ -158,5 +158,6 @@ export function generateBulletinPDF(ctx: BulletinContext) {
   const name = `bulletin_${ctx.eleve.nom}_${ctx.eleve.prenom}_${ctx.periode?.label ?? ""}`
     .replace(/\s+/g, "-")
     .replace(/[^\w\-]/g, "");
-  doc.save(`${name}.pdf`);
+  const blob = doc.output("blob") as Blob;
+  await savePdfBlob(blob, `${name}.pdf`);
 }
