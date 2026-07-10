@@ -287,20 +287,47 @@ export async function enqueueWrite(
 
 
   const userId = await currentUserId();
+  // Capture le `updated_at` connu localement pour la détection de conflit au
+  // moment du rejeu (si non fourni explicitement par l'appelant).
+  const withBase = await withBaseUpdatedAt(input);
   // Optimistic local mirror : injecte immédiatement dans IndexedDB pour que les
   // listes affichent la donnée comme si le serveur avait répondu.
-  const enriched = await applyOptimisticMirror(input, userId);
+  const enriched = await applyOptimisticMirror(withBase, userId);
   const item: QueuedWrite = {
     id: makeId(),
     createdAt: Date.now(),
     userId,
     attempts: 0,
+    conflictStrategy: enriched.conflictStrategy ?? "merge",
     ...enriched,
   };
   await putItem(item);
   notify();
   notifyMutation(input.table);
   return { queued: true, id: item.id };
+}
+
+/**
+ * Renseigne `baseUpdatedAt` depuis le miroir IndexedDB si l'appelant ne l'a
+ * pas fourni. Sert de référence temporelle pour détecter les conflits au
+ * moment du rejeu : si le serveur a été modifié après ce timestamp, on
+ * applique la stratégie choisie (merge par défaut).
+ */
+async function withBaseUpdatedAt(input: EnqueueInput): Promise<EnqueueInput> {
+  if (input.baseUpdatedAt) return input;
+  if (input.op !== "update" && input.op !== "delete") return input;
+  const id = (input.match?.id as string | undefined) ?? (input.payload?.id as string | undefined);
+  if (!id) return input;
+  try {
+    const mod = await import("@/lib/sqlite");
+    const rows = await mod.mirrorSelect<Record<string, unknown>>(input.table as any, { where: { id } });
+    const existing = rows[0];
+    const upd = existing?.updated_at as string | undefined;
+    if (upd) return { ...input, baseUpdatedAt: upd };
+  } catch {
+    /* miroir indisponible — pas de base */
+  }
+  return input;
 }
 
 /**

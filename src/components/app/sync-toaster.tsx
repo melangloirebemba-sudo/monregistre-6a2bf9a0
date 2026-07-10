@@ -3,9 +3,23 @@ import { toast } from "sonner";
 import {
   listQueue,
   subscribeOfflineQueue,
+  subscribeOfflineConflicts,
   isSyncing,
   type QueuedWrite,
 } from "@/lib/offline-queue";
+
+// Étiquettes lisibles pour les tables concernées par un conflit.
+const TABLE_LABELS: Record<string, string> = {
+  eleves: "un élève",
+  classes: "une classe",
+  ecoles: "une école",
+  notes: "une note",
+  absences: "une absence",
+  periodes: "une période",
+  creneaux: "un créneau",
+  sequences_programme: "une séquence",
+  annees_scolaires: "une année scolaire",
+};
 
 /**
  * Écoute la file d'attente hors ligne et affiche un toast lorsqu'une
@@ -76,9 +90,22 @@ export function SyncToaster() {
     const unsub = subscribeOfflineQueue(() => {
       void handle();
     });
+    const unsubConflict = subscribeOfflineConflicts((e) => {
+      const label = TABLE_LABELS[e.table] ?? "un enregistrement";
+      if (e.resolution === "client-applied") {
+        toast.warning(
+          `Conflit sur ${label} — votre version locale a été appliquée (modifié aussi côté serveur).`,
+        );
+      } else {
+        toast.warning(
+          `Conflit sur ${label} — la version serveur a été conservée.`,
+        );
+      }
+    });
     return () => {
       cancelled = true;
       unsub();
+      unsubConflict();
     };
   }, []);
 
