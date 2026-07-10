@@ -15,7 +15,14 @@ import {
 } from "@/lib/offline-queue";
 import { mirrorSelect } from "@/lib/sqlite";
 import { SQLITE_TABLES, type SqliteTable } from "@/lib/sqlite/schema";
-import { HardDrive, RefreshCw, Wifi, WifiOff, Database, CheckCircle2, XCircle } from "lucide-react";
+import { HardDrive, RefreshCw, Wifi, WifiOff, Database, CheckCircle2, XCircle, PlugZap } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  isSimulatedOffline,
+  setSimulatedOffline,
+  subscribeSimulatedOffline,
+} from "@/lib/simulated-offline";
+
 
 export const Route = createFileRoute("/_authenticated/diagnostic-offline")({
   head: () => ({ meta: [{ title: "Diagnostic hors-ligne — MonRegistre" }] }),
