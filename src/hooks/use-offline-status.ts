@@ -99,10 +99,12 @@ export function useOfflineStatus(): OfflineStatus {
       unsub();
       unsubMut();
       teardown();
+      unsubSim();
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
       removeNetworkListener?.();
     };
+
   }, [qc]);
 
   return { online, syncing, pending };
