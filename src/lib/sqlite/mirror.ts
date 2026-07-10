@@ -78,7 +78,7 @@ export async function mirrorDelete(table: SqliteTable, id: string): Promise<void
 }
 
 /** Sélection générique — used by les read-fallbacks dans data.ts. */
-export async function mirrorSelect<T extends Record<string, unknown>>(
+export async function mirrorSelect<T>(
   table: SqliteTable,
   opts: {
     where?: Record<string, unknown>;
