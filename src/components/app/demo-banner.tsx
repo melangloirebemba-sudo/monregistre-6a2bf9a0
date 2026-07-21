@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -13,11 +13,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { endDemo, isDemoMode } from "@/lib/demo";
+import { DemoConversionDialog } from "@/components/app/demo-conversion-dialog";
 
 export function DemoBanner() {
   const navigate = useNavigate();
   const [demo, setDemo] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [quitOpen, setQuitOpen] = useState(false);
 
   useEffect(() => {
     setDemo(isDemoMode());
@@ -28,11 +30,11 @@ export function DemoBanner() {
 
   if (!demo) return null;
 
-  const handleEnd = async () => {
+  const handleQuit = async () => {
     await endDemo();
-    setConfirmOpen(false);
+    setQuitOpen(false);
     setDemo(false);
-    navigate({ to: "/auth", search: { tab: "signup", from: "demo" } as never, replace: true });
+    navigate({ to: "/auth", replace: true });
   };
 
   return (
@@ -41,28 +43,34 @@ export function DemoBanner() {
         <div className="flex items-center gap-2 text-foreground">
           <Sparkles className="h-4 w-4 text-gold" />
           <span>
-            <strong>Mode démo</strong> — vos données ne seront pas conservées.
+            <strong>Mode démo</strong> — créez un compte pour conserver vos données.
           </span>
         </div>
-        <Button size="sm" variant="default" onClick={() => setConfirmOpen(true)}>
-          Terminer la démo &amp; créer mon compte
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setQuitOpen(true)}>
+            <LogOut className="mr-1 h-4 w-4" />
+            Quitter
+          </Button>
+          <Button size="sm" variant="default" onClick={() => setConvertOpen(true)}>
+            Créer mon compte
+          </Button>
+        </div>
       </div>
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+
+      <DemoConversionDialog open={convertOpen} onOpenChange={setConvertOpen} />
+
+      <AlertDialog open={quitOpen} onOpenChange={setQuitOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Terminer la démo ?</AlertDialogTitle>
+            <AlertDialogTitle>Quitter la démo ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous allez être redirigé vers la création de compte. Les données de démonstration
-              seront supprimées et vous repartirez d'un espace vierge.
+              Les données de démonstration seront perdues. Créez plutôt votre compte pour les
+              conserver.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>
-              <X className="mr-2 h-4 w-4" />
-              Continuer la démo
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleEnd}>Créer mon compte</AlertDialogAction>
+            <AlertDialogCancel>Continuer la démo</AlertDialogCancel>
+            <AlertDialogAction onClick={handleQuit}>Quitter sans conserver</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
