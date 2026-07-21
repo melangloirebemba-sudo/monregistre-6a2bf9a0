@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { BookMarked, Sparkles } from "lucide-react";
+import { BookMarked, Sparkles, PlayCircle } from "lucide-react";
 import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 import { resolveLandingPath } from "@/lib/auth-landing";
 import { startDemo, isDemoMode } from "@/lib/demo";
