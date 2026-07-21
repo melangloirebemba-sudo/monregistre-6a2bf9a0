@@ -116,16 +116,28 @@ function AuthPage() {
             </div>
           )}
 
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-4 w-full"
-            onClick={handleStartDemo}
-            disabled={demoLoading}
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            {demoLoading ? "Préparation de la démo…" : "Essayer la démo"}
-          </Button>
+          {hasDemoSession ? (
+            <Button
+              type="button"
+              variant="default"
+              className="mt-4 w-full"
+              onClick={() => navigate({ to: "/accueil", replace: true })}
+            >
+              <PlayCircle className="mr-2 h-4 w-4" />
+              Reprendre la démo
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-4 w-full"
+              onClick={handleStartDemo}
+              disabled={demoLoading}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {demoLoading ? "Préparation de la démo…" : "Essayer la démo"}
+            </Button>
+          )}
 
           <div className="my-4 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
             <span className="h-px flex-1 bg-border" />
