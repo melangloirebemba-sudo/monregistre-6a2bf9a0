@@ -796,6 +796,7 @@ export type Database = {
           telephone: string | null
           telephone_verifie: boolean
           telephone_verifie_le: string | null
+          tour_completed_at: string | null
           updated_at: string
           user_id: string
         }
@@ -820,6 +821,7 @@ export type Database = {
           telephone?: string | null
           telephone_verifie?: boolean
           telephone_verifie_le?: string | null
+          tour_completed_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -844,6 +846,7 @@ export type Database = {
           telephone?: string | null
           telephone_verifie?: boolean
           telephone_verifie_le?: string | null
+          tour_completed_at?: string | null
           updated_at?: string
           user_id?: string
         }

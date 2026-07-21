@@ -1,0 +1,1 @@
+ALTER TABLE public.profils_enseignant ADD COLUMN IF NOT EXISTS tour_completed_at timestamptz;
