@@ -35,6 +35,8 @@ import { useSyncProgress } from "@/hooks/use-sync-progress";
 import { useReminderPrefs } from "@/lib/reminders-prefs";
 import { useReminderNotifications } from "@/lib/notifications";
 import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
+import { isDemoMode, isTourDemoDone } from "@/lib/demo";
+import { getTourStatus } from "@/lib/tour.functions";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   // Un admin ne doit jamais voir l'espace enseignant : on l'envoie sur /admin.
@@ -81,6 +83,42 @@ function AccueilPage() {
     }, 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  // Lance automatiquement le tour guidé :
+  //  - à l'entrée en mode démo (tant qu'il n'a pas été suivi/passé)
+  //  - au premier login d'un compte réel (tour_completed_at IS NULL)
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const demo = isDemoMode();
+      if (demo && isTourDemoDone()) return;
+      let shouldStart = demo;
+      let persist = false;
+      if (!demo) {
+        try {
+          const st = await getTourStatus();
+          if (!st.completedAt) {
+            shouldStart = true;
+            persist = true;
+          }
+        } catch {
+          return;
+        }
+      }
+      if (cancelled || !shouldStart) return;
+      // Attend le rendu du shell pour que les cibles data-tour existent.
+      window.setTimeout(async () => {
+        if (cancelled) return;
+        const { startTour } = await import("@/lib/tour");
+        startTour({ persist, onDemo: demo });
+      }, 600);
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
 
   
   const { online, syncing, pending } = useOfflineStatus();
@@ -562,7 +600,7 @@ function AccueilPage() {
       )}
 
       <SyncHistoryCard className="mt-6" />
-      <SyncStatusCard className="mt-6" />
+      <div data-tour="sync-status"><SyncStatusCard className="mt-6" /></div>
 
       {/* Grille menu */}
       <section className="mt-6">

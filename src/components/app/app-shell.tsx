@@ -32,7 +32,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { OfflineIndicator } from "@/components/app/offline-indicator";
 import { NotificationsBell } from "@/components/app/notifications-bell";
+import { DemoBanner } from "@/components/app/demo-banner";
 import { toast } from "sonner";
+
+function tourKey(to: string): string | undefined {
+  if (to === "/accueil") return "nav-accueil";
+  if (to === "/ecoles") return "nav-ecoles";
+  if (to === "/classes") return "nav-classes";
+  if (to === "/eleves") return "nav-eleves";
+  if (to === "/notes") return "nav-notes";
+  return undefined;
+}
 
 interface AppShellProps {
   children: ReactNode;
@@ -104,6 +114,7 @@ export function AppShell({ children }: AppShellProps) {
               <Link
                 key={t.to}
                 to={t.to}
+                data-tour={tourKey(t.to)}
                 className={[
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                   active
@@ -132,7 +143,7 @@ export function AppShell({ children }: AppShellProps) {
           )}
         </nav>
         <div className="border-t border-white/10 p-3 space-y-1">
-          <NotificationsBell variant="sidebar" />
+          <div data-tour="notifications-bell"><NotificationsBell variant="sidebar" /></div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-ink-foreground/80 hover:bg-white/5 hover:text-ink-foreground">
@@ -208,7 +219,7 @@ export function AppShell({ children }: AppShellProps) {
 
 
           <div className="flex items-center gap-1">
-            <NotificationsBell variant="topbar" />
+            <div data-tour="notifications-bell"><NotificationsBell variant="topbar" /></div>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -241,6 +252,7 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* Contenu */}
         <main className="flex-1 pb-24 lg:pb-10">
+          <DemoBanner />
           <div className="mx-auto w-full max-w-[440px] sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl">
             {children}
           </div>
@@ -256,6 +268,7 @@ export function AppShell({ children }: AppShellProps) {
                 <li key={t.to}>
                   <Link
                     to={t.to}
+                    data-tour={tourKey(t.to)}
                     className={[
                       "flex flex-col items-center gap-1 px-2 py-3 text-[11px] font-medium transition-colors",
                       active
