@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { BookMarked } from "lucide-react";
+import { BookMarked, Sparkles } from "lucide-react";
 import { PasswordCriteria, PASSWORD_MIN_LENGTH, isPasswordValid } from "@/components/app/password-criteria";
 import { resolveLandingPath } from "@/lib/auth-landing";
+import { startDemo, isDemoMode } from "@/lib/demo";
 
 const searchSchema = z.object({
   next: z.string().optional(),
+  tab: z.enum(["signin", "signup"]).optional(),
+  from: z.string().optional(),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -23,7 +26,7 @@ export const Route = createFileRoute("/auth")({
       { title: "Connexion — MonRegistre" },
       {
         name: "description",
-        content: "Connectez-vous à MonRegistre pour gérer vos classes, notes et emplois du temps.",
+        content: "Connectez-vous à MonRegistre ou essayez la démo interactive.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -33,14 +36,18 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { next } = Route.useSearch();
+  const { next, tab, from } = Route.useSearch();
+  const [demoLoading, setDemoLoading] = useState(false);
 
-  // Redirige l'utilisateur (déjà connecté ou fraîchement authentifié) vers son
-  // espace en fonction de son rôle : /admin pour les administrateurs, /accueil
-  // pour les enseignants. Un `next` explicite (ex. /notes) est prioritaire.
   const goToLanding = async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) return;
+    // En mode démo, on file directement sur l'accueil sans passer par
+    // le résolveur de landing (l'utilisateur anonyme n'est ni admin ni enseignant établi).
+    if (isDemoMode()) {
+      navigate({ to: "/accueil", replace: true });
+      return;
+    }
     const target = await resolveLandingPath(data.user.id, next);
     navigate({ to: target, replace: true });
   };
@@ -49,6 +56,19 @@ function AuthPage() {
     void goToLanding();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [next]);
+
+  const handleStartDemo = async () => {
+    setDemoLoading(true);
+    try {
+      await startDemo();
+      toast.success("Bienvenue dans la démo !");
+      navigate({ to: "/accueil", replace: true });
+    } catch (e) {
+      toast.error(toFrench(e));
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full hero-gradient">
@@ -70,10 +90,42 @@ function AuthPage() {
         <div className="card-elevated p-6">
           <h1 className="font-display text-2xl text-foreground">Bienvenue</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Connectez-vous ou créez votre compte enseignant.
+            Connectez-vous, créez votre compte, ou essayez la démo interactive.
           </p>
 
-          <Tabs defaultValue="signin" className="mt-6">
+          {from === "demo" && (
+            <div className="mt-4 rounded-lg border border-gold/40 bg-gold/10 p-3 text-sm text-foreground">
+              <div className="flex items-start gap-2">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                <div>
+                  <p className="font-semibold">Prêt à passer à la vraie chose ?</p>
+                  <p className="mt-0.5 text-muted-foreground">
+                    Créez votre compte enseignant pour conserver vos données et débloquer toutes
+                    les fonctionnalités.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 w-full"
+            onClick={handleStartDemo}
+            disabled={demoLoading}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            {demoLoading ? "Préparation de la démo…" : "Essayer la démo"}
+          </Button>
+
+          <div className="my-4 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            <span>ou</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <Tabs defaultValue={tab === "signup" ? "signup" : "signin"} className="mt-2">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Connexion</TabsTrigger>
               <TabsTrigger value="signup">Créer un compte</TabsTrigger>
