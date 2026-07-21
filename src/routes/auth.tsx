@@ -38,6 +38,14 @@ function AuthPage() {
   const navigate = useNavigate();
   const { next, tab, from } = Route.useSearch();
   const [demoLoading, setDemoLoading] = useState(false);
+  const [hasDemoSession, setHasDemoSession] = useState(false);
+
+  useEffect(() => {
+    if (!isDemoMode()) return;
+    supabase.auth.getSession().then(({ data }) => {
+      setHasDemoSession(!!data.session);
+    });
+  }, []);
 
   const goToLanding = async () => {
     const { data } = await supabase.auth.getUser();
