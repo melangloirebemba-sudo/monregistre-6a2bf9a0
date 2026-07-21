@@ -600,7 +600,7 @@ function AccueilPage() {
       )}
 
       <SyncHistoryCard className="mt-6" />
-      <SyncStatusCard className="mt-6" />
+      <div data-tour="sync-status"><SyncStatusCard className="mt-6" /></div>
 
       {/* Grille menu */}
       <section className="mt-6">
