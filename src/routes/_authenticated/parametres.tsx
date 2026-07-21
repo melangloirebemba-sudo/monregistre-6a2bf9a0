@@ -236,6 +236,28 @@ function ParametresPage() {
       </section>
 
       <section className="mt-6 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold">Aide & tour guidé</h2>
+            <p className="text-xs text-muted-foreground">
+              Relancez la visite interactive pour redécouvrir les fonctionnalités clés.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              const { startTour } = await import("@/lib/tour");
+              startTour({ persist: true });
+            }}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Relancer le tour guidé
+          </Button>
+        </div>
+      </section>
+
+
+      <section className="mt-6 space-y-3">
         <div>
           <h2 className="font-display text-lg font-semibold">Synchronisation</h2>
           <p className="text-xs text-muted-foreground">
