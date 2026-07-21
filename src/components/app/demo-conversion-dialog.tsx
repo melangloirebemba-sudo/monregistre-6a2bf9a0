@@ -65,7 +65,7 @@ export function DemoConversionDialog({ open, onOpenChange }: Props) {
           .update({
             nom_affiche: nom,
             telephone: tel || null,
-            initiales: nom.trim().slice(0, 2).toUpperCase() || null,
+            initiales: nom.trim().slice(0, 2).toUpperCase() || undefined,
           })
           .eq("user_id", userData.user.id);
       }
