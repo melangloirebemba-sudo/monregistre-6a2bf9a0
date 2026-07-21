@@ -32,7 +32,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { OfflineIndicator } from "@/components/app/offline-indicator";
 import { NotificationsBell } from "@/components/app/notifications-bell";
+import { DemoBanner } from "@/components/app/demo-banner";
 import { toast } from "sonner";
+
+function tourKey(to: string): string | undefined {
+  if (to === "/accueil") return "nav-accueil";
+  if (to === "/ecoles") return "nav-ecoles";
+  if (to === "/classes") return "nav-classes";
+  if (to === "/eleves") return "nav-eleves";
+  if (to === "/notes") return "nav-notes";
+  return undefined;
+}
 
 interface AppShellProps {
   children: ReactNode;
