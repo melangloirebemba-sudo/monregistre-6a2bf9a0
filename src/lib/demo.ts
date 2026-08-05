@@ -170,3 +170,116 @@ export async function endDemo(): Promise<void> {
     /* noop */
   }
 }
+
+/**
+ * Après la création d'un vrai compte, recopie en base les données saisies
+ * pendant la démo (jusque-là uniquement locales).
+ */
+export async function importDemoDataToAccount(userId: string): Promise<void> {
+  const { supabase } = await import("@/integrations/supabase/client");
+  const idMap = new Map<string, string>();
+  const remap = (v: unknown): string | null => {
+    if (typeof v !== "string" || !v) return null;
+    if (!idMap.has(v)) idMap.set(v, uid());
+    return idMap.get(v)!;
+  };
+
+  const annee = demoAnneeActive();
+  const ecoles = await mirrorSelect<Record<string, unknown>>("ecoles");
+  const classes = await mirrorSelect<Record<string, unknown>>("classes");
+  const eleves = await mirrorSelect<Record<string, unknown>>("eleves");
+  const periodes = await mirrorSelect<Record<string, unknown>>("periodes");
+  const notes = await mirrorSelect<Record<string, unknown>>("notes");
+  const absences = await mirrorSelect<Record<string, unknown>>("absences");
+
+  await supabase.from("annees_scolaires").insert({
+    user_id: userId,
+    libelle: annee,
+    statut: "active",
+  });
+
+  if (ecoles.length) {
+    await supabase.from("ecoles").insert(
+      ecoles.map((e) => ({
+        id: remap(e.id)!,
+        user_id: userId,
+        nom: String(e.nom ?? "École"),
+        numero: (e.numero as string) ?? null,
+        adresse: (e.adresse as string) ?? null,
+        telephone: (e.telephone as string) ?? null,
+        directeur_etudes: (e.directeur_etudes as string) ?? null,
+      })),
+    );
+  }
+  if (classes.length) {
+    await supabase.from("classes").insert(
+      classes.map((c) => ({
+        id: remap(c.id)!,
+        user_id: userId,
+        ecole_id: remap(c.ecole_id)!,
+        nom: String(c.nom ?? "Classe"),
+        code: String(c.code ?? "CL"),
+        matiere: (c.matiere as string) ?? null,
+        effectif: Number(c.effectif ?? 0),
+        annee_scolaire: (c.annee_scolaire as string) ?? annee,
+      })),
+    );
+  }
+  if (eleves.length) {
+    await supabase.from("eleves").insert(
+      eleves.map((e) => ({
+        id: remap(e.id)!,
+        user_id: userId,
+        ecole_id: remap(e.ecole_id)!,
+        classe_id: remap(e.classe_id)!,
+        nom: String(e.nom ?? ""),
+        prenom: String(e.prenom ?? ""),
+        sexe: (e.sexe as string) ?? null,
+        tuteur_nom: (e.tuteur_nom as string) ?? null,
+        tuteur_numero: (e.tuteur_numero as string) ?? null,
+        adresse: (e.adresse as string) ?? null,
+        numero_eleve: (e.numero_eleve as string) ?? null,
+      })),
+    );
+  }
+  if (periodes.length) {
+    await supabase.from("periodes").insert(
+      periodes.map((p) => ({
+        id: remap(p.id)!,
+        user_id: userId,
+        label: String(p.label ?? "Période"),
+        ordre: Number(p.ordre ?? 1),
+        active: Boolean(p.active),
+        annee_scolaire: (p.annee_scolaire as string) ?? annee,
+      })),
+    );
+  }
+  if (notes.length) {
+    await supabase.from("notes").insert(
+      notes.map((n) => ({
+        id: remap(n.id)!,
+        user_id: userId,
+        ecole_id: remap(n.ecole_id)!,
+        eleve_id: remap(n.eleve_id)!,
+        periode_id: n.periode_id ? remap(n.periode_id) : null,
+        libelle: String(n.libelle ?? "Note"),
+        matiere: (n.matiere as string) ?? null,
+        valeur: Number(n.valeur ?? 0),
+        coefficient: Number(n.coefficient ?? 1),
+        date: (n.date as string) ?? new Date().toISOString().slice(0, 10),
+      })),
+    );
+  }
+  if (absences.length) {
+    await supabase.from("absences").insert(
+      absences.map((a) => ({
+        id: remap(a.id)!,
+        user_id: userId,
+        eleve_id: remap(a.eleve_id)!,
+        date: (a.date as string) ?? new Date().toISOString().slice(0, 10),
+        motif: (a.motif as string) ?? null,
+        justifiee: Boolean(a.justifiee),
+      })),
+    );
+  }
+}
