@@ -1,6 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { isDemoMode } from "@/lib/demo";
+import { isEffectivelyOnline } from "@/lib/simulated-offline";
+import { hasPendingForTable } from "@/lib/offline-queue";
 
 export type Cycle = "primaire" | "college" | "lycee" | "universite";
 export type SeanceStatut =
@@ -119,14 +121,48 @@ export function seancesQO(debut: string, fin: string) {
     staleTime: STALE,
     queryFn: async (): Promise<Seance[]> => {
       if (isDemoMode()) return [];
-      const { data, error } = await supabase
-        .from("seances")
-        .select("*")
-        .gte("date", debut)
-        .lte("date", fin)
-        .order("date", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Seance[];
+
+      // Miroir IndexedDB : sert les séances validées hors ligne.
+      const local = async (): Promise<Seance[]> => {
+        const { mirrorSelect } = await import("@/lib/sqlite");
+        const rows = await mirrorSelect<Seance>("seances", {});
+        return rows
+          .filter((r) => r.date >= debut && r.date <= fin)
+          .sort((a, b) => (a.date < b.date ? 1 : -1));
+      };
+
+      if (!isEffectivelyOnline()) {
+        try {
+          return await local();
+        } catch {
+          /* miroir indisponible */
+        }
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("seances")
+          .select("*")
+          .gte("date", debut)
+          .lte("date", fin)
+          .order("date", { ascending: false });
+        if (error) throw error;
+        const rows = (data ?? []) as unknown as Seance[];
+        try {
+          const { mirrorUpsert } = await import("@/lib/sqlite");
+          if (rows.length > 0) await mirrorUpsert("seances", rows as unknown as Record<string, unknown>[]);
+          if (await hasPendingForTable("seances")) return await local();
+        } catch {
+          /* ignore */
+        }
+        return rows;
+      } catch (err) {
+        try {
+          return await local();
+        } catch {
+          throw err;
+        }
+      }
     },
   });
 }
