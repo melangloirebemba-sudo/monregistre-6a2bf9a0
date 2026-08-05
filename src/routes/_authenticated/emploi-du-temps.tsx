@@ -386,6 +386,12 @@ function EmploiDuTempsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PresenceDialog
+        open={!!presence}
+        onOpenChange={(o) => !o && setPresence(null)}
+        target={presence}
+      />
     </div>
   );
 }
