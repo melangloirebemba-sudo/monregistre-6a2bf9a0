@@ -22,7 +22,7 @@ export function OfflineIndicator() {
     Icon = CloudOff;
   } else if (syncing) {
     label = `Synchronisation…${pending > 0 ? ` (${pending})` : ""}`;
-    tone = "bg-amber-500 text-white";
+    tone = "bg-warning text-warning-foreground";
     Icon = RefreshCw;
   } else if (pending > 0) {
     label = `${pending} écriture(s) en attente`;
