@@ -15,6 +15,7 @@ export const SQLITE_TABLES = [
   "notes",
   "absences",
   "annees_scolaires",
+  "seances",
 ] as const;
 
 export type SqliteTable = (typeof SQLITE_TABLES)[number];
@@ -81,4 +82,13 @@ export const SQLITE_DDL: string[] = [
      date_fin TEXT, active INTEGER, archived INTEGER,
      created_at TEXT, updated_at TEXT
    )`,
+  `CREATE TABLE IF NOT EXISTS seances (
+     id TEXT PRIMARY KEY, user_id TEXT, ecole_id TEXT, classe_id TEXT,
+     creneau_id TEXT, date TEXT, heure_debut TEXT, heure_fin TEXT,
+     matiere TEXT, cycle TEXT, statut TEXT, retard_minutes INTEGER,
+     duree_minutes INTEGER, motif TEXT, commentaire TEXT, validee_le TEXT,
+     approbation TEXT, approbation_note TEXT, approuve_le TEXT, approuve_par TEXT,
+     created_at TEXT, updated_at TEXT
+   )`,
+  `CREATE INDEX IF NOT EXISTS idx_seances_date ON seances(date)`,
 ];

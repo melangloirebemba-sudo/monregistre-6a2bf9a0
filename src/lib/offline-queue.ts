@@ -378,6 +378,15 @@ async function applyOptimisticMirror(
   return input;
 }
 
+/** Violation de contrainte unique : l'écriture a déjà été appliquée. */
+function isDuplicateError(err: unknown): boolean {
+  if (!err) return false;
+  const code = (err as { code?: string }).code;
+  if (code === "23505") return true;
+  const msg = err instanceof Error ? err.message : String(err);
+  return /duplicate key|already exists/i.test(msg);
+}
+
 function isNetworkError(err: unknown): boolean {
   if (!err) return false;
   if (typeof navigator !== "undefined" && !navigator.onLine) return true;
@@ -472,7 +481,7 @@ async function runWrite(input: EnqueueInput): Promise<unknown> {
 // No-op si la table n'est pas mirrorée.
 const MIRRORED_TABLES = new Set([
   "ecoles", "classes", "eleves", "periodes", "creneaux",
-  "sequences_programme", "notes", "absences", "annees_scolaires",
+  "sequences_programme", "notes", "absences", "annees_scolaires", "seances",
 ]);
 async function mirrorToSqlite(
   table: string,
@@ -595,6 +604,16 @@ async function doFlush(): Promise<void> {
           break;
         }
         const message = err instanceof Error ? err.message : String(err);
+        if (isDuplicateError(err)) {
+          // La ligne existe déjà côté serveur (rejeu d'une validation déjà
+          // synchronisée) : on considère l'écriture comme appliquée.
+          await removeItem(item.id);
+          done += 1;
+          updateSnap(item.id, { status: "ok" });
+          flushProgress = { ...flushProgress, done, items: snapshots.slice() };
+          notify();
+          continue;
+        }
         const next: QueuedWrite = {
           ...item,
           attempts: item.attempts + 1,
