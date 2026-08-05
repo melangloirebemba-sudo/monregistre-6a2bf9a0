@@ -55,11 +55,11 @@ export function SyncStatusInline({ className = "" }: { className?: string }) {
     Icon = CloudOff;
   } else if (syncing) {
     label = `Synchronisation…${pending > 0 ? ` (${pending})` : ""}`;
-    tone = "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400";
+    tone = "bg-warning/10 text-warning border-warning/30 ";
     Icon = RefreshCw;
   } else if (pending > 0) {
     label = `${pending} écriture(s) en attente`;
-    tone = "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400";
+    tone = "bg-warning/10 text-warning border-warning/30 ";
     Icon = RefreshCw;
     showRetry = true;
   } else if (justReconnected) {

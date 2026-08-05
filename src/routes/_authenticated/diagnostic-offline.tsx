@@ -176,10 +176,10 @@ function DiagnosticOfflinePage() {
         </p>
       </div>
 
-      <Card className={simOffline ? "border-amber-500/60 bg-amber-500/5" : undefined}>
+      <Card className={simOffline ? "border-warning/60 bg-warning/5" : undefined}>
         <CardContent className="flex items-center justify-between gap-3 py-3">
           <div className="flex items-start gap-3">
-            <PlugZap className={`h-5 w-5 mt-0.5 ${simOffline ? "text-amber-600" : "text-muted-foreground"}`} />
+            <PlugZap className={`h-5 w-5 mt-0.5 ${simOffline ? "text-warning" : "text-muted-foreground"}`} />
             <div>
               <div className="font-medium text-sm">Mode hors-ligne simulé</div>
               <div className="text-xs text-muted-foreground">
@@ -230,7 +230,7 @@ function DiagnosticOfflinePage() {
                 label="IndexedDB"
                 value={
                   diag.indexedDbAvailable ? (
-                    <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    <Badge variant="secondary" className="bg-success/15 text-success">
                       <CheckCircle2 className="mr-1 h-3 w-3" /> Disponible
                     </Badge>
                   ) : (

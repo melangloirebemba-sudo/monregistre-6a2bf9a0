@@ -251,7 +251,7 @@ function NotificationsSection({
           }
         : {
             label: "En attente",
-            tone: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30",
+            tone: "bg-warning/10 text-warning  border border-warning/30",
           };
 
   return (

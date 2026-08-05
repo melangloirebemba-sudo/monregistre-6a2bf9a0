@@ -125,12 +125,12 @@ export function SyncStatusCard({ className = "" }: { className?: string }) {
     syncing: {
       Icon: RefreshCw,
       label: "Synchronisation…",
-      tone: "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400",
+      tone: "bg-warning/10 text-warning border-warning/30 ",
     },
     pending: {
       Icon: RefreshCw,
       label: "En attente",
-      tone: "bg-amber-500/10 text-amber-700 border-amber-500/30 dark:text-amber-400",
+      tone: "bg-warning/10 text-warning border-warning/30 ",
     },
     synced: {
       Icon: CheckCircle2,
@@ -178,9 +178,9 @@ export function SyncStatusCard({ className = "" }: { className?: string }) {
       </header>
 
       {progress.active && progress.total > 0 && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 space-y-1.5">
+        <div className="rounded-lg border border-warning/30 bg-warning/5 p-2.5 space-y-1.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="inline-flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+            <span className="inline-flex items-center gap-1.5 font-medium text-warning ">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               Synchronisation en cours
             </span>
@@ -194,14 +194,14 @@ export function SyncStatusCard({ className = "" }: { className?: string }) {
             </span>
           </div>
           <div
-            className="h-1.5 w-full overflow-hidden rounded-full bg-amber-500/15"
+            className="h-1.5 w-full overflow-hidden rounded-full bg-warning/15"
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={progress.total}
             aria-valuenow={progress.done}
           >
             <div
-              className="h-full rounded-full bg-amber-500 transition-[width] duration-500 ease-out"
+              className="h-full rounded-full bg-warning transition-[width] duration-500 ease-out"
               style={{
                 width: `${Math.min(100, Math.round((progress.done / Math.max(1, progress.total)) * 100))}%`,
               }}
@@ -283,7 +283,7 @@ export function SyncStatusCard({ className = "" }: { className?: string }) {
                   it.status === "ok"
                     ? { label: "OK", tone: "text-teal bg-teal/10 border-teal/30" }
                     : it.status === "running"
-                      ? { label: "En cours…", tone: "text-amber-700 bg-amber-500/10 border-amber-500/30 dark:text-amber-400" }
+                      ? { label: "En cours…", tone: "text-warning bg-warning/10 border-warning/30 " }
                       : it.status === "failed"
                         ? { label: "Échec", tone: "text-destructive bg-destructive/10 border-destructive/30" }
                         : { label: "En attente", tone: "text-muted-foreground bg-foreground/5 border-border" };
@@ -294,7 +294,7 @@ export function SyncStatusCard({ className = "" }: { className?: string }) {
                     className={[
                       "flex items-start justify-between gap-2 rounded-md border px-2 py-1.5",
                       it.status === "running"
-                        ? "border-amber-500/40 bg-amber-500/5"
+                        ? "border-warning/40 bg-warning/5"
                         : it.status === "ok"
                           ? "border-teal/30 bg-teal/5"
                           : "border-border/60 bg-card",
