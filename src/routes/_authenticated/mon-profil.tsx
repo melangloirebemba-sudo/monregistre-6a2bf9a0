@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RemunerationSummary } from "@/components/app/remuneration-summary";
 import { toFrench } from "@/lib/errors";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
