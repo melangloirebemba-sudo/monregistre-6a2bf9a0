@@ -217,6 +217,42 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogue_history: {
+        Row: {
+          action: string
+          ancienne_valeur: string | null
+          created_at: string
+          cycle: string | null
+          entry_id: string | null
+          id: string
+          nouvelle_valeur: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          ancienne_valeur?: string | null
+          created_at?: string
+          cycle?: string | null
+          entry_id?: string | null
+          id?: string
+          nouvelle_valeur?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          ancienne_valeur?: string | null
+          created_at?: string
+          cycle?: string | null
+          entry_id?: string | null
+          id?: string
+          nouvelle_valeur?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           annee_scolaire: string | null
