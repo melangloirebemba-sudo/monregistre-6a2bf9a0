@@ -28,6 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox, MultiCombobox } from "@/components/ui/combobox";
+import { catalogueQO, entriesFor, useSaveCatalogue } from "@/lib/queries/catalogue";
+import {
+  CYCLES_DEFAUT,
+  classesSuggerees,
+  matieresSuggerees,
+  fusionner,
+} from "@/lib/catalogues";
 import {
   Dialog,
   DialogContent,
