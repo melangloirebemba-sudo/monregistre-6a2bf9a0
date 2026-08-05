@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isDemoMode } from "@/lib/demo";
 
 export type AppRole = "admin" | "user";
 export type AppPlan = "gratuit" | "lite" | "premium";
@@ -12,6 +13,7 @@ export function currentUserRolesQO() {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async (): Promise<AppRole[]> => {
+      if (isDemoMode()) return [];
       const { data: userRes } = await supabase.auth.getUser();
       if (!userRes.user) return [];
       const { data, error } = await supabase

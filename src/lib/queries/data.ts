@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { mirrorSelect, mirrorUpsert, type SqliteTable } from "@/lib/sqlite";
 import { hasPendingForTable } from "@/lib/offline-queue";
 import { isEffectivelyOnline } from "@/lib/simulated-offline";
+import { isDemoMode, DEMO_USER_ID, demoAnneeActive } from "@/lib/demo";
 
 // Fallback hors ligne : lit dans le miroir IndexedDB si l'appel réseau échoue
 // et rejoue les données servies dans le miroir sinon.
@@ -179,6 +180,10 @@ async function getCachedUserId(): Promise<string | null> {
   const p = (async () => {
     // getSession() lit le token depuis le localStorage — fonctionne hors ligne.
     // On l'essaie d'abord pour ne jamais bloquer la sauvegarde offline.
+    if (isDemoMode()) {
+      _userIdCache = { value: DEMO_USER_ID, at: Date.now() };
+      return DEMO_USER_ID;
+    }
     let v: string | null = null;
     try {
       const { data: s } = await supabase.auth.getSession();
@@ -206,6 +211,11 @@ async function getAnneeActive(): Promise<string | null> {
   if (_anneeCache && now - _anneeCache.at < REF_TTL) return _anneeCache.value;
   if (_anneeCache?.p) return _anneeCache.p;
   const p = (async () => {
+    if (isDemoMode()) {
+      const v = demoAnneeActive();
+      _anneeCache = { value: v, at: Date.now() };
+      return v;
+    }
     const uid = await getCachedUserId();
     if (!uid) return null;
     const { data } = await supabase
