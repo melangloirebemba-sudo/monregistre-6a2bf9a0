@@ -642,6 +642,65 @@ export type Database = {
           },
         ]
       }
+      paiements_salaire: {
+        Row: {
+          created_at: string
+          devise: string
+          ecole_id: string
+          heures_payees: number
+          id: string
+          mois: string
+          montant: number
+          moyen_paiement: string | null
+          note: string | null
+          paye_le: string
+          reference: string | null
+          statut: Database["public"]["Enums"]["salaire_statut"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          devise?: string
+          ecole_id: string
+          heures_payees?: number
+          id?: string
+          mois: string
+          montant?: number
+          moyen_paiement?: string | null
+          note?: string | null
+          paye_le?: string
+          reference?: string | null
+          statut?: Database["public"]["Enums"]["salaire_statut"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          devise?: string
+          ecole_id?: string
+          heures_payees?: number
+          id?: string
+          mois?: string
+          montant?: number
+          moyen_paiement?: string | null
+          note?: string | null
+          paye_le?: string
+          reference?: string | null
+          statut?: Database["public"]["Enums"]["salaire_statut"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_salaire_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       periodes: {
         Row: {
           active: boolean
@@ -972,6 +1031,91 @@ export type Database = {
         }
         Relationships: []
       }
+      seances: {
+        Row: {
+          classe_id: string | null
+          commentaire: string | null
+          created_at: string
+          creneau_id: string | null
+          cycle: Database["public"]["Enums"]["cycle_enseignement"]
+          date: string
+          duree_minutes: number
+          ecole_id: string
+          heure_debut: string
+          heure_fin: string
+          id: string
+          matiere: string | null
+          motif: string | null
+          retard_minutes: number
+          statut: Database["public"]["Enums"]["seance_statut"]
+          updated_at: string
+          user_id: string
+          validee_le: string | null
+        }
+        Insert: {
+          classe_id?: string | null
+          commentaire?: string | null
+          created_at?: string
+          creneau_id?: string | null
+          cycle?: Database["public"]["Enums"]["cycle_enseignement"]
+          date?: string
+          duree_minutes?: number
+          ecole_id: string
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          matiere?: string | null
+          motif?: string | null
+          retard_minutes?: number
+          statut?: Database["public"]["Enums"]["seance_statut"]
+          updated_at?: string
+          user_id: string
+          validee_le?: string | null
+        }
+        Update: {
+          classe_id?: string | null
+          commentaire?: string | null
+          created_at?: string
+          creneau_id?: string | null
+          cycle?: Database["public"]["Enums"]["cycle_enseignement"]
+          date?: string
+          duree_minutes?: number
+          ecole_id?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          matiere?: string | null
+          motif?: string | null
+          retard_minutes?: number
+          statut?: Database["public"]["Enums"]["seance_statut"]
+          updated_at?: string
+          user_id?: string
+          validee_le?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seances_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seances_creneau_id_fkey"
+            columns: ["creneau_id"]
+            isOneToOne: false
+            referencedRelation: "creneaux"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seances_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sequences_programme: {
         Row: {
           classe_id: string
@@ -1031,6 +1175,53 @@ export type Database = {
             columns: ["periode_id"]
             isOneToOne: false
             referencedRelation: "periodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tarifs_horaires: {
+        Row: {
+          actif: boolean
+          created_at: string
+          cycle: Database["public"]["Enums"]["cycle_enseignement"]
+          devise: string
+          ecole_id: string
+          id: string
+          matiere: string | null
+          montant_horaire: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          cycle?: Database["public"]["Enums"]["cycle_enseignement"]
+          devise?: string
+          ecole_id: string
+          id?: string
+          matiere?: string | null
+          montant_horaire?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          cycle?: Database["public"]["Enums"]["cycle_enseignement"]
+          devise?: string
+          ecole_id?: string
+          id?: string
+          matiere?: string | null
+          montant_horaire?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarifs_horaires_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
             referencedColumns: ["id"]
           },
         ]
@@ -1118,12 +1309,30 @@ export type Database = {
         Args: { _periode: Database["public"]["Enums"]["plan_periode"] }
         Returns: number
       }
+      synthese_remuneration: {
+        Args: { _debut: string; _fin: string }
+        Returns: {
+          devise: string
+          ecole_id: string
+          minutes_effectuees: number
+          minutes_perdues: number
+          mois: string
+          montant_estime: number
+        }[]
+      }
     }
     Enums: {
       app_plan: "gratuit" | "lite" | "premium"
       app_role: "admin" | "user"
+      cycle_enseignement: "primaire" | "college" | "lycee" | "universite"
       otp_purpose: "password_reset" | "phone_verification" | "phone_change"
       plan_periode: "mensuelle" | "trimestrielle" | "annuelle"
+      salaire_statut: "en_attente" | "paye" | "partiel"
+      seance_statut:
+        | "effectuee"
+        | "absence_justifiee"
+        | "absence_non_justifiee"
+        | "annulee"
       user_statut: "actif" | "suspendu"
     }
     CompositeTypes: {
@@ -1254,8 +1463,16 @@ export const Constants = {
     Enums: {
       app_plan: ["gratuit", "lite", "premium"],
       app_role: ["admin", "user"],
+      cycle_enseignement: ["primaire", "college", "lycee", "universite"],
       otp_purpose: ["password_reset", "phone_verification", "phone_change"],
       plan_periode: ["mensuelle", "trimestrielle", "annuelle"],
+      salaire_statut: ["en_attente", "paye", "partiel"],
+      seance_statut: [
+        "effectuee",
+        "absence_justifiee",
+        "absence_non_justifiee",
+        "annulee",
+      ],
       user_statut: ["actif", "suspendu"],
     },
   },
