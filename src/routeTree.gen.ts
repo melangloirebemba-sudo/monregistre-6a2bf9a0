@@ -27,6 +27,7 @@ import { Route as AuthenticatedElevesRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEcolesRouteImport } from './routes/_authenticated/ecoles'
 import { Route as AuthenticatedDiagnosticOfflineRouteImport } from './routes/_authenticated/diagnostic-offline'
 import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
+import { Route as AuthenticatedCataloguesRouteImport } from './routes/_authenticated/catalogues'
 import { Route as AuthenticatedAnneesScolairesRouteImport } from './routes/_authenticated/annees-scolaires'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticated/accueil'
@@ -141,6 +142,11 @@ const AuthenticatedDiagnosticOfflineRoute =
 const AuthenticatedClassesRoute = AuthenticatedClassesRouteImport.update({
   id: '/classes',
   path: '/classes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCataloguesRoute = AuthenticatedCataloguesRouteImport.update({
+  id: '/catalogues',
+  path: '/catalogues',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAnneesScolairesRoute =
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/accueil': typeof AuthenticatedAccueilRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
+  '/catalogues': typeof AuthenticatedCataloguesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/diagnostic-offline': typeof AuthenticatedDiagnosticOfflineRoute
   '/ecoles': typeof AuthenticatedEcolesRoute
@@ -311,6 +318,7 @@ export interface FileRoutesByTo {
   '/absences': typeof AuthenticatedAbsencesRoute
   '/accueil': typeof AuthenticatedAccueilRoute
   '/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
+  '/catalogues': typeof AuthenticatedCataloguesRoute
   '/classes': typeof AuthenticatedClassesRoute
   '/diagnostic-offline': typeof AuthenticatedDiagnosticOfflineRoute
   '/ecoles': typeof AuthenticatedEcolesRoute
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/_authenticated/accueil': typeof AuthenticatedAccueilRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/annees-scolaires': typeof AuthenticatedAnneesScolairesRoute
+  '/_authenticated/catalogues': typeof AuthenticatedCataloguesRoute
   '/_authenticated/classes': typeof AuthenticatedClassesRoute
   '/_authenticated/diagnostic-offline': typeof AuthenticatedDiagnosticOfflineRoute
   '/_authenticated/ecoles': typeof AuthenticatedEcolesRoute
@@ -395,6 +404,7 @@ export interface FileRouteTypes {
     | '/accueil'
     | '/admin'
     | '/annees-scolaires'
+    | '/catalogues'
     | '/classes'
     | '/diagnostic-offline'
     | '/ecoles'
@@ -434,6 +444,7 @@ export interface FileRouteTypes {
     | '/absences'
     | '/accueil'
     | '/annees-scolaires'
+    | '/catalogues'
     | '/classes'
     | '/diagnostic-offline'
     | '/ecoles'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accueil'
     | '/_authenticated/admin'
     | '/_authenticated/annees-scolaires'
+    | '/_authenticated/catalogues'
     | '/_authenticated/classes'
     | '/_authenticated/diagnostic-offline'
     | '/_authenticated/ecoles'
@@ -646,6 +658,13 @@ declare module '@tanstack/react-router' {
       path: '/classes'
       fullPath: '/classes'
       preLoaderRoute: typeof AuthenticatedClassesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/catalogues': {
+      id: '/_authenticated/catalogues'
+      path: '/catalogues'
+      fullPath: '/catalogues'
+      preLoaderRoute: typeof AuthenticatedCataloguesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/annees-scolaires': {
@@ -875,6 +894,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccueilRoute: typeof AuthenticatedAccueilRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedAnneesScolairesRoute: typeof AuthenticatedAnneesScolairesRoute
+  AuthenticatedCataloguesRoute: typeof AuthenticatedCataloguesRoute
   AuthenticatedClassesRoute: typeof AuthenticatedClassesRoute
   AuthenticatedDiagnosticOfflineRoute: typeof AuthenticatedDiagnosticOfflineRoute
   AuthenticatedEcolesRoute: typeof AuthenticatedEcolesRoute
@@ -896,6 +916,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccueilRoute: AuthenticatedAccueilRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedAnneesScolairesRoute: AuthenticatedAnneesScolairesRoute,
+  AuthenticatedCataloguesRoute: AuthenticatedCataloguesRoute,
   AuthenticatedClassesRoute: AuthenticatedClassesRoute,
   AuthenticatedDiagnosticOfflineRoute: AuthenticatedDiagnosticOfflineRoute,
   AuthenticatedEcolesRoute: AuthenticatedEcolesRoute,

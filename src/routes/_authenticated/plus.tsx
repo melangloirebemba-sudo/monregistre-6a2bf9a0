@@ -35,6 +35,7 @@ const baseItems = [
   { to: "/progression", label: "Progression pédagogique", desc: "Séquences par trimestre", icon: BookOpen },
   { to: "/remuneration", label: "Heures & rémunération", desc: "Heures par école, salaire estimé, paiements", icon: Wallet },
   { to: "/facturation", label: "Facturation & paiements", desc: "Reçus, plan, renouvellement", icon: Receipt },
+  { to: "/catalogues", label: "Mes catalogues", desc: "Cycles, classes et matières personnalisés", icon: Library },
   { to: "/parametres", label: "Paramètres", desc: "Année scolaire, notation, périodes", icon: Settings },
   { to: "/support", label: "Support & aide", desc: "WhatsApp, e-mail, FAQ", icon: LifeBuoy },
   { to: "/diagnostic-offline", label: "Diagnostic hors-ligne", desc: "Vérifier IndexedDB et la file", icon: HardDrive },
