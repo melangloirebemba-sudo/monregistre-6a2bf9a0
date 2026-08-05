@@ -421,11 +421,31 @@ function ClasseDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ccycle">Cycle</Label>
+            <Combobox
+              id="ccycle"
+              value={form.cycle}
+              options={cycleOptions}
+              placeholder="Choisir ou créer un cycle"
+              onChange={(v) =>
+                setForm((f) => ({ ...f, cycle: v, nom: "", matieres: [] }))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cnom">Classe *</Label>
+            <Combobox
+              id="cnom"
+              value={form.nom}
+              options={classeOptions}
+              placeholder="Choisir ou créer une classe"
+              onChange={(v) =>
+                setForm((f) => ({ ...f, nom: v, code: f.code.trim() || v }))
+              }
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="cnom">Nom *</Label>
-              <Input id="cnom" placeholder="ex. 6ème A" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
-            </div>
             <div className="space-y-1.5">
               <Label htmlFor="ccode">Code *</Label>
               <Input id="ccode" placeholder="6A" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
@@ -436,8 +456,14 @@ function ClasseDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cmat">Matière enseignée</Label>
-            <Input id="cmat" value={form.matiere} onChange={(e) => setForm({ ...form, matiere: e.target.value })} />
+            <Label htmlFor="cmat">Matières enseignées</Label>
+            <MultiCombobox
+              id="cmat"
+              values={form.matieres}
+              options={matiereOptions}
+              placeholder="Choisir ou créer des matières"
+              onChange={(v) => setForm((f) => ({ ...f, matieres: v }))}
+            />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
