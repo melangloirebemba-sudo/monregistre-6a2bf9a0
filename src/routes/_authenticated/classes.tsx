@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox, MultiCombobox } from "@/components/ui/combobox";
-import { catalogueQO, entriesFor, useSaveCatalogue } from "@/lib/queries/catalogue";
+import { catalogueQO, entriesFor, normValeur, useSaveCatalogue } from "@/lib/queries/catalogue";
 import {
   CYCLES_DEFAUT,
   classesSuggerees,
@@ -331,14 +331,19 @@ function ClasseDialog({
   const { data: catalogue = [] } = useQuery(catalogueQO());
   const saveCatalogue = useSaveCatalogue();
 
-  const cycleOptions = fusionner([...CYCLES_DEFAUT], entriesFor(catalogue, "cycle"));
+  // Les valeurs déjà enregistrées sur la classe sont toujours proposées, même
+  // si elles ne figurent ni dans les suggestions ni dans le catalogue perso.
+  const cycleOptions = fusionner(
+    [...CYCLES_DEFAUT],
+    fusionner(entriesFor(catalogue, "cycle"), form.cycle ? [form.cycle] : []),
+  );
   const classeOptions = fusionner(
     classesSuggerees(form.cycle),
-    entriesFor(catalogue, "classe", form.cycle),
+    fusionner(entriesFor(catalogue, "classe", form.cycle), form.nom ? [form.nom] : []),
   );
   const matiereOptions = fusionner(
     matieresSuggerees(form.cycle),
-    entriesFor(catalogue, "matiere", form.cycle),
+    fusionner(entriesFor(catalogue, "matiere", form.cycle), form.matieres),
   );
 
   useEffect(() => {
@@ -401,7 +406,8 @@ function ClasseDialog({
       // Mémorise les valeurs créées pour les proposer les prochaines fois.
       const cyc = form.cycle.trim();
       saveCatalogue.mutate([
-        ...(cyc && !cycleOptions.some((o) => o.toLowerCase() === cyc.toLowerCase())
+        ...(cyc &&
+        !CYCLES_DEFAUT.some((o) => normValeur(o) === normValeur(cyc))
           ? [{ type: "cycle" as const, valeur: cyc }]
           : []),
         ...(form.nom.trim() ? [{ type: "classe" as const, valeur: form.nom, cycle: cyc }] : []),
