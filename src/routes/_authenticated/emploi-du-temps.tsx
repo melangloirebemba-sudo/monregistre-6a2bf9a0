@@ -72,6 +72,8 @@ function EmploiDuTempsPage() {
   const [edit, setEdit] = useState<Creneau | null>(null);
   const [toDelete, setToDelete] = useState<string | null>(null);
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const [presence, setPresence] = useState<PresenceTarget | null>(null);
+
   const [ecoleId, setEcoleId] = useState("");
   const [classeId, setClasseId] = useState("");
   const [jour, setJour] = useState("1");
