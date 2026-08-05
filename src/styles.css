@@ -135,61 +135,62 @@
 }
 
 .dark {
-  /* Mode sombre humanisé — inspiré d'un vieux registre à la lueur d'une lampe.
-     Fonds désaturés (moins de bleu clinique), texte crème au lieu de blanc pur,
-     accents adoucis pour éviter l'effet « écran d'IA ». */
-  --cream: oklch(0.21 0.018 268);
-  --cream-deep: oklch(0.17 0.016 268);
-  --background: oklch(0.18 0.014 268);
-  --surface: oklch(0.235 0.018 268);
-  --foreground: oklch(0.9 0.022 82);       /* crème chaud, pas blanc */
+  /* Mode sombre humanisé — bleu nuit profond, accents blanc doux (plus de doré).
+     Aucun dégradé, contrastes doux, texture papier-encre inversée. */
+  --cream: oklch(0.24 0.03 262);
+  --cream-deep: oklch(0.19 0.028 262);
+  --background: oklch(0.20 0.03 262);      /* bleu nuit */
+  --surface: oklch(0.25 0.03 262);
+  --foreground: oklch(0.94 0.006 250);     /* blanc doux */
 
-  --ink: oklch(0.13 0.012 268);
-  --ink-soft: oklch(0.28 0.02 268);
-  --ink-foreground: oklch(0.9 0.022 82);
+  --ink: oklch(0.15 0.025 262);
+  --ink-soft: oklch(0.30 0.03 262);
+  --ink-foreground: oklch(0.94 0.006 250);
 
-  --card: oklch(0.235 0.018 268);
-  --card-foreground: oklch(0.9 0.022 82);
-  --popover: oklch(0.245 0.018 268);
-  --popover-foreground: oklch(0.9 0.022 82);
+  --card: oklch(0.25 0.03 262);
+  --card-foreground: oklch(0.94 0.006 250);
+  --popover: oklch(0.26 0.03 262);
+  --popover-foreground: oklch(0.94 0.006 250);
 
-  --primary: oklch(0.8 0.09 84);
-  --primary-foreground: oklch(0.16 0.014 268);
+  --primary: oklch(0.94 0.006 250);
+  --primary-foreground: oklch(0.20 0.03 262);
 
-  --secondary: oklch(0.29 0.02 268);
-  --secondary-foreground: oklch(0.9 0.022 82);
+  --secondary: oklch(0.30 0.03 262);
+  --secondary-foreground: oklch(0.94 0.006 250);
 
-  --muted: oklch(0.27 0.017 268);
-  --muted-foreground: oklch(0.68 0.024 82);
+  --muted: oklch(0.28 0.028 262);
+  --muted-foreground: oklch(0.72 0.012 255);
 
-  --accent: oklch(0.7 0.1 82);
-  --accent-foreground: oklch(0.16 0.014 268);
+  --accent: oklch(0.90 0.008 250);
+  --accent-foreground: oklch(0.20 0.03 262);
 
-  --gold: oklch(0.74 0.1 84);
-  --gold-soft: oklch(0.82 0.08 88);
-  --gold-foreground: oklch(0.16 0.014 268);
-  --teal: oklch(0.6 0.08 192);
-  --teal-soft: oklch(0.7 0.08 190);
-  --teal-foreground: oklch(0.16 0.014 268);
+  /* « Doré » remplacé par un blanc doux en mode sombre */
+  --gold: oklch(0.92 0.007 250);
+  --gold-soft: oklch(0.82 0.010 252);
+  --gold-foreground: oklch(0.20 0.03 262);
+  --teal: oklch(0.62 0.07 220);
+  --teal-soft: oklch(0.72 0.06 220);
+  --teal-foreground: oklch(0.18 0.028 262);
 
   --destructive: oklch(0.6 0.14 27);
-  --destructive-foreground: oklch(0.95 0.02 82);
-  --success: oklch(0.62 0.12 148);
-  --success-foreground: oklch(0.95 0.02 82);
-  --warning: oklch(0.75 0.12 75);
-  --warning-foreground: oklch(0.16 0.014 268);
+  --destructive-foreground: oklch(0.96 0.006 250);
+  --success: oklch(0.62 0.11 155);
+  --success-foreground: oklch(0.96 0.006 250);
+  --warning: oklch(0.78 0.09 85);
+  --warning-foreground: oklch(0.20 0.03 262);
 
-  --border: oklch(1 0 0 / 7%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.74 0.1 84 / 0.55);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.92 0.007 250 / 0.45);
 
-  /* Graphiques — même palette or / sarcelle qu'en clair, ajustée pour le sombre */
-  --chart-1: oklch(0.74 0.1 84);      /* or patiné */
-  --chart-2: oklch(0.6 0.08 192);     /* sarcelle sourde */
-  --chart-3: oklch(0.68 0.024 82);    /* crème atténuée (ink-soft inversé) */
-  --chart-4: oklch(0.66 0.12 148);    /* success */
-  --chart-5: oklch(0.6 0.14 27);      /* destructive */
+  /* Graphiques — blanc doux + bleus */
+  --chart-1: oklch(0.92 0.007 250);
+  --chart-2: oklch(0.62 0.07 220);
+  --chart-3: oklch(0.72 0.012 255);
+  --chart-4: oklch(0.66 0.11 155);
+  --chart-5: oklch(0.6 0.14 27);
 }
+
 
 
 @layer base {
@@ -209,12 +210,11 @@
 }
 
 @utility hero-gradient {
-  background:
-    radial-gradient(120% 80% at 100% 0%, oklch(0.32 0.06 265 / 0.7), transparent 60%),
-    radial-gradient(80% 60% at 0% 100%, oklch(0.52 0.09 195 / 0.35), transparent 60%),
-    linear-gradient(160deg, oklch(0.22 0.04 265), oklch(0.18 0.035 265));
-  color: var(--color-ink-foreground);
+  /* Aplat uni (plus de dégradé) — bleu nuit, texte blanc doux */
+  background-color: oklch(0.24 0.035 262);
+  color: oklch(0.95 0.006 250);
 }
+
 
 @utility card-elevated {
   background-color: var(--color-card);
