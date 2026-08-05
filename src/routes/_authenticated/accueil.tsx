@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   CloudOff,
   RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -37,6 +38,8 @@ import { useReminderNotifications } from "@/lib/notifications";
 import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
 import { isDemoMode, isTourDemoDone } from "@/lib/demo";
 import { getTourStatus } from "@/lib/tour.functions";
+import { Button } from "@/components/ui/button";
+import { PresenceDialog, type PresenceTarget } from "@/components/app/presence-dialog";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   // Un admin ne doit jamais voir l'espace enseignant : on l'envoie sur /admin.
