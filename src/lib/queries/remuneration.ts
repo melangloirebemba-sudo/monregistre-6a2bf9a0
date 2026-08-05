@@ -52,6 +52,31 @@ export interface Seance {
   motif: string | null;
   commentaire: string | null;
   validee_le: string | null;
+  approbation: SeanceApprobation;
+  approbation_note: string | null;
+  approuve_le: string | null;
+  approuve_par: string | null;
+}
+
+export type SeanceApprobation = "non_requise" | "en_attente" | "approuvee" | "refusee";
+
+export const APPROBATION_LABEL: Record<SeanceApprobation, string> = {
+  non_requise: "Non requise",
+  en_attente: "En attente",
+  approuvee: "Approuvée",
+  refusee: "Refusée",
+};
+
+export interface SeanceValidation {
+  id: string;
+  seance_id: string;
+  user_id: string;
+  action: string;
+  note: string | null;
+  statut_seance: SeanceStatut | null;
+  retard_minutes: number;
+  approbation: SeanceApprobation;
+  created_at: string;
 }
 
 export interface PaiementSalaire {
@@ -102,6 +127,44 @@ export function seancesQO(debut: string, fin: string) {
         .order("date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Seance[];
+    },
+  });
+}
+
+/** Séances en attente d'approbation (retards, absences justifiées). */
+export function seancesEnAttenteQO() {
+  return queryOptions({
+    queryKey: ["seances", "en-attente"],
+    staleTime: STALE,
+    queryFn: async (): Promise<Seance[]> => {
+      if (isDemoMode()) return [];
+      const { data, error } = await supabase
+        .from("seances")
+        .select("*")
+        .eq("approbation", "en_attente")
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as Seance[];
+    },
+  });
+}
+
+/** Historique des validations (demandes, approbations, refus). */
+export function validationsQO(seanceId?: string) {
+  return queryOptions({
+    queryKey: ["seance-validations", seanceId ?? "all"],
+    staleTime: STALE,
+    queryFn: async (): Promise<SeanceValidation[]> => {
+      if (isDemoMode()) return [];
+      let q = supabase
+        .from("seance_validations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (seanceId) q = q.eq("seance_id", seanceId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as unknown as SeanceValidation[];
     },
   });
 }
@@ -195,4 +258,52 @@ export function moisISO(d: Date): string {
 export function labelMois(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+}
+
+/** Nombre de créneaux du mois encore non validés (aucune séance saisie). */
+export interface CreneauLite {
+  id: string;
+  jour_semaine: number;
+  ecole_id: string;
+  classe_id: string | null;
+  heure_debut: string;
+  heure_fin: string;
+  matiere: string | null;
+}
+
+export interface CreneauNonValide {
+  creneau: CreneauLite;
+  date: string;
+}
+
+/**
+ * Déroule les créneaux hebdomadaires sur la plage [debut, fin] (jusqu'à
+ * aujourd'hui) et retourne les occurrences sans séance enregistrée.
+ */
+export function creneauxNonValides(
+  creneaux: CreneauLite[],
+  seances: Seance[],
+  debut: string,
+  fin: string,
+): CreneauNonValide[] {
+  const today = new Date().toISOString().slice(0, 10);
+  const stop = fin < today ? fin : today;
+  const seen = new Set(
+    seances.filter((s) => s.creneau_id).map((s) => `${s.creneau_id}:${s.date}`),
+  );
+  const out: CreneauNonValide[] = [];
+  const d = new Date(`${debut}T00:00:00`);
+  const end = new Date(`${stop}T00:00:00`);
+  while (d <= end) {
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const js = d.getDay();
+    const weekday = js === 0 ? 7 : js;
+    for (const c of creneaux) {
+      if (c.jour_semaine !== weekday) continue;
+      if (seen.has(`${c.id}:${iso}`)) continue;
+      out.push({ creneau: c, date: iso });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return out.sort((a, b) => (a.date < b.date ? 1 : -1));
 }
