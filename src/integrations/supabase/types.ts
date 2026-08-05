@@ -1031,8 +1031,59 @@ export type Database = {
         }
         Relationships: []
       }
+      seance_validations: {
+        Row: {
+          action: string
+          approbation: Database["public"]["Enums"]["seance_approbation"]
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          retard_minutes: number
+          seance_id: string
+          statut_seance: Database["public"]["Enums"]["seance_statut"] | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          approbation: Database["public"]["Enums"]["seance_approbation"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          retard_minutes?: number
+          seance_id: string
+          statut_seance?: Database["public"]["Enums"]["seance_statut"] | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          approbation?: Database["public"]["Enums"]["seance_approbation"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          retard_minutes?: number
+          seance_id?: string
+          statut_seance?: Database["public"]["Enums"]["seance_statut"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seance_validations_seance_id_fkey"
+            columns: ["seance_id"]
+            isOneToOne: false
+            referencedRelation: "seances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seances: {
         Row: {
+          approbation: Database["public"]["Enums"]["seance_approbation"]
+          approbation_note: string | null
+          approuve_le: string | null
+          approuve_par: string | null
           classe_id: string | null
           commentaire: string | null
           created_at: string
@@ -1053,6 +1104,10 @@ export type Database = {
           validee_le: string | null
         }
         Insert: {
+          approbation?: Database["public"]["Enums"]["seance_approbation"]
+          approbation_note?: string | null
+          approuve_le?: string | null
+          approuve_par?: string | null
           classe_id?: string | null
           commentaire?: string | null
           created_at?: string
@@ -1073,6 +1128,10 @@ export type Database = {
           validee_le?: string | null
         }
         Update: {
+          approbation?: Database["public"]["Enums"]["seance_approbation"]
+          approbation_note?: string | null
+          approuve_le?: string | null
+          approuve_par?: string | null
           classe_id?: string | null
           commentaire?: string | null
           created_at?: string
@@ -1293,6 +1352,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      approuver_seance: {
+        Args: { _approuver: boolean; _note?: string; _seance_id: string }
+        Returns: undefined
+      }
       expire_plans: { Args: never; Returns: number }
       get_user_plan: {
         Args: { _user_id: string }
@@ -1328,6 +1391,7 @@ export type Database = {
       otp_purpose: "password_reset" | "phone_verification" | "phone_change"
       plan_periode: "mensuelle" | "trimestrielle" | "annuelle"
       salaire_statut: "en_attente" | "paye" | "partiel"
+      seance_approbation: "non_requise" | "en_attente" | "approuvee" | "refusee"
       seance_statut:
         | "effectuee"
         | "absence_justifiee"
@@ -1467,6 +1531,7 @@ export const Constants = {
       otp_purpose: ["password_reset", "phone_verification", "phone_change"],
       plan_periode: ["mensuelle", "trimestrielle", "annuelle"],
       salaire_statut: ["en_attente", "paye", "partiel"],
+      seance_approbation: ["non_requise", "en_attente", "approuvee", "refusee"],
       seance_statut: [
         "effectuee",
         "absence_justifiee",
