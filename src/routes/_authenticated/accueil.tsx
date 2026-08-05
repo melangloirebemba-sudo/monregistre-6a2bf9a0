@@ -554,6 +554,26 @@ function AccueilPage() {
                       En cours
                     </span>
                   )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() =>
+                      setPresence({
+                        creneau_id: c.id,
+                        ecole_id: c.ecole_id,
+                        ecole_nom: c.ecole?.nom ?? null,
+                        classe_id: c.classe_id,
+                        classe_nom: c.classe?.nom ?? null,
+                        matiere: c.matiere,
+                        heure_debut: c.heure_debut,
+                        heure_fin: c.heure_fin,
+                      })
+                    }
+                  >
+                    <CheckCircle2 className="mr-1 h-4 w-4 text-teal" />
+                    Présence
+                  </Button>
                 </li>
               );
             })}
