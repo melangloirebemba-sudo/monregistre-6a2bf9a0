@@ -79,6 +79,7 @@ function AccueilPage() {
   const { data: periodes = [] } = useQuery(periodesQO());
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const [presence, setPresence] = useState<PresenceTarget | null>(null);
   const [salutation, setSalutation] = useState<string>(() => getSalutation(new Date().getHours()));
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -673,7 +674,11 @@ function AccueilPage() {
         </p>
       </section>
 
-      
+      <PresenceDialog
+        open={!!presence}
+        onOpenChange={(o) => !o && setPresence(null)}
+        target={presence}
+      />
     </div>
   );
 }
