@@ -13,6 +13,34 @@ export interface CatalogueEntry {
   valeur: string;
 }
 
+export interface CatalogueHistoryRow {
+  id: string;
+  action: string;
+  type: string;
+  cycle: string | null;
+  ancienne_valeur: string | null;
+  nouvelle_valeur: string | null;
+  created_at: string;
+}
+
+/**
+ * Normalisation utilisée pour la déduplication : accents, casse et espaces
+ * multiples sont ignorés ("  6E  " ≡ "6e").
+ */
+export function normValeur(v: string | null | undefined): string {
+  return (v ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/** Nettoyage d'une valeur avant enregistrement (espaces multiples réduits). */
+export function cleanValeur(v: string): string {
+  return v.replace(/\s+/g, " ").trim();
+}
+
 export const catalogueQO = () =>
   queryOptions({
     queryKey: ["catalogue"],
@@ -25,6 +53,21 @@ export const catalogueQO = () =>
         .order("valeur");
       if (error) throw error;
       return (data ?? []) as CatalogueEntry[];
+    },
+  });
+
+export const catalogueHistoryQO = () =>
+  queryOptions({
+    queryKey: ["catalogue-history"],
+    staleTime: 60_000,
+    queryFn: async (): Promise<CatalogueHistoryRow[]> => {
+      const { data, error } = await supabase
+        .from("catalogue_history")
+        .select("id, action, type, cycle, ancienne_valeur, nouvelle_valeur, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as CatalogueHistoryRow[];
     },
   });
 
@@ -44,9 +87,11 @@ export function entriesFor(
 export function useSaveCatalogue() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (items: Array<{ type: CatalogueType; valeur: string; cycle?: string | null }>) => {
+    mutationFn: async (
+      items: Array<{ type: CatalogueType; valeur: string; cycle?: string | null }>,
+    ) => {
       const clean = items
-        .map((i) => ({ ...i, valeur: i.valeur.trim() }))
+        .map((i) => ({ ...i, valeur: cleanValeur(i.valeur) }))
         .filter((i) => i.valeur.length > 0);
       if (clean.length === 0) return;
       let user_id: string;
@@ -55,16 +100,39 @@ export function useSaveCatalogue() {
       } catch {
         return;
       }
-      const rows = clean.map((i) => ({
-        user_id,
-        type: i.type,
-        valeur: i.valeur,
-        cycle: i.type === "cycle" ? null : (i.cycle?.trim() || null),
-      }));
-      // L'index unique (user, type, cycle, valeur) rejette les doublons :
-      // on insère ligne par ligne et on ignore silencieusement les conflits.
+
+      // Déduplication locale (casse / espaces) avant l'appel réseau.
+      const seen = new Set<string>();
+      const rows = clean
+        .map((i) => ({
+          user_id,
+          type: i.type,
+          valeur: i.valeur,
+          cycle: i.type === "cycle" ? null : cleanValeur(i.cycle ?? "") || null,
+        }))
+        .filter((r) => {
+          const k = `${r.type}|${normValeur(r.cycle)}|${normValeur(r.valeur)}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+
+      // Ignore ce qui existe déjà en base (comparaison normalisée).
+      const { data: existing } = await supabase
+        .from("catalogue_entries")
+        .select("type, cycle, valeur");
+      const known = new Set(
+        (existing ?? []).map(
+          (e) => `${e.type}|${normValeur(e.cycle)}|${normValeur(e.valeur)}`,
+        ),
+      );
+      const toInsert = rows.filter(
+        (r) => !known.has(`${r.type}|${normValeur(r.cycle)}|${normValeur(r.valeur)}`),
+      );
+
+      // L'index unique normalisé rejette les doublons résiduels : on ignore 23505.
       await Promise.all(
-        rows.map(async (r) => {
+        toInsert.map(async (r) => {
           const { error } = await supabase.from("catalogue_entries").insert(r);
           if (error && error.code !== "23505") throw error;
         }),
@@ -72,6 +140,90 @@ export function useSaveCatalogue() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["catalogue"] });
+      qc.invalidateQueries({ queryKey: ["catalogue-history"] });
     },
   });
+}
+
+export function useUpdateCatalogueEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; valeur: string; cycle?: string | null }) => {
+      const valeur = cleanValeur(input.valeur);
+      if (!valeur) throw new Error("La valeur ne peut pas être vide.");
+      const { error } = await supabase
+        .from("catalogue_entries")
+        .update({
+          valeur,
+          ...(input.cycle !== undefined
+            ? { cycle: cleanValeur(input.cycle ?? "") || null }
+            : {}),
+        })
+        .eq("id", input.id);
+      if (error) {
+        if (error.code === "23505") throw new Error("Cette valeur existe déjà.");
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["catalogue"] });
+      qc.invalidateQueries({ queryKey: ["catalogue-history"] });
+    },
+  });
+}
+
+export function useDeleteCatalogueEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("catalogue_entries").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["catalogue"] });
+      qc.invalidateQueries({ queryKey: ["catalogue-history"] });
+    },
+  });
+}
+
+export interface CatalogueExport {
+  format: "monregistre-catalogues";
+  version: 1;
+  exported_at: string;
+  entries: Array<{ type: CatalogueType; cycle: string | null; valeur: string }>;
+}
+
+export function buildCatalogueExport(entries: CatalogueEntry[]): CatalogueExport {
+  return {
+    format: "monregistre-catalogues",
+    version: 1,
+    exported_at: new Date().toISOString(),
+    entries: entries.map((e) => ({ type: e.type, cycle: e.cycle, valeur: e.valeur })),
+  };
+}
+
+export function parseCatalogueImport(raw: string): CatalogueExport["entries"] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Fichier illisible : JSON invalide.");
+  }
+  const obj = parsed as Partial<CatalogueExport>;
+  if (!obj || !Array.isArray(obj.entries)) {
+    throw new Error("Fichier invalide : aucune entrée de catalogue trouvée.");
+  }
+  const types: CatalogueType[] = ["cycle", "classe", "matiere"];
+  return obj.entries
+    .filter(
+      (e) =>
+        e &&
+        typeof e.valeur === "string" &&
+        types.includes(e.type as CatalogueType),
+    )
+    .map((e) => ({
+      type: e.type as CatalogueType,
+      cycle: typeof e.cycle === "string" ? e.cycle : null,
+      valeur: e.valeur,
+    }));
 }
