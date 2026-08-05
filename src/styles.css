@@ -210,12 +210,11 @@
 }
 
 @utility hero-gradient {
-  background:
-    radial-gradient(120% 80% at 100% 0%, oklch(0.32 0.06 265 / 0.7), transparent 60%),
-    radial-gradient(80% 60% at 0% 100%, oklch(0.52 0.09 195 / 0.35), transparent 60%),
-    linear-gradient(160deg, oklch(0.22 0.04 265), oklch(0.18 0.035 265));
-  color: var(--color-ink-foreground);
+  /* Aplat uni (plus de dégradé) — bleu nuit, texte blanc doux */
+  background-color: oklch(0.24 0.035 262);
+  color: oklch(0.95 0.006 250);
 }
+
 
 @utility card-elevated {
   background-color: var(--color-card);
