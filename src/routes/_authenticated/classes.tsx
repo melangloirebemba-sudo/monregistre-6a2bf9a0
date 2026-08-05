@@ -312,19 +312,42 @@ function ClasseDialog({
   defaultEcoleId?: string;
 }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState({ nom: "", code: "", matiere: "", effectif: "0", ecole_id: "" });
+  const [form, setForm] = useState({
+    nom: "",
+    code: "",
+    cycle: "",
+    matieres: [] as string[],
+    effectif: "0",
+    ecole_id: "",
+  });
+  const { data: catalogue = [] } = useQuery(catalogueQO());
+  const saveCatalogue = useSaveCatalogue();
+
+  const cycleOptions = fusionner([...CYCLES_DEFAUT], entriesFor(catalogue, "cycle"));
+  const classeOptions = fusionner(
+    classesSuggerees(form.cycle),
+    entriesFor(catalogue, "classe", form.cycle),
+  );
+  const matiereOptions = fusionner(
+    matieresSuggerees(form.cycle),
+    entriesFor(catalogue, "matiere", form.cycle),
+  );
 
   useEffect(() => {
     if (open) {
       setForm({
         nom: classe?.nom ?? "",
         code: classe?.code ?? "",
-        matiere: classe?.matiere ?? "",
+        cycle: classe?.cycle ?? "",
+        matieres: classe?.matiere
+          ? classe.matiere.split(",").map((m) => m.trim()).filter(Boolean)
+          : [],
         effectif: String(classe?.effectif ?? 0),
         ecole_id: classe?.ecole_id ?? defaultEcoleId ?? "",
       });
     }
   }, [open, classe, defaultEcoleId]);
+
 
   const save = useMutation({
     mutationFn: async () => {
