@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { toFrench } from "@/lib/errors";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarDays, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { CalendarDays, Plus, Pencil, Trash2, MapPin, CheckCircle2 } from "lucide-react";
 import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
+import { PresenceDialog, type PresenceTarget } from "@/components/app/presence-dialog";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
 import {
@@ -71,6 +72,8 @@ function EmploiDuTempsPage() {
   const [edit, setEdit] = useState<Creneau | null>(null);
   const [toDelete, setToDelete] = useState<string | null>(null);
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const [presence, setPresence] = useState<PresenceTarget | null>(null);
+
   const [ecoleId, setEcoleId] = useState("");
   const [classeId, setClasseId] = useState("");
   const [jour, setJour] = useState("1");
@@ -215,6 +218,25 @@ function EmploiDuTempsPage() {
         </p>
       </div>
       <div className="flex flex-col gap-1 shrink-0">
+        <Button
+          size="icon"
+          variant="ghost"
+          title="Valider ma présence"
+          onClick={() =>
+            setPresence({
+              creneau_id: c.id,
+              ecole_id: c.ecole_id,
+              ecole_nom: c.ecole?.nom ?? ecoleById[c.ecole_id] ?? null,
+              classe_id: c.classe_id,
+              classe_nom: c.classe?.nom ?? null,
+              matiere: c.matiere,
+              heure_debut: c.heure_debut,
+              heure_fin: c.heure_fin,
+            })
+          }
+        >
+          <CheckCircle2 className="h-4 w-4 text-teal" />
+        </Button>
         <Button size="icon" variant="ghost" onClick={() => openEdit(c)}>
           <Pencil className="h-4 w-4" />
         </Button>
@@ -364,6 +386,12 @@ function EmploiDuTempsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PresenceDialog
+        open={!!presence}
+        onOpenChange={(o) => !o && setPresence(null)}
+        target={presence}
+      />
     </div>
   );
 }

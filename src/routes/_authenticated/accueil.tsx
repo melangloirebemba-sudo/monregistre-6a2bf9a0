@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   CloudOff,
   RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -37,6 +38,8 @@ import { useReminderNotifications } from "@/lib/notifications";
 import { EcoleFilter, EcoleBadge } from "@/components/app/ecole-filter";
 import { isDemoMode, isTourDemoDone } from "@/lib/demo";
 import { getTourStatus } from "@/lib/tour.functions";
+import { Button } from "@/components/ui/button";
+import { PresenceDialog, type PresenceTarget } from "@/components/app/presence-dialog";
 
 export const Route = createFileRoute("/_authenticated/accueil")({
   // Un admin ne doit jamais voir l'espace enseignant : on l'envoie sur /admin.
@@ -76,6 +79,7 @@ function AccueilPage() {
   const { data: periodes = [] } = useQuery(periodesQO());
 
   const [ecoleFilter, setEcoleFilter] = useState<string>("all");
+  const [presence, setPresence] = useState<PresenceTarget | null>(null);
   const [salutation, setSalutation] = useState<string>(() => getSalutation(new Date().getHours()));
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -554,6 +558,26 @@ function AccueilPage() {
                       En cours
                     </span>
                   )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() =>
+                      setPresence({
+                        creneau_id: c.id,
+                        ecole_id: c.ecole_id,
+                        ecole_nom: c.ecole?.nom ?? null,
+                        classe_id: c.classe_id,
+                        classe_nom: c.classe?.nom ?? null,
+                        matiere: c.matiere,
+                        heure_debut: c.heure_debut,
+                        heure_fin: c.heure_fin,
+                      })
+                    }
+                  >
+                    <CheckCircle2 className="mr-1 h-4 w-4 text-teal" />
+                    Présence
+                  </Button>
                 </li>
               );
             })}
@@ -650,7 +674,11 @@ function AccueilPage() {
         </p>
       </section>
 
-      
+      <PresenceDialog
+        open={!!presence}
+        onOpenChange={(o) => !o && setPresence(null)}
+        target={presence}
+      />
     </div>
   );
 }
