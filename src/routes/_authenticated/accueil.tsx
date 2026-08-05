@@ -398,7 +398,7 @@ function AccueilPage() {
                 <span className="tabular-nums text-ink-foreground">
                   {syncProgress.done} / {syncProgress.total}
                   {syncProgress.failed > 0 && (
-                    <span className="ml-1 text-red-200">· {syncProgress.failed} échec{syncProgress.failed > 1 ? "s" : ""}</span>
+                    <span className="ml-1 text-danger-soft">· {syncProgress.failed} échec{syncProgress.failed > 1 ? "s" : ""}</span>
                   )}
                 </span>
               </div>
@@ -437,7 +437,7 @@ function AccueilPage() {
                     </div>
                   )}
                   {syncProgress.lastError && (
-                    <div className="truncate text-red-200">
+                    <div className="truncate text-danger-soft">
                       Dernière erreur : {syncProgress.lastError}
                     </div>
                   )}
