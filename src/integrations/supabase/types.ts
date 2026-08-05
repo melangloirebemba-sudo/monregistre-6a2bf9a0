@@ -187,12 +187,43 @@ export type Database = {
         }
         Relationships: []
       }
+      catalogue_entries: {
+        Row: {
+          created_at: string
+          cycle: string | null
+          id: string
+          type: string
+          updated_at: string
+          user_id: string
+          valeur: string
+        }
+        Insert: {
+          created_at?: string
+          cycle?: string | null
+          id?: string
+          type: string
+          updated_at?: string
+          user_id: string
+          valeur: string
+        }
+        Update: {
+          created_at?: string
+          cycle?: string | null
+          id?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          valeur?: string
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           annee_scolaire: string | null
           chef_id: string | null
           code: string
           created_at: string
+          cycle: string | null
           ecole_id: string
           effectif: number
           id: string
@@ -206,6 +237,7 @@ export type Database = {
           chef_id?: string | null
           code: string
           created_at?: string
+          cycle?: string | null
           ecole_id: string
           effectif?: number
           id?: string
@@ -219,6 +251,7 @@ export type Database = {
           chef_id?: string | null
           code?: string
           created_at?: string
+          cycle?: string | null
           ecole_id?: string
           effectif?: number
           id?: string

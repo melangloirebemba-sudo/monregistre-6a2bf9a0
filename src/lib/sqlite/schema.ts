@@ -32,7 +32,7 @@ export const SQLITE_DDL: string[] = [
    )`,
   `CREATE TABLE IF NOT EXISTS classes (
      id TEXT PRIMARY KEY, user_id TEXT, ecole_id TEXT, nom TEXT, code TEXT,
-     matiere TEXT, effectif INTEGER, chef_id TEXT, annee_scolaire TEXT,
+     matiere TEXT, effectif INTEGER, chef_id TEXT, annee_scolaire TEXT, cycle TEXT,
      created_at TEXT, updated_at TEXT
    )`,
   `CREATE INDEX IF NOT EXISTS idx_classes_ecole ON classes(ecole_id)`,

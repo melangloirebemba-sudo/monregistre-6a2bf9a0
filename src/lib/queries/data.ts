@@ -89,6 +89,7 @@ export interface Classe {
   user_id: string;
   chef_id: string | null;
   annee_scolaire: string | null;
+  cycle: string | null;
 }
 
 
