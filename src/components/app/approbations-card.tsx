@@ -59,7 +59,7 @@ export function ApprobationsCard() {
       const { error } = await supabase.rpc("approuver_seance", {
         _seance_id: input.id,
         _approuver: input.approuver,
-        _note: notes[input.id]?.trim() || null,
+        _note: notes[input.id]?.trim() || undefined,
       });
       if (error) throw error;
     },
