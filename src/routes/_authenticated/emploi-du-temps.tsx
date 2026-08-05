@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { toFrench } from "@/lib/errors";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarDays, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { CalendarDays, Plus, Pencil, Trash2, MapPin, CheckCircle2 } from "lucide-react";
 import { EcoleFilter, EcoleBadge, EcoleGroupHeader } from "@/components/app/ecole-filter";
+import { PresenceDialog, type PresenceTarget } from "@/components/app/presence-dialog";
 import { toast } from "sonner";
 import { enqueueWrite } from "@/lib/offline-queue";
 import {
