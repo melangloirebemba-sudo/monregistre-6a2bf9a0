@@ -161,6 +161,8 @@ function MonProfilPage() {
         )}
       </div>
 
+      <RemunerationSummary />
+
 
       {/* Phone verification hidden — system not deployed yet */}
 
