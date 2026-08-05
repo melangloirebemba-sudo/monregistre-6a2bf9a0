@@ -41,10 +41,7 @@ function AuthPage() {
   const [hasDemoSession, setHasDemoSession] = useState(false);
 
   useEffect(() => {
-    if (!isDemoMode()) return;
-    supabase.auth.getSession().then(({ data }) => {
-      setHasDemoSession(!!data.session);
-    });
+    setHasDemoSession(isDemoMode());
   }, []);
 
   const goToLanding = async () => {

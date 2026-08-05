@@ -5,6 +5,16 @@
 // `monregistre:simulated-offline-change` est diffusé à chaque bascule.
 
 const KEY = "monregistre.simulatedOffline";
+
+/** Lecture directe du drapeau démo (évite un cycle d'import avec lib/demo). */
+export function isDemoLocal(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  try {
+    return localStorage.getItem("mr-demo-mode") === "1";
+  } catch {
+    return false;
+  }
+}
 export const SIMULATED_OFFLINE_EVENT = "monregistre:simulated-offline-change";
 
 export function isSimulatedOffline(): boolean {
@@ -34,6 +44,8 @@ export function setSimulatedOffline(v: boolean): void {
 /** Retourne true si le réseau est réellement disponible ET le mode simulé n'est pas actif. */
 export function isEffectivelyOnline(): boolean {
   if (isSimulatedOffline()) return false;
+  // Mode démo : 100 % local, aucune requête réseau ni écriture en base.
+  if (isDemoLocal()) return false;
   if (typeof navigator === "undefined") return true;
   return navigator.onLine;
 }

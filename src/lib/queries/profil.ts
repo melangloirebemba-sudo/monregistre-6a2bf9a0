@@ -1,5 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isDemoMode, DEMO_USER_ID, demoProfil } from "@/lib/demo";
+import { mirrorSelect } from "@/lib/sqlite";
 
 export type PlanKey = "gratuit" | "lite" | "premium";
 export type PlanPeriode = "mensuelle" | "trimestrielle" | "annuelle";
@@ -81,6 +83,16 @@ export function planCapabilitiesQO() {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async (): Promise<PlanCapabilities> => {
+      if (isDemoMode()) {
+        // Démo locale : plan premium simulé, aucune lecture/écriture en base.
+        return {
+          plan: "premium", storedPlan: "premium", isAdmin: false,
+          bulletins_pdf: true, rapports: true, progression: true,
+          max_ecoles: 99, max_classes_par_ecole: 99, max_eleves: 999,
+          periode: null, startedAt: null, expiresAt: null,
+          daysRemaining: null, isExpired: false, isExpiringSoon: false,
+        };
+      }
       // Hors ligne : conserver les dernières capacités connues plutôt que
       // de basculer sur le plan gratuit par défaut.
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -160,6 +172,18 @@ export function profilQueryOptions() {
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     queryFn: async (): Promise<Profil | null> => {
+      if (isDemoMode()) {
+        const d = demoProfil();
+        return {
+          id: DEMO_USER_ID, user_id: DEMO_USER_ID,
+          nom_affiche: d.nom_affiche, initiales: d.initiales,
+          echelle_notation: 20, annee_active: d.annee_active,
+          prenom: null, nom_famille: null, telephone: null,
+          telephone_verifie: false, telephone_verifie_le: null,
+          email: null, matiere_principale: null, etablissement: null,
+          plan: "premium", plan_periode: null, plan_started_at: null, plan_expires_at: null,
+        };
+      }
       // Hors ligne : préserver le profil en cache (évite un état "vide").
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
         throw new Error("offline");
@@ -182,6 +206,13 @@ export function countsQueryOptions() {
     queryKey: ["counts"],
     staleTime: 30_000,
     queryFn: async () => {
+      if (isDemoMode()) {
+        const [e, c, el, n] = await Promise.all([
+          mirrorSelect("ecoles"), mirrorSelect("classes"),
+          mirrorSelect("eleves"), mirrorSelect("notes"),
+        ]);
+        return { ecoles: e.length, classes: c.length, eleves: el.length, notes: n.length };
+      }
       const [ecoles, classes, eleves, notes] = await Promise.all([
         supabase.from("ecoles").select("id", { count: "exact", head: true }),
         supabase.from("classes").select("id", { count: "exact", head: true }),

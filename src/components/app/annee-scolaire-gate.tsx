@@ -5,6 +5,7 @@ import { profilQueryOptions } from "@/lib/queries/profil";
 import { anneesScolairesQO, activerAnnee } from "@/lib/queries/annees";
 import { requireUserId } from "@/lib/queries/data";
 import { supabase } from "@/integrations/supabase/client";
+import { isDemoMode } from "@/lib/demo";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +30,8 @@ export function AnneeScolaireGate() {
 
   const noProfilYear = !profil?.annee_active || !profil.annee_active.trim();
   const hasActive = annees.some((a) => a.statut === "active");
-  const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
+  const isOffline =
+    (typeof navigator !== "undefined" && navigator.onLine === false) || isDemoMode();
   // Hors ligne : ne pas afficher le sélecteur d'année (les requêtes peuvent
   // échouer ou renvoyer vide et déclencher un faux positif).
   const needsChoice =

@@ -8,6 +8,7 @@ import { AnneeScolaireGate } from "@/components/app/annee-scolaire-gate";
 import { SuspendedGate } from "@/components/app/suspended-gate";
 import { PlanUpgradeNotice } from "@/components/app/plan-upgrade-notice";
 import { currentUserRolesQO } from "@/lib/queries/admin";
+import { isDemoMode, DEMO_USER_ID } from "@/lib/demo";
 
 const OFFLINE_SESSION_KEY = "mr-offline-session-anchor";
 const OFFLINE_GRACE_MS = 72 * 60 * 60 * 1000; // 72h
@@ -15,6 +16,10 @@ const OFFLINE_GRACE_MS = 72 * 60 * 60 * 1000; // 72h
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
+    // Mode démo : session purement locale, aucun compte ni écriture en base.
+    if (isDemoMode()) {
+      return { user: { id: DEMO_USER_ID, email: null } as unknown as import("@supabase/supabase-js").User };
+    }
     const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
 
     const readAnchor = () => {

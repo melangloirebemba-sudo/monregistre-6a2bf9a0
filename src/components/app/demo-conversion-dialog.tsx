@@ -20,7 +20,8 @@ import {
   PASSWORD_MIN_LENGTH,
   isPasswordValid,
 } from "@/components/app/password-criteria";
-import { setDemoMode } from "@/lib/demo";
+import { setDemoMode, importDemoDataToAccount } from "@/lib/demo";
+import { mirrorClearAll } from "@/lib/sqlite";
 
 interface Props {
   open: boolean;
@@ -48,18 +49,17 @@ export function DemoConversionDialog({ open, onOpenChange }: Props) {
     }
     setLoading(true);
     try {
-      // 1) Rattache un email au compte anonyme (déclenche un email de confirmation)
-      const { error: emailErr } = await supabase.auth.updateUser({
+      // Création d'un vrai compte : c'est le premier moment où l'on écrit en base.
+      const emailRedirectTo = `${window.location.origin}/auth`;
+      const { data, error } = await supabase.auth.signUp({
         email,
-        data: { nom_affiche: nom, telephone: tel || null },
+        password,
+        options: { emailRedirectTo, data: { nom_affiche: nom, telephone: tel || null } },
       });
-      if (emailErr) throw emailErr;
-      // 2) Définit le mot de passe
-      const { error: pwErr } = await supabase.auth.updateUser({ password });
-      if (pwErr) throw pwErr;
-      // 3) Met à jour le profil enseignant si présent
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
+      if (error) throw error;
+      const user = data.user;
+      const hasSession = Boolean(data.session);
+      if (user && hasSession) {
         await supabase
           .from("profils_enseignant")
           .update({
@@ -67,12 +67,22 @@ export function DemoConversionDialog({ open, onOpenChange }: Props) {
             telephone: tel || null,
             initiales: nom.trim().slice(0, 2).toUpperCase() || undefined,
           })
-          .eq("user_id", userData.user.id);
+          .eq("user_id", user.id);
+        try {
+          await importDemoDataToAccount(user.id);
+        } catch {
+          /* import best-effort */
+        }
       }
       setDemoMode(false);
-      toast.success("Compte créé — vos données de démo sont conservées !");
+      await mirrorClearAll();
+      toast.success(
+        hasSession
+          ? "Compte créé — vos données de démo ont été importées !"
+          : "Compte créé — confirmez votre email pour vous connecter.",
+      );
       onOpenChange(false);
-      navigate({ to: "/accueil", replace: true });
+      navigate({ to: hasSession ? "/accueil" : "/auth", replace: true });
     } catch (err) {
       toast.error(toFrench(err));
     } finally {
@@ -89,7 +99,7 @@ export function DemoConversionDialog({ open, onOpenChange }: Props) {
             Créer mon compte
           </DialogTitle>
           <DialogDescription>
-            Créez votre compte pour <strong>conserver toutes les données</strong> saisies pendant
+            Créez votre compte pour <strong>importer les données</strong> saisies pendant
             la démo (écoles, classes, élèves, notes…). Aucune donnée ne sera perdue.
           </DialogDescription>
         </DialogHeader>

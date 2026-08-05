@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mirrorSelect, mirrorUpsert } from "@/lib/sqlite";
 import { hasPendingForTable, enqueueWrite } from "@/lib/offline-queue";
+import { isEffectivelyOnline } from "@/lib/simulated-offline";
 
 export type StatutAnnee = "active" | "archivee" | "a_venir";
 
@@ -32,7 +33,7 @@ export const anneesScolairesQO = () =>
     queryFn: async (): Promise<AnneeScolaire[]> => {
       // Hors ligne : sert le miroir local plutôt que d'échouer — la liste
       // reste visible et les ajouts/modifs en attente y apparaissent déjà.
-      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      if (!isEffectivelyOnline()) {
         return readMirror();
       }
       try {

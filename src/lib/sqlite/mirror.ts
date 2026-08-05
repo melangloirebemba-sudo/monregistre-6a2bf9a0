@@ -187,3 +187,19 @@ export async function sqliteHasData(table: SqliteTable): Promise<boolean> {
   const rows = await mirrorSelect(table);
   return rows.length > 0;
 }
+
+/** Vide entièrement le miroir local (fin de démo, déconnexion…). */
+export async function mirrorClearAll(): Promise<void> {
+  try {
+    const db = await openMirrorDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error("IndexedDB mirror clear failed"));
+      tx.onabort = () => reject(tx.error ?? new Error("IndexedDB mirror clear aborted"));
+    });
+  } catch (err) {
+    console.warn("[indexeddb] mirrorClearAll failed", err);
+  }
+}
