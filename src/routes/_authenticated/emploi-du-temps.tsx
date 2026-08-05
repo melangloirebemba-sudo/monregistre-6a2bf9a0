@@ -218,6 +218,25 @@ function EmploiDuTempsPage() {
         </p>
       </div>
       <div className="flex flex-col gap-1 shrink-0">
+        <Button
+          size="icon"
+          variant="ghost"
+          title="Valider ma présence"
+          onClick={() =>
+            setPresence({
+              creneau_id: c.id,
+              ecole_id: c.ecole_id,
+              ecole_nom: c.ecole?.nom ?? ecoleById[c.ecole_id] ?? null,
+              classe_id: c.classe_id,
+              classe_nom: c.classe?.nom ?? null,
+              matiere: c.matiere,
+              heure_debut: c.heure_debut,
+              heure_fin: c.heure_fin,
+            })
+          }
+        >
+          <CheckCircle2 className="h-4 w-4 text-teal" />
+        </Button>
         <Button size="icon" variant="ghost" onClick={() => openEdit(c)}>
           <Pencil className="h-4 w-4" />
         </Button>
