@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
+import { Route as AuthenticatedRemunerationRouteImport } from './routes/_authenticated/remuneration'
 import { Route as AuthenticatedRapportsRouteImport } from './routes/_authenticated/rapports'
 import { Route as AuthenticatedProgressionRouteImport } from './routes/_authenticated/progression'
 import { Route as AuthenticatedPlusRouteImport } from './routes/_authenticated/plus'
@@ -71,6 +72,12 @@ const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRemunerationRoute =
+  AuthenticatedRemunerationRouteImport.update({
+    id: '/remuneration',
+    path: '/remuneration',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRapportsRoute = AuthenticatedRapportsRouteImport.update({
   id: '/rapports',
   path: '/rapports',
@@ -270,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/plus': typeof AuthenticatedPlusRoute
   '/progression': typeof AuthenticatedProgressionRoute
   '/rapports': typeof AuthenticatedRapportsRoute
+  '/remuneration': typeof AuthenticatedRemunerationRoute
   '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/admin/facturation': typeof AuthenticatedAdminFacturationRoute
@@ -307,6 +315,7 @@ export interface FileRoutesByTo {
   '/plus': typeof AuthenticatedPlusRoute
   '/progression': typeof AuthenticatedProgressionRoute
   '/rapports': typeof AuthenticatedRapportsRoute
+  '/remuneration': typeof AuthenticatedRemunerationRoute
   '/support': typeof AuthenticatedSupportRoute
   '/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/admin/facturation': typeof AuthenticatedAdminFacturationRoute
@@ -347,6 +356,7 @@ export interface FileRoutesById {
   '/_authenticated/plus': typeof AuthenticatedPlusRoute
   '/_authenticated/progression': typeof AuthenticatedProgressionRoute
   '/_authenticated/rapports': typeof AuthenticatedRapportsRoute
+  '/_authenticated/remuneration': typeof AuthenticatedRemunerationRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/admin/annees-scolaires': typeof AuthenticatedAdminAnneesScolairesRoute
   '/_authenticated/admin/facturation': typeof AuthenticatedAdminFacturationRoute
@@ -387,6 +397,7 @@ export interface FileRouteTypes {
     | '/plus'
     | '/progression'
     | '/rapports'
+    | '/remuneration'
     | '/support'
     | '/admin/annees-scolaires'
     | '/admin/facturation'
@@ -424,6 +435,7 @@ export interface FileRouteTypes {
     | '/plus'
     | '/progression'
     | '/rapports'
+    | '/remuneration'
     | '/support'
     | '/admin/annees-scolaires'
     | '/admin/facturation'
@@ -463,6 +475,7 @@ export interface FileRouteTypes {
     | '/_authenticated/plus'
     | '/_authenticated/progression'
     | '/_authenticated/rapports'
+    | '/_authenticated/remuneration'
     | '/_authenticated/support'
     | '/_authenticated/admin/annees-scolaires'
     | '/_authenticated/admin/facturation'
@@ -528,6 +541,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/remuneration': {
+      id: '/_authenticated/remuneration'
+      path: '/remuneration'
+      fullPath: '/remuneration'
+      preLoaderRoute: typeof AuthenticatedRemunerationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rapports': {
@@ -846,6 +866,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPlusRoute: typeof AuthenticatedPlusRoute
   AuthenticatedProgressionRoute: typeof AuthenticatedProgressionRoute
   AuthenticatedRapportsRoute: typeof AuthenticatedRapportsRoute
+  AuthenticatedRemunerationRoute: typeof AuthenticatedRemunerationRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
 }
 
@@ -866,6 +887,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPlusRoute: AuthenticatedPlusRoute,
   AuthenticatedProgressionRoute: AuthenticatedProgressionRoute,
   AuthenticatedRapportsRoute: AuthenticatedRapportsRoute,
+  AuthenticatedRemunerationRoute: AuthenticatedRemunerationRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
 }
 
