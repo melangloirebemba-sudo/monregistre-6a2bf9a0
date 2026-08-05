@@ -8,7 +8,7 @@
 // The queue is per-user (scoped by auth user id) and survives reloads.
 
 import { supabase } from "@/integrations/supabase/client";
-import { isSimulatedOffline, isEffectivelyOnline } from "@/lib/simulated-offline";
+import { isEffectivelyOnline } from "@/lib/simulated-offline";
 
 
 export type QueueOp = "insert" | "update" | "delete";
