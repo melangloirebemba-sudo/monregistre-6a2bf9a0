@@ -61,11 +61,14 @@ export function useSaveCatalogue() {
         valeur: i.valeur,
         cycle: i.type === "cycle" ? null : (i.cycle?.trim() || null),
       }));
-      // Doublons ignorés grâce à l'index unique (user, type, cycle, valeur).
-      await supabase.from("catalogue_entries").upsert(rows, {
-        onConflict: "user_id,type,cycle,valeur",
-        ignoreDuplicates: true,
-      });
+      // L'index unique (user, type, cycle, valeur) rejette les doublons :
+      // on insère ligne par ligne et on ignore silencieusement les conflits.
+      await Promise.all(
+        rows.map(async (r) => {
+          const { error } = await supabase.from("catalogue_entries").insert(r);
+          if (error && error.code !== "23505") throw error;
+        }),
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["catalogue"] });
