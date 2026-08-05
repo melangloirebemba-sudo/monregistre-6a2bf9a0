@@ -398,6 +398,15 @@ function ClasseDialog({
 
     onSuccess: () => {
       toast.success(classe ? "Classe modifiée" : "Classe ajoutée");
+      // Mémorise les valeurs créées pour les proposer les prochaines fois.
+      const cyc = form.cycle.trim();
+      saveCatalogue.mutate([
+        ...(cyc && !cycleOptions.some((o) => o.toLowerCase() === cyc.toLowerCase())
+          ? [{ type: "cycle" as const, valeur: cyc }]
+          : []),
+        ...(form.nom.trim() ? [{ type: "classe" as const, valeur: form.nom, cycle: cyc }] : []),
+        ...form.matieres.map((m) => ({ type: "matiere" as const, valeur: m, cycle: cyc })),
+      ]);
       qc.invalidateQueries({ queryKey: ["classes"] });
       qc.invalidateQueries({ queryKey: ["counts"] });
       onOpenChange(false);
