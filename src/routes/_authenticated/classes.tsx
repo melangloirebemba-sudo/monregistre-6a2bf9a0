@@ -371,7 +371,8 @@ function ClasseDialog({
       const payload = {
         nom: form.nom.trim(),
         code: form.code.trim(),
-        matiere: form.matiere.trim() || null,
+        cycle: form.cycle.trim() || null,
+        matiere: form.matieres.map((m) => m.trim()).filter(Boolean).join(", ") || null,
         effectif: Number(form.effectif) || 0,
         ecole_id: form.ecole_id,
       };
