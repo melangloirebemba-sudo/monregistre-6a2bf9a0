@@ -14,6 +14,7 @@ import {
   CalendarX,
   Receipt,
   HardDrive,
+  Wallet,
 } from "lucide-react";
 
 
