@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
+import { isEffectivelyOnline } from "@/lib/simulated-offline";
 import { toFrench } from "@/lib/errors";
 import { requireUserId } from "@/lib/queries/data";
 import { CYCLES, STATUTS, type Cycle, type SeanceStatut } from "@/lib/queries/remuneration";
