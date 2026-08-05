@@ -147,7 +147,7 @@ function SupportPage() {
           rel="noopener noreferrer"
           className="card-elevated flex items-start gap-3 p-4 transition-colors hover:bg-cream-deep/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2"
         >
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#25D366]/15 text-[#128C7E]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#25D366]/15 text-[#128C7E] dark:text-[#5BE39B]">
             <MessageCircle className="h-5 w-5" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
