@@ -16,6 +16,7 @@ const TABLE_COLUMNS: Record<SqliteTable, string[]> = {
   sequences_programme: ["id", "user_id", "classe_id", "periode_id", "titre", "description", "ordre", "semaine_prevue", "date_traitee", "statut", "notes_libres", "created_at", "updated_at"],
   notes: ["id", "user_id", "ecole_id", "eleve_id", "periode_id", "sequence_id", "libelle", "matiere", "valeur", "coefficient", "date", "created_at", "updated_at"],
   absences: ["id", "user_id", "eleve_id", "date", "motif", "justifiee", "created_at", "updated_at"],
+  seances: ["id", "user_id", "ecole_id", "classe_id", "creneau_id", "date", "heure_debut", "heure_fin", "matiere", "cycle", "statut", "retard_minutes", "duree_minutes", "motif", "commentaire", "validee_le", "approbation", "approbation_note", "approuve_le", "approuve_par", "created_at", "updated_at"],
   annees_scolaires: ["id", "user_id", "libelle", "date_debut", "date_fin", "active", "archived", "created_at", "updated_at"],
 };
 

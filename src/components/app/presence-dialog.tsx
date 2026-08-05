@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { enqueueWrite } from "@/lib/offline-queue";
+import { isEffectivelyOnline } from "@/lib/simulated-offline";
 import { toFrench } from "@/lib/errors";
 import { requireUserId } from "@/lib/queries/data";
 import { CYCLES, STATUTS, type Cycle, type SeanceStatut } from "@/lib/queries/remuneration";
@@ -88,29 +90,62 @@ export function PresenceDialog({
         commentaire: commentaire.trim() || null,
         validee_le: new Date().toISOString(),
       };
+
+      // Anti-doublon : une seule séance par créneau et par date. On cherche
+      // d'abord dans le miroir local (fonctionne hors ligne), puis côté serveur.
+      let existingId: string | null = null;
       if (target.creneau_id) {
-        const { data: existing } = await supabase
-          .from("seances")
-          .select("id")
-          .eq("creneau_id", target.creneau_id)
-          .eq("date", date)
-          .maybeSingle();
-        if (existing?.id) {
-          const { error } = await supabase.from("seances").update(payload).eq("id", existing.id);
-          if (error) throw error;
-          return;
+        try {
+          const { mirrorSelect } = await import("@/lib/sqlite");
+          const rows = await mirrorSelect<{ id: string; creneau_id: string | null; date: string }>(
+            "seances",
+            { where: { creneau_id: target.creneau_id } },
+          );
+          existingId = rows.find((r) => r.date === date)?.id ?? null;
+        } catch {
+          /* miroir indisponible */
+        }
+        if (!existingId && isEffectivelyOnline()) {
+          const { data: existing } = await supabase
+            .from("seances")
+            .select("id")
+            .eq("creneau_id", target.creneau_id)
+            .eq("date", date)
+            .maybeSingle();
+          existingId = existing?.id ?? null;
         }
       }
-      const { error } = await supabase.from("seances").insert(payload);
-      if (error) throw error;
+
+      const label = `Présence ${new Date(date).toLocaleDateString("fr-FR")}${
+        target.classe_nom ? ` · ${target.classe_nom}` : ""
+      }`;
+
+      const res = existingId
+        ? await enqueueWrite({
+            table: "seances",
+            op: "update",
+            payload,
+            match: { id: existingId },
+            label,
+          })
+        : await enqueueWrite({ table: "seances", op: "insert", payload, label });
+      return res.queued;
     },
-    onSuccess: () => {
+    onSuccess: (queued) => {
       qc.invalidateQueries({ queryKey: ["seances"] });
-      toast.success("Présence enregistrée");
+      qc.invalidateQueries({ queryKey: ["seance-validations"] });
+      toast.success(queued ? "Présence enregistrée (hors ligne)" : "Présence enregistrée", {
+        description: queued
+          ? "Elle sera synchronisée dès le retour de la connexion."
+          : Number(retard) > 0 || statut === "absence_justifiee"
+            ? "Elle est soumise à l'approbation de l'administration."
+            : undefined,
+      });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error(toFrench(e)),
   });
+
 
   const absent = statut !== "effectuee";
 

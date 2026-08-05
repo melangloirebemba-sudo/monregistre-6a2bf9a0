@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Clock, Coins, Plus, Trash2, Wallet, TrendingDown } from "lucide-react";
+import { AlertTriangle, Clock, Coins, Download, Plus, Trash2, Wallet, TrendingDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toFrench } from "@/lib/errors";
-import { ecolesQO, requireUserId } from "@/lib/queries/data";
+import { creneauxQO, ecolesQO, requireUserId } from "@/lib/queries/data";
 import {
   CYCLES,
   STATUTS,
@@ -13,12 +13,16 @@ import {
   labelMois,
   paiementsSalaireQO,
   seancesQO,
+  seancesEnAttenteQO,
+  creneauxNonValides,
   syntheseParEcole,
   tarifsQO,
   type Cycle,
   type SalaireStatut,
 } from "@/lib/queries/remuneration";
 import { formatMontantXAF } from "@/lib/pdf/recu-paiement-shared";
+import { generateRecapRemunerationPDF } from "@/lib/pdf/recap-remuneration";
+import { ApprobationsCard, ApprobationBadge } from "@/components/app/approbations-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +85,8 @@ function RemunerationPage() {
   const { data: tarifs = [] } = useQuery(tarifsQO());
   const { data: seances = [] } = useQuery(seancesQO(debut, fin));
   const { data: paiements = [] } = useQuery(paiementsSalaireQO());
+  const { data: enAttente = [] } = useQuery(seancesEnAttenteQO());
+  const { data: creneaux = [] } = useQuery(creneauxQO());
 
   const ecoleNom = useMemo(
     () => Object.fromEntries(ecoles.map((e) => [e.id, e.nom])),
@@ -90,6 +96,28 @@ function RemunerationPage() {
   const totalEstime = synthese.reduce((a, s) => a + s.montantEstime, 0);
   const totalMinutes = synthese.reduce((a, s) => a + s.minutesEffectuees, 0);
   const totalPerdu = synthese.reduce((a, s) => a + s.montantPerdu, 0);
+  const nonValides = useMemo(
+    () => creneauxNonValides(creneaux, seances, debut, fin),
+    [creneaux, seances, debut, fin],
+  );
+  const [exporting, setExporting] = useState(false);
+
+  const exportRecap = async () => {
+    setExporting(true);
+    try {
+      await generateRecapRemunerationPDF({
+        mois: `${mois}-01`,
+        synthese,
+        ecoleNom,
+        enAttente: enAttente.length,
+      });
+      toast.success("Récapitulatif exporté");
+    } catch (e) {
+      toast.error(toFrench(e as Error));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const [tarifOpen, setTarifOpen] = useState(false);
   const [tEcole, setTEcole] = useState("");
@@ -194,11 +222,37 @@ function RemunerationPage() {
             Heures assurées, estimation du salaire net et paiements reçus.
           </p>
         </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Mois</Label>
-          <Input type="month" value={mois} onChange={(e) => setMois(e.target.value)} />
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Mois</Label>
+            <Input type="month" value={mois} onChange={(e) => setMois(e.target.value)} />
+          </div>
+          <Button variant="outline" onClick={exportRecap} disabled={exporting}>
+            <Download className="mr-1.5 h-4 w-4" />
+            {exporting ? "..." : "Récapitulatif PDF"}
+          </Button>
         </div>
       </header>
+
+      {nonValides.length > 0 && (
+        <section className="card-elevated border-l-4 border-l-gold p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                {nonValides.length} créneau(x) du mois non validé(s)
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Ces heures ne sont pas comptabilisées tant que la présence ou l'absence n'est pas
+                enregistrée. Dernières dates :{" "}
+                {[...new Set(nonValides.slice(0, 5).map((c) => new Date(c.date).toLocaleDateString("fr-FR")))].join(", ")}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <ApprobationsCard />
 
       <section className="grid gap-3 sm:grid-cols-3">
         <div className="card-elevated p-4">
@@ -333,6 +387,8 @@ function RemunerationPage() {
                     {s.motif ? ` · ${s.motif}` : ""}
                   </p>
                 </div>
+                <ApprobationBadge statut={s.approbation} />
+
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                     s.statut === "effectuee"

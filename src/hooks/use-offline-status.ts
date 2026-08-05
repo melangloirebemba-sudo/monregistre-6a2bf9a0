@@ -21,6 +21,7 @@ const TABLE_TO_QUERY_KEY: Record<string, string> = {
   notes: "notes",
   absences: "absences",
   annees_scolaires: "annees",
+  seances: "seances",
 };
 
 export interface OfflineStatus {

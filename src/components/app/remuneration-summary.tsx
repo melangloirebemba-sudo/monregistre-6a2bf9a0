@@ -1,7 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Clock, Wallet } from "lucide-react";
+import { ChevronRight, Clock, Download, Wallet } from "lucide-react";
+import { toast } from "sonner";
+import { toFrench } from "@/lib/errors";
+import { generateRecapRemunerationPDF } from "@/lib/pdf/recap-remuneration";
+import { Button } from "@/components/ui/button";
 import { ecolesQO } from "@/lib/queries/data";
 import {
   formatHeures,
@@ -32,6 +36,19 @@ export function RemunerationSummary() {
   const totalMinutes = synthese.reduce((a, s) => a + s.minutesEffectuees, 0);
   const totalEstime = synthese.reduce((a, s) => a + s.montantEstime, 0);
   const derniers = paiements.slice(0, 3);
+  const [exporting, setExporting] = useState(false);
+
+  const exportRecap = async () => {
+    setExporting(true);
+    try {
+      await generateRecapRemunerationPDF({ mois: debut, synthese, ecoleNom });
+      toast.success("Récapitulatif exporté");
+    } catch (e) {
+      toast.error(toFrench(e as Error));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="card-elevated p-5 mb-4">
@@ -40,9 +57,15 @@ export function RemunerationSummary() {
           <Wallet className="h-4 w-4" />
           Heures & rémunération
         </div>
-        <Link to="/remuneration" className="flex items-center text-xs text-teal hover:underline">
-          Détails <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={exportRecap} disabled={exporting}>
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            {exporting ? "..." : "PDF"}
+          </Button>
+          <Link to="/remuneration" className="flex items-center text-xs text-teal hover:underline">
+            Détails <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
