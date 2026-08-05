@@ -387,6 +387,8 @@ function RemunerationPage() {
                     {s.motif ? ` · ${s.motif}` : ""}
                   </p>
                 </div>
+                <ApprobationBadge statut={s.approbation} />
+
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                     s.statut === "effectuee"
