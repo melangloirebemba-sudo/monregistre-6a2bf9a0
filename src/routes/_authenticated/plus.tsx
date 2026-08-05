@@ -15,6 +15,7 @@ import {
   Receipt,
   HardDrive,
   Wallet,
+  Library,
 } from "lucide-react";
 
 

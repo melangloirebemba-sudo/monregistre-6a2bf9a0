@@ -331,14 +331,19 @@ function ClasseDialog({
   const { data: catalogue = [] } = useQuery(catalogueQO());
   const saveCatalogue = useSaveCatalogue();
 
-  const cycleOptions = fusionner([...CYCLES_DEFAUT], entriesFor(catalogue, "cycle"));
+  // Les valeurs déjà enregistrées sur la classe sont toujours proposées, même
+  // si elles ne figurent ni dans les suggestions ni dans le catalogue perso.
+  const cycleOptions = fusionner(
+    [...CYCLES_DEFAUT],
+    fusionner(entriesFor(catalogue, "cycle"), form.cycle ? [form.cycle] : []),
+  );
   const classeOptions = fusionner(
     classesSuggerees(form.cycle),
-    entriesFor(catalogue, "classe", form.cycle),
+    fusionner(entriesFor(catalogue, "classe", form.cycle), form.nom ? [form.nom] : []),
   );
   const matiereOptions = fusionner(
     matieresSuggerees(form.cycle),
-    entriesFor(catalogue, "matiere", form.cycle),
+    fusionner(entriesFor(catalogue, "matiere", form.cycle), form.matieres),
   );
 
   useEffect(() => {
