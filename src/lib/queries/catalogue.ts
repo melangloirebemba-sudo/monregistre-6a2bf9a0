@@ -227,3 +227,138 @@ export function parseCatalogueImport(raw: string): CatalogueExport["entries"] {
       valeur: e.valeur,
     }));
 }
+
+// ---------------------------------------------------------------------------
+// Stratégie d'import : détection des conflits
+// ---------------------------------------------------------------------------
+
+export type ImportStrategy = "fusionner" | "remplacer" | "ignorer";
+
+export interface ImportItem {
+  type: CatalogueType;
+  cycle: string | null;
+  valeur: string;
+}
+
+export interface ImportConflict {
+  /** Entrée existante en base (même type/cycle/valeur normalisés). */
+  existing: CatalogueEntry;
+  /** Valeur telle qu'écrite dans le fichier importé. */
+  incoming: ImportItem;
+  /** true si l'orthographe diffère (casse, accents, espaces). */
+  differentSpelling: boolean;
+}
+
+export interface ImportAnalysis {
+  nouveaux: ImportItem[];
+  conflits: ImportConflict[];
+  total: number;
+}
+
+function keyOf(type: string, cycle: string | null, valeur: string) {
+  return `${type}|${normValeur(cycle)}|${normValeur(valeur)}`;
+}
+
+/** Compare le fichier importé au catalogue existant. */
+export function analyzeCatalogueImport(
+  items: ImportItem[],
+  existing: CatalogueEntry[],
+): ImportAnalysis {
+  const byKey = new Map<string, CatalogueEntry>();
+  for (const e of existing) byKey.set(keyOf(e.type, e.cycle, e.valeur), e);
+
+  const nouveaux: ImportItem[] = [];
+  const conflits: ImportConflict[] = [];
+  const seen = new Set<string>();
+
+  for (const raw of items) {
+    const item: ImportItem = {
+      type: raw.type,
+      cycle: raw.type === "cycle" ? null : cleanValeur(raw.cycle ?? "") || null,
+      valeur: cleanValeur(raw.valeur),
+    };
+    if (!item.valeur) continue;
+    const k = keyOf(item.type, item.cycle, item.valeur);
+    if (seen.has(k)) continue;
+    seen.add(k);
+
+    const match = byKey.get(k);
+    if (match) {
+      conflits.push({
+        existing: match,
+        incoming: item,
+        differentSpelling: match.valeur !== item.valeur,
+      });
+    } else {
+      nouveaux.push(item);
+    }
+  }
+
+  return { nouveaux, conflits, total: nouveaux.length + conflits.length };
+}
+
+export interface ApplyImportResult {
+  ajoutes: number;
+  remplaces: number;
+  ignores: number;
+}
+
+/**
+ * Applique un import selon la stratégie choisie :
+ * - fusionner : ajoute les nouveaux, conserve les valeurs existantes
+ * - remplacer : ajoute les nouveaux et écrase l'orthographe des existantes
+ * - ignorer   : n'ajoute que les nouveaux, sans toucher aux conflits
+ * (fusionner et ignorer diffèrent seulement par le rapport affiché)
+ */
+export function useApplyCatalogueImport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      analysis: ImportAnalysis;
+      strategy: ImportStrategy;
+    }): Promise<ApplyImportResult> => {
+      const { analysis, strategy } = input;
+      let user_id: string;
+      try {
+        user_id = await requireUserId();
+      } catch {
+        throw new Error("Session expirée : reconnectez-vous pour importer.");
+      }
+
+      let ajoutes = 0;
+      for (const item of analysis.nouveaux) {
+        const { error } = await supabase.from("catalogue_entries").insert({
+          user_id,
+          type: item.type,
+          cycle: item.cycle,
+          valeur: item.valeur,
+        });
+        if (error && error.code !== "23505") throw error;
+        if (!error) ajoutes += 1;
+      }
+
+      let remplaces = 0;
+      if (strategy === "remplacer") {
+        for (const c of analysis.conflits) {
+          if (!c.differentSpelling) continue;
+          const { error } = await supabase
+            .from("catalogue_entries")
+            .update({ valeur: c.incoming.valeur })
+            .eq("id", c.existing.id);
+          if (error && error.code !== "23505") throw error;
+          if (!error) remplaces += 1;
+        }
+      }
+
+      return {
+        ajoutes,
+        remplaces,
+        ignores: analysis.conflits.length - remplaces,
+      };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["catalogue"] });
+      qc.invalidateQueries({ queryKey: ["catalogue-history"] });
+    },
+  });
+}
