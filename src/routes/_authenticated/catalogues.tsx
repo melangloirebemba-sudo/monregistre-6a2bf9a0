@@ -118,12 +118,34 @@ function CataloguesPage() {
         toast.error("Aucune valeur exploitable dans ce fichier.");
         return;
       }
-      await save.mutateAsync(items);
-      toast.success(`${items.length} valeur(s) importée(s) — doublons ignorés`);
+      const result = analyzeCatalogueImport(items, entries);
+      if (result.total === 0) {
+        toast.error("Aucune valeur exploitable dans ce fichier.");
+        return;
+      }
+      setStrategy(result.conflits.length > 0 ? "fusionner" : "fusionner");
+      setAnalysis(result);
     } catch (e) {
       toast.error(toFrench(e as Error));
     }
   };
+
+  const confirmImport = () => {
+    if (!analysis) return;
+    applyImport.mutate(
+      { analysis, strategy },
+      {
+        onSuccess: (r) => {
+          toast.success(
+            `${r.ajoutes} ajout(s), ${r.remplaces} remplacement(s), ${r.ignores} ignoré(s)`,
+          );
+          setAnalysis(null);
+        },
+        onError: (err) => toast.error(toFrench(err as Error)),
+      },
+    );
+  };
+
 
   return (
     <div className="px-5 pb-10 pt-5">
