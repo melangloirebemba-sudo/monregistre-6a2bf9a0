@@ -72,13 +72,15 @@ function CataloguesPage() {
   const { data: history = [] } = useQuery(catalogueHistoryQO());
   const update = useUpdateCatalogueEntry();
   const remove = useDeleteCatalogueEntry();
-  const save = useSaveCatalogue();
+  const applyImport = useApplyCatalogueImport();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [toDelete, setToDelete] = useState<CatalogueEntry | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [analysis, setAnalysis] = useState<ImportAnalysis | null>(null);
+  const [strategy, setStrategy] = useState<ImportStrategy>("fusionner");
 
   const grouped = useMemo(() => {
     const map: Record<CatalogueType, CatalogueEntry[]> = {
