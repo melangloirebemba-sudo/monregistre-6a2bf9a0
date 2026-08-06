@@ -16,17 +16,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toFrench } from "@/lib/errors";
 import {
+  analyzeCatalogueImport,
   buildCatalogueExport,
   catalogueHistoryQO,
   catalogueQO,
   parseCatalogueImport,
+  useApplyCatalogueImport,
   useDeleteCatalogueEntry,
-  useSaveCatalogue,
   useUpdateCatalogueEntry,
   type CatalogueEntry,
   type CatalogueType,
+  type ImportAnalysis,
+  type ImportStrategy,
 } from "@/lib/queries/catalogue";
 
 export const Route = createFileRoute("/_authenticated/catalogues")({
