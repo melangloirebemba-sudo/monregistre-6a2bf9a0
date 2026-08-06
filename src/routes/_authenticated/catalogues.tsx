@@ -362,6 +362,92 @@ function CataloguesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!analysis} onOpenChange={(o) => !o && setAnalysis(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Importer des catalogues</DialogTitle>
+            <DialogDescription>
+              {analysis?.total} valeur(s) lues · {analysis?.nouveaux.length} nouvelle(s) ·{" "}
+              {analysis?.conflits.length} déjà présente(s).
+            </DialogDescription>
+          </DialogHeader>
+
+          {analysis && analysis.conflits.length > 0 && (
+            <div className="space-y-3">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Que faire des valeurs en conflit ?
+              </Label>
+              <div className="space-y-2">
+                {(
+                  [
+                    {
+                      v: "fusionner" as const,
+                      t: "Fusionner",
+                      d: "Ajoute les nouvelles valeurs et conserve celles déjà enregistrées.",
+                    },
+                    {
+                      v: "remplacer" as const,
+                      t: "Remplacer",
+                      d: "Écrase l'orthographe des valeurs existantes par celle du fichier.",
+                    },
+                    {
+                      v: "ignorer" as const,
+                      t: "Ignorer",
+                      d: "N'importe que les valeurs totalement nouvelles.",
+                    },
+                  ]
+                ).map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setStrategy(o.v)}
+                    className={`w-full rounded-xl border px-3 py-2 text-left transition ${
+                      strategy === o.v
+                        ? "border-primary bg-primary/10"
+                        : "border-border/60 hover:bg-muted/50"
+                    }`}
+                  >
+                    <div className="text-sm font-medium text-foreground">{o.t}</div>
+                    <div className="text-xs text-muted-foreground">{o.d}</div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="rounded-xl border border-border/60 p-3">
+                <div className="text-xs font-medium text-foreground">
+                  Conflits détectés
+                </div>
+                <ul className="mt-2 space-y-1">
+                  {analysis.conflits.slice(0, 30).map((c, i) => (
+                    <li key={i} className="text-xs text-muted-foreground">
+                      <span className="text-foreground">{c.existing.valeur}</span>
+                      {c.differentSpelling ? ` → ${c.incoming.valeur}` : " (identique)"} ·{" "}
+                      {c.existing.type}
+                      {c.existing.cycle ? ` · ${c.existing.cycle}` : ""}
+                    </li>
+                  ))}
+                  {analysis.conflits.length > 30 && (
+                    <li className="text-xs text-muted-foreground">
+                      … et {analysis.conflits.length - 30} autre(s)
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAnalysis(null)}>
+              Annuler
+            </Button>
+            <Button onClick={confirmImport} disabled={applyImport.isPending}>
+              {applyImport.isPending ? "Import…" : "Importer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
