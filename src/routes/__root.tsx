@@ -44,12 +44,16 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
+  // L'erreur peut être `undefined` (throw non-Error) : on la normalise pour
+  // éviter que le composant d'erreur plante à son tour (écran blanc).
+  const safeError = error instanceof Error ? error : new Error(String(error ?? "Erreur inconnue"));
+  console.error(safeError);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+    reportLovableError(safeError, { boundary: "tanstack_root_error_component" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeError.message]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
