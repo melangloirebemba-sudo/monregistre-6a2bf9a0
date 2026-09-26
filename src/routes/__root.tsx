@@ -21,6 +21,7 @@ import { AppUpdateNotifier } from "@/components/app/app-update-notifier";
 import { CapacitorLiveUpdater } from "@/components/app/capacitor-live-updater";
 import { SyncToaster } from "@/components/app/sync-toaster";
 import { SyncQueueDialog } from "@/components/app/sync-queue-dialog";
+import { SafeBoundary } from "@/components/app/safe-boundary";
 
 function NotFoundComponent() {
   return (
@@ -217,12 +218,16 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <InstallPwaPrompt />
-      <AppUpdateNotifier />
-      <CapacitorLiveUpdater />
-      <SyncToaster />
-      <SyncQueueDialog />
+      <SafeBoundary name="page" fallback={<ErrorComponent error={undefined} reset={() => window.location.reload()} />}>
+        <Outlet />
+      </SafeBoundary>
+      <SafeBoundary name="widgets">
+        <InstallPwaPrompt />
+        <AppUpdateNotifier />
+        <CapacitorLiveUpdater />
+        <SyncToaster />
+        <SyncQueueDialog />
+      </SafeBoundary>
       <Toaster />
     </QueryClientProvider>
   );

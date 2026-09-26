@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { verifyAdminAccess } from "@/lib/admin-guard.functions";
+import { isUserAdmin } from "@/lib/auth-landing";
 
 /**
  * Layout de la console admin. Le rôle est vérifié CÔTÉ SERVEUR via
@@ -17,10 +18,14 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  beforeLoad: async () => {
+  beforeLoad: async ({ context }) => {
+    // Vérification via la base (RLS + has_role). Ne lance JAMAIS d'exception :
+    // un rejet non-Error (Response 401, undefined…) provoquait un écran blanc.
     try {
-      await verifyAdminAccess();
-      return { adminOk: true };
+      const uid = (context as { user?: { id?: string } }).user?.id;
+      if (uid && (await isUserAdmin(uid))) return { adminOk: true };
+      const res = await verifyAdminAccess().catch(() => null);
+      return { adminOk: Boolean(res?.isAdmin) };
     } catch {
       return { adminOk: false };
     }
