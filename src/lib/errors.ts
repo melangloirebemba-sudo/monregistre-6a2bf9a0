@@ -12,7 +12,10 @@ export function toFrench(input: unknown): string {
           ? String((input as { message: unknown }).message)
           : "";
   const msg = (raw || "").trim();
-  if (!msg) return "Une erreur est survenue. Réessayez.";
+  if (!msg || msg === "{}" || msg === "[object Object]")
+    return "Le service est momentanément indisponible. Réessayez dans un instant.";
+  if (/error code:\s*10\d\d/i.test(msg) || /\b(520|521|522|523|530)\b/.test(msg))
+    return "Le service est momentanément indisponible. Réessayez dans un instant.";
   const m = msg.toLowerCase();
 
   // --- Auth ---
