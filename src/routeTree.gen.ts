@@ -9,50 +9,54 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
-import { Route as AuthenticatedRemunerationRouteImport } from './routes/_authenticated/remuneration'
-import { Route as AuthenticatedRapportsRouteImport } from './routes/_authenticated/rapports'
-import { Route as AuthenticatedProgressionRouteImport } from './routes/_authenticated/progression'
-import { Route as AuthenticatedPlusRouteImport } from './routes/_authenticated/plus'
-import { Route as AuthenticatedParametresRouteImport } from './routes/_authenticated/parametres'
-import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
-import { Route as AuthenticatedMonProfilRouteImport } from './routes/_authenticated/mon-profil'
-import { Route as AuthenticatedFacturationRouteImport } from './routes/_authenticated/facturation'
-import { Route as AuthenticatedEmploiDuTempsRouteImport } from './routes/_authenticated/emploi-du-temps'
-import { Route as AuthenticatedElevesRouteImport } from './routes/_authenticated/eleves'
-import { Route as AuthenticatedEcolesRouteImport } from './routes/_authenticated/ecoles'
-import { Route as AuthenticatedDiagnosticOfflineRouteImport } from './routes/_authenticated/diagnostic-offline'
-import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
-import { Route as AuthenticatedCataloguesRouteImport } from './routes/_authenticated/catalogues'
-import { Route as AuthenticatedAnneesScolairesRouteImport } from './routes/_authenticated/annees-scolaires'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticated/accueil'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAbsencesRouteImport } from './routes/_authenticated/absences'
+import { Route as AuthenticatedAccueilRouteImport } from './routes/_authenticated/accueil'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAnneesScolairesRouteImport } from './routes/_authenticated/annees-scolaires'
+import { Route as AuthenticatedCataloguesRouteImport } from './routes/_authenticated/catalogues'
+import { Route as AuthenticatedClassesRouteImport } from './routes/_authenticated/classes'
+import { Route as AuthenticatedDiagnosticOfflineRouteImport } from './routes/_authenticated/diagnostic-offline'
+import { Route as AuthenticatedEcolesRouteImport } from './routes/_authenticated/ecoles'
+import { Route as AuthenticatedElevesRouteImport } from './routes/_authenticated/eleves'
+import { Route as AuthenticatedEmploiDuTempsRouteImport } from './routes/_authenticated/emploi-du-temps'
+import { Route as AuthenticatedFacturationRouteImport } from './routes/_authenticated/facturation'
+import { Route as AuthenticatedMonProfilRouteImport } from './routes/_authenticated/mon-profil'
+import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
+import { Route as AuthenticatedParametresRouteImport } from './routes/_authenticated/parametres'
+import { Route as AuthenticatedPlusRouteImport } from './routes/_authenticated/plus'
+import { Route as AuthenticatedProgressionRouteImport } from './routes/_authenticated/progression'
+import { Route as AuthenticatedRapportsRouteImport } from './routes/_authenticated/rapports'
+import { Route as AuthenticatedRemunerationRouteImport } from './routes/_authenticated/remuneration'
+import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as AuthenticatedParametresRappelsRouteImport } from './routes/_authenticated/parametres.rappels'
-import { Route as AuthenticatedParametresNotificationsRouteImport } from './routes/_authenticated/parametres.notifications'
-import { Route as AuthenticatedFacturationIdRouteImport } from './routes/_authenticated/facturation.$id'
-import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
-import { Route as AuthenticatedAdminPlusRouteImport } from './routes/_authenticated/admin.plus'
-import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
-import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
-import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
-import { Route as AuthenticatedAdminFacturationRouteImport } from './routes/_authenticated/admin.facturation'
 import { Route as AuthenticatedAdminAnneesScolairesRouteImport } from './routes/_authenticated/admin.annees-scolaires'
-import { Route as ApiPublicHooksScheduleDailyRemindersRouteImport } from './routes/api/public/hooks/schedule-daily-reminders'
-import { Route as ApiPublicHooksRelayInappNotificationsRouteImport } from './routes/api/public/hooks/relay-inapp-notifications'
-import { Route as ApiPublicHooksLicenseExpiryRemindersRouteImport } from './routes/api/public/hooks/license-expiry-reminders'
-import { Route as ApiPublicHooksDispatchScheduledNotificationsRouteImport } from './routes/api/public/hooks/dispatch-scheduled-notifications'
-import { Route as ApiPublicHooksCheckUnvalidatedSessionsRouteImport } from './routes/api/public/hooks/check-unvalidated-sessions'
+import { Route as AuthenticatedAdminFacturationRouteImport } from './routes/_authenticated/admin.facturation'
+import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
+import { Route as AuthenticatedAdminParametresRouteImport } from './routes/_authenticated/admin.parametres'
+import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin.plans'
+import { Route as AuthenticatedAdminPlusRouteImport } from './routes/_authenticated/admin.plus'
+import { Route as AuthenticatedAdminUtilisateursRouteImport } from './routes/_authenticated/admin.utilisateurs'
+import { Route as AuthenticatedFacturationIdRouteImport } from './routes/_authenticated/facturation.$id'
+import { Route as AuthenticatedParametresNotificationsRouteImport } from './routes/_authenticated/parametres.notifications'
+import { Route as AuthenticatedParametresRappelsRouteImport } from './routes/_authenticated/parametres.rappels'
 import { Route as AuthenticatedFacturationIdPdfRouteImport } from './routes/_authenticated/facturation.$id.pdf'
+import { Route as ApiPublicHooksCheckUnvalidatedSessionsRouteImport } from './routes/api/public/hooks/check-unvalidated-sessions'
+import { Route as ApiPublicHooksDispatchScheduledNotificationsRouteImport } from './routes/api/public/hooks/dispatch-scheduled-notifications'
+import { Route as ApiPublicHooksLicenseExpiryRemindersRouteImport } from './routes/api/public/hooks/license-expiry-reminders'
+import { Route as ApiPublicHooksRelayInappNotificationsRouteImport } from './routes/api/public/hooks/relay-inapp-notifications'
+import { Route as ApiPublicHooksScheduleDailyRemindersRouteImport } from './routes/api/public/hooks/schedule-daily-reminders'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -60,93 +64,24 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
-  id: '/support',
-  path: '/support',
+const AuthenticatedAbsencesRoute = AuthenticatedAbsencesRouteImport.update({
+  id: '/absences',
+  path: '/absences',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedRemunerationRoute =
-  AuthenticatedRemunerationRouteImport.update({
-    id: '/remuneration',
-    path: '/remuneration',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRapportsRoute = AuthenticatedRapportsRouteImport.update({
-  id: '/rapports',
-  path: '/rapports',
+const AuthenticatedAccueilRoute = AuthenticatedAccueilRouteImport.update({
+  id: '/accueil',
+  path: '/accueil',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedProgressionRoute =
-  AuthenticatedProgressionRouteImport.update({
-    id: '/progression',
-    path: '/progression',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPlusRoute = AuthenticatedPlusRouteImport.update({
-  id: '/plus',
-  path: '/plus',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedParametresRoute = AuthenticatedParametresRouteImport.update({
-  id: '/parametres',
-  path: '/parametres',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
-  id: '/notes',
-  path: '/notes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedMonProfilRoute = AuthenticatedMonProfilRouteImport.update({
-  id: '/mon-profil',
-  path: '/mon-profil',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedFacturationRoute =
-  AuthenticatedFacturationRouteImport.update({
-    id: '/facturation',
-    path: '/facturation',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedEmploiDuTempsRoute =
-  AuthenticatedEmploiDuTempsRouteImport.update({
-    id: '/emploi-du-temps',
-    path: '/emploi-du-temps',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedElevesRoute = AuthenticatedElevesRouteImport.update({
-  id: '/eleves',
-  path: '/eleves',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEcolesRoute = AuthenticatedEcolesRouteImport.update({
-  id: '/ecoles',
-  path: '/ecoles',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDiagnosticOfflineRoute =
-  AuthenticatedDiagnosticOfflineRouteImport.update({
-    id: '/diagnostic-offline',
-    path: '/diagnostic-offline',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedClassesRoute = AuthenticatedClassesRouteImport.update({
-  id: '/classes',
-  path: '/classes',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCataloguesRoute = AuthenticatedCataloguesRouteImport.update({
-  id: '/catalogues',
-  path: '/catalogues',
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAnneesScolairesRoute =
@@ -155,19 +90,84 @@ const AuthenticatedAnneesScolairesRoute =
     path: '/annees-scolaires',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedCataloguesRoute = AuthenticatedCataloguesRouteImport.update({
+  id: '/catalogues',
+  path: '/catalogues',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAccueilRoute = AuthenticatedAccueilRouteImport.update({
-  id: '/accueil',
-  path: '/accueil',
+const AuthenticatedClassesRoute = AuthenticatedClassesRouteImport.update({
+  id: '/classes',
+  path: '/classes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAbsencesRoute = AuthenticatedAbsencesRouteImport.update({
-  id: '/absences',
-  path: '/absences',
+const AuthenticatedDiagnosticOfflineRoute =
+  AuthenticatedDiagnosticOfflineRouteImport.update({
+    id: '/diagnostic-offline',
+    path: '/diagnostic-offline',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEcolesRoute = AuthenticatedEcolesRouteImport.update({
+  id: '/ecoles',
+  path: '/ecoles',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedElevesRoute = AuthenticatedElevesRouteImport.update({
+  id: '/eleves',
+  path: '/eleves',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEmploiDuTempsRoute =
+  AuthenticatedEmploiDuTempsRouteImport.update({
+    id: '/emploi-du-temps',
+    path: '/emploi-du-temps',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedFacturationRoute =
+  AuthenticatedFacturationRouteImport.update({
+    id: '/facturation',
+    path: '/facturation',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMonProfilRoute = AuthenticatedMonProfilRouteImport.update({
+  id: '/mon-profil',
+  path: '/mon-profil',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedParametresRoute = AuthenticatedParametresRouteImport.update({
+  id: '/parametres',
+  path: '/parametres',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPlusRoute = AuthenticatedPlusRouteImport.update({
+  id: '/plus',
+  path: '/plus',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProgressionRoute =
+  AuthenticatedProgressionRouteImport.update({
+    id: '/progression',
+    path: '/progression',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRapportsRoute = AuthenticatedRapportsRouteImport.update({
+  id: '/rapports',
+  path: '/rapports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRemunerationRoute =
+  AuthenticatedRemunerationRouteImport.update({
+    id: '/remuneration',
+    path: '/remuneration',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -175,50 +175,10 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const AuthenticatedParametresRappelsRoute =
-  AuthenticatedParametresRappelsRouteImport.update({
-    id: '/rappels',
-    path: '/rappels',
-    getParentRoute: () => AuthenticatedParametresRoute,
-  } as any)
-const AuthenticatedParametresNotificationsRoute =
-  AuthenticatedParametresNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedParametresRoute,
-  } as any)
-const AuthenticatedFacturationIdRoute =
-  AuthenticatedFacturationIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedFacturationRoute,
-  } as any)
-const AuthenticatedAdminUtilisateursRoute =
-  AuthenticatedAdminUtilisateursRouteImport.update({
-    id: '/utilisateurs',
-    path: '/utilisateurs',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminPlusRoute = AuthenticatedAdminPlusRouteImport.update({
-  id: '/plus',
-  path: '/plus',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminParametresRoute =
-  AuthenticatedAdminParametresRouteImport.update({
-    id: '/parametres',
-    path: '/parametres',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
-const AuthenticatedAdminNotificationsRoute =
-  AuthenticatedAdminNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
+const AuthenticatedAdminAnneesScolairesRoute =
+  AuthenticatedAdminAnneesScolairesRouteImport.update({
+    id: '/annees-scolaires',
+    path: '/annees-scolaires',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminFacturationRoute =
@@ -227,28 +187,62 @@ const AuthenticatedAdminFacturationRoute =
     path: '/facturation',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminAnneesScolairesRoute =
-  AuthenticatedAdminAnneesScolairesRouteImport.update({
-    id: '/annees-scolaires',
-    path: '/annees-scolaires',
+const AuthenticatedAdminNotificationsRoute =
+  AuthenticatedAdminNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const ApiPublicHooksScheduleDailyRemindersRoute =
-  ApiPublicHooksScheduleDailyRemindersRouteImport.update({
-    id: '/api/public/hooks/schedule-daily-reminders',
-    path: '/api/public/hooks/schedule-daily-reminders',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAdminParametresRoute =
+  AuthenticatedAdminParametresRouteImport.update({
+    id: '/parametres',
+    path: '/parametres',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const ApiPublicHooksRelayInappNotificationsRoute =
-  ApiPublicHooksRelayInappNotificationsRouteImport.update({
-    id: '/api/public/hooks/relay-inapp-notifications',
-    path: '/api/public/hooks/relay-inapp-notifications',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminPlusRoute = AuthenticatedAdminPlusRouteImport.update({
+  id: '/plus',
+  path: '/plus',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminUtilisateursRoute =
+  AuthenticatedAdminUtilisateursRouteImport.update({
+    id: '/utilisateurs',
+    path: '/utilisateurs',
+    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const ApiPublicHooksLicenseExpiryRemindersRoute =
-  ApiPublicHooksLicenseExpiryRemindersRouteImport.update({
-    id: '/api/public/hooks/license-expiry-reminders',
-    path: '/api/public/hooks/license-expiry-reminders',
+const AuthenticatedFacturationIdRoute =
+  AuthenticatedFacturationIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedFacturationRoute,
+  } as any)
+const AuthenticatedParametresNotificationsRoute =
+  AuthenticatedParametresNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedParametresRoute,
+  } as any)
+const AuthenticatedParametresRappelsRoute =
+  AuthenticatedParametresRappelsRouteImport.update({
+    id: '/rappels',
+    path: '/rappels',
+    getParentRoute: () => AuthenticatedParametresRoute,
+  } as any)
+const AuthenticatedFacturationIdPdfRoute =
+  AuthenticatedFacturationIdPdfRouteImport.update({
+    id: '/pdf',
+    path: '/pdf',
+    getParentRoute: () => AuthenticatedFacturationIdRoute,
+  } as any)
+const ApiPublicHooksCheckUnvalidatedSessionsRoute =
+  ApiPublicHooksCheckUnvalidatedSessionsRouteImport.update({
+    id: '/api/public/hooks/check-unvalidated-sessions',
+    path: '/api/public/hooks/check-unvalidated-sessions',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksDispatchScheduledNotificationsRoute =
@@ -257,17 +251,23 @@ const ApiPublicHooksDispatchScheduledNotificationsRoute =
     path: '/api/public/hooks/dispatch-scheduled-notifications',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksCheckUnvalidatedSessionsRoute =
-  ApiPublicHooksCheckUnvalidatedSessionsRouteImport.update({
-    id: '/api/public/hooks/check-unvalidated-sessions',
-    path: '/api/public/hooks/check-unvalidated-sessions',
+const ApiPublicHooksLicenseExpiryRemindersRoute =
+  ApiPublicHooksLicenseExpiryRemindersRouteImport.update({
+    id: '/api/public/hooks/license-expiry-reminders',
+    path: '/api/public/hooks/license-expiry-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AuthenticatedFacturationIdPdfRoute =
-  AuthenticatedFacturationIdPdfRouteImport.update({
-    id: '/pdf',
-    path: '/pdf',
-    getParentRoute: () => AuthenticatedFacturationIdRoute,
+const ApiPublicHooksRelayInappNotificationsRoute =
+  ApiPublicHooksRelayInappNotificationsRouteImport.update({
+    id: '/api/public/hooks/relay-inapp-notifications',
+    path: '/api/public/hooks/relay-inapp-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksScheduleDailyRemindersRoute =
+  ApiPublicHooksScheduleDailyRemindersRouteImport.update({
+    id: '/api/public/hooks/schedule-daily-reminders',
+    path: '/api/public/hooks/schedule-daily-reminders',
+    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -534,18 +534,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -555,130 +548,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/support': {
-      id: '/_authenticated/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof AuthenticatedSupportRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/remuneration': {
-      id: '/_authenticated/remuneration'
-      path: '/remuneration'
-      fullPath: '/remuneration'
-      preLoaderRoute: typeof AuthenticatedRemunerationRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/rapports': {
-      id: '/_authenticated/rapports'
-      path: '/rapports'
-      fullPath: '/rapports'
-      preLoaderRoute: typeof AuthenticatedRapportsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/progression': {
-      id: '/_authenticated/progression'
-      path: '/progression'
-      fullPath: '/progression'
-      preLoaderRoute: typeof AuthenticatedProgressionRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/plus': {
-      id: '/_authenticated/plus'
-      path: '/plus'
-      fullPath: '/plus'
-      preLoaderRoute: typeof AuthenticatedPlusRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/parametres': {
-      id: '/_authenticated/parametres'
-      path: '/parametres'
-      fullPath: '/parametres'
-      preLoaderRoute: typeof AuthenticatedParametresRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/notes': {
-      id: '/_authenticated/notes'
-      path: '/notes'
-      fullPath: '/notes'
-      preLoaderRoute: typeof AuthenticatedNotesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/mon-profil': {
-      id: '/_authenticated/mon-profil'
-      path: '/mon-profil'
-      fullPath: '/mon-profil'
-      preLoaderRoute: typeof AuthenticatedMonProfilRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/facturation': {
-      id: '/_authenticated/facturation'
-      path: '/facturation'
-      fullPath: '/facturation'
-      preLoaderRoute: typeof AuthenticatedFacturationRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/emploi-du-temps': {
-      id: '/_authenticated/emploi-du-temps'
-      path: '/emploi-du-temps'
-      fullPath: '/emploi-du-temps'
-      preLoaderRoute: typeof AuthenticatedEmploiDuTempsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/eleves': {
-      id: '/_authenticated/eleves'
-      path: '/eleves'
-      fullPath: '/eleves'
-      preLoaderRoute: typeof AuthenticatedElevesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/ecoles': {
-      id: '/_authenticated/ecoles'
-      path: '/ecoles'
-      fullPath: '/ecoles'
-      preLoaderRoute: typeof AuthenticatedEcolesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/diagnostic-offline': {
-      id: '/_authenticated/diagnostic-offline'
-      path: '/diagnostic-offline'
-      fullPath: '/diagnostic-offline'
-      preLoaderRoute: typeof AuthenticatedDiagnosticOfflineRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/classes': {
-      id: '/_authenticated/classes'
-      path: '/classes'
-      fullPath: '/classes'
-      preLoaderRoute: typeof AuthenticatedClassesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/catalogues': {
-      id: '/_authenticated/catalogues'
-      path: '/catalogues'
-      fullPath: '/catalogues'
-      preLoaderRoute: typeof AuthenticatedCataloguesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/annees-scolaires': {
-      id: '/_authenticated/annees-scolaires'
-      path: '/annees-scolaires'
-      fullPath: '/annees-scolaires'
-      preLoaderRoute: typeof AuthenticatedAnneesScolairesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+    '/_authenticated/absences': {
+      id: '/_authenticated/absences'
+      path: '/absences'
+      fullPath: '/absences'
+      preLoaderRoute: typeof AuthenticatedAbsencesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/accueil': {
@@ -688,11 +576,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccueilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/absences': {
-      id: '/_authenticated/absences'
-      path: '/absences'
-      fullPath: '/absences'
-      preLoaderRoute: typeof AuthenticatedAbsencesRouteImport
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/annees-scolaires': {
+      id: '/_authenticated/annees-scolaires'
+      path: '/annees-scolaires'
+      fullPath: '/annees-scolaires'
+      preLoaderRoute: typeof AuthenticatedAnneesScolairesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/catalogues': {
+      id: '/_authenticated/catalogues'
+      path: '/catalogues'
+      fullPath: '/catalogues'
+      preLoaderRoute: typeof AuthenticatedCataloguesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/classes': {
+      id: '/_authenticated/classes'
+      path: '/classes'
+      fullPath: '/classes'
+      preLoaderRoute: typeof AuthenticatedClassesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/diagnostic-offline': {
+      id: '/_authenticated/diagnostic-offline'
+      path: '/diagnostic-offline'
+      fullPath: '/diagnostic-offline'
+      preLoaderRoute: typeof AuthenticatedDiagnosticOfflineRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ecoles': {
+      id: '/_authenticated/ecoles'
+      path: '/ecoles'
+      fullPath: '/ecoles'
+      preLoaderRoute: typeof AuthenticatedEcolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/eleves': {
+      id: '/_authenticated/eleves'
+      path: '/eleves'
+      fullPath: '/eleves'
+      preLoaderRoute: typeof AuthenticatedElevesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/emploi-du-temps': {
+      id: '/_authenticated/emploi-du-temps'
+      path: '/emploi-du-temps'
+      fullPath: '/emploi-du-temps'
+      preLoaderRoute: typeof AuthenticatedEmploiDuTempsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/facturation': {
+      id: '/_authenticated/facturation'
+      path: '/facturation'
+      fullPath: '/facturation'
+      preLoaderRoute: typeof AuthenticatedFacturationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mon-profil': {
+      id: '/_authenticated/mon-profil'
+      path: '/mon-profil'
+      fullPath: '/mon-profil'
+      preLoaderRoute: typeof AuthenticatedMonProfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notes': {
+      id: '/_authenticated/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof AuthenticatedNotesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/parametres': {
+      id: '/_authenticated/parametres'
+      path: '/parametres'
+      fullPath: '/parametres'
+      preLoaderRoute: typeof AuthenticatedParametresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/plus': {
+      id: '/_authenticated/plus'
+      path: '/plus'
+      fullPath: '/plus'
+      preLoaderRoute: typeof AuthenticatedPlusRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/progression': {
+      id: '/_authenticated/progression'
+      path: '/progression'
+      fullPath: '/progression'
+      preLoaderRoute: typeof AuthenticatedProgressionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rapports': {
+      id: '/_authenticated/rapports'
+      path: '/rapports'
+      fullPath: '/rapports'
+      preLoaderRoute: typeof AuthenticatedRapportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/remuneration': {
+      id: '/_authenticated/remuneration'
+      path: '/remuneration'
+      fullPath: '/remuneration'
+      preLoaderRoute: typeof AuthenticatedRemunerationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/': {
@@ -702,60 +702,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/parametres/rappels': {
-      id: '/_authenticated/parametres/rappels'
-      path: '/rappels'
-      fullPath: '/parametres/rappels'
-      preLoaderRoute: typeof AuthenticatedParametresRappelsRouteImport
-      parentRoute: typeof AuthenticatedParametresRoute
-    }
-    '/_authenticated/parametres/notifications': {
-      id: '/_authenticated/parametres/notifications'
-      path: '/notifications'
-      fullPath: '/parametres/notifications'
-      preLoaderRoute: typeof AuthenticatedParametresNotificationsRouteImport
-      parentRoute: typeof AuthenticatedParametresRoute
-    }
-    '/_authenticated/facturation/$id': {
-      id: '/_authenticated/facturation/$id'
-      path: '/$id'
-      fullPath: '/facturation/$id'
-      preLoaderRoute: typeof AuthenticatedFacturationIdRouteImport
-      parentRoute: typeof AuthenticatedFacturationRoute
-    }
-    '/_authenticated/admin/utilisateurs': {
-      id: '/_authenticated/admin/utilisateurs'
-      path: '/utilisateurs'
-      fullPath: '/admin/utilisateurs'
-      preLoaderRoute: typeof AuthenticatedAdminUtilisateursRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/plus': {
-      id: '/_authenticated/admin/plus'
-      path: '/plus'
-      fullPath: '/admin/plus'
-      preLoaderRoute: typeof AuthenticatedAdminPlusRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/plans': {
-      id: '/_authenticated/admin/plans'
-      path: '/plans'
-      fullPath: '/admin/plans'
-      preLoaderRoute: typeof AuthenticatedAdminPlansRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/parametres': {
-      id: '/_authenticated/admin/parametres'
-      path: '/parametres'
-      fullPath: '/admin/parametres'
-      preLoaderRoute: typeof AuthenticatedAdminParametresRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/notifications': {
-      id: '/_authenticated/admin/notifications'
-      path: '/notifications'
-      fullPath: '/admin/notifications'
-      preLoaderRoute: typeof AuthenticatedAdminNotificationsRouteImport
+    '/_authenticated/admin/annees-scolaires': {
+      id: '/_authenticated/admin/annees-scolaires'
+      path: '/annees-scolaires'
+      fullPath: '/admin/annees-scolaires'
+      preLoaderRoute: typeof AuthenticatedAdminAnneesScolairesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/facturation': {
@@ -765,32 +716,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFacturationRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/annees-scolaires': {
-      id: '/_authenticated/admin/annees-scolaires'
-      path: '/annees-scolaires'
-      fullPath: '/admin/annees-scolaires'
-      preLoaderRoute: typeof AuthenticatedAdminAnneesScolairesRouteImport
+    '/_authenticated/admin/notifications': {
+      id: '/_authenticated/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AuthenticatedAdminNotificationsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/api/public/hooks/schedule-daily-reminders': {
-      id: '/api/public/hooks/schedule-daily-reminders'
-      path: '/api/public/hooks/schedule-daily-reminders'
-      fullPath: '/api/public/hooks/schedule-daily-reminders'
-      preLoaderRoute: typeof ApiPublicHooksScheduleDailyRemindersRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/parametres': {
+      id: '/_authenticated/admin/parametres'
+      path: '/parametres'
+      fullPath: '/admin/parametres'
+      preLoaderRoute: typeof AuthenticatedAdminParametresRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/api/public/hooks/relay-inapp-notifications': {
-      id: '/api/public/hooks/relay-inapp-notifications'
-      path: '/api/public/hooks/relay-inapp-notifications'
-      fullPath: '/api/public/hooks/relay-inapp-notifications'
-      preLoaderRoute: typeof ApiPublicHooksRelayInappNotificationsRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/admin/plans': {
+      id: '/_authenticated/admin/plans'
+      path: '/plans'
+      fullPath: '/admin/plans'
+      preLoaderRoute: typeof AuthenticatedAdminPlansRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/api/public/hooks/license-expiry-reminders': {
-      id: '/api/public/hooks/license-expiry-reminders'
-      path: '/api/public/hooks/license-expiry-reminders'
-      fullPath: '/api/public/hooks/license-expiry-reminders'
-      preLoaderRoute: typeof ApiPublicHooksLicenseExpiryRemindersRouteImport
+    '/_authenticated/admin/plus': {
+      id: '/_authenticated/admin/plus'
+      path: '/plus'
+      fullPath: '/admin/plus'
+      preLoaderRoute: typeof AuthenticatedAdminPlusRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/utilisateurs': {
+      id: '/_authenticated/admin/utilisateurs'
+      path: '/utilisateurs'
+      fullPath: '/admin/utilisateurs'
+      preLoaderRoute: typeof AuthenticatedAdminUtilisateursRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/facturation/$id': {
+      id: '/_authenticated/facturation/$id'
+      path: '/$id'
+      fullPath: '/facturation/$id'
+      preLoaderRoute: typeof AuthenticatedFacturationIdRouteImport
+      parentRoute: typeof AuthenticatedFacturationRoute
+    }
+    '/_authenticated/parametres/notifications': {
+      id: '/_authenticated/parametres/notifications'
+      path: '/notifications'
+      fullPath: '/parametres/notifications'
+      preLoaderRoute: typeof AuthenticatedParametresNotificationsRouteImport
+      parentRoute: typeof AuthenticatedParametresRoute
+    }
+    '/_authenticated/parametres/rappels': {
+      id: '/_authenticated/parametres/rappels'
+      path: '/rappels'
+      fullPath: '/parametres/rappels'
+      preLoaderRoute: typeof AuthenticatedParametresRappelsRouteImport
+      parentRoute: typeof AuthenticatedParametresRoute
+    }
+    '/_authenticated/facturation/$id/pdf': {
+      id: '/_authenticated/facturation/$id/pdf'
+      path: '/pdf'
+      fullPath: '/facturation/$id/pdf'
+      preLoaderRoute: typeof AuthenticatedFacturationIdPdfRouteImport
+      parentRoute: typeof AuthenticatedFacturationIdRoute
+    }
+    '/api/public/hooks/check-unvalidated-sessions': {
+      id: '/api/public/hooks/check-unvalidated-sessions'
+      path: '/api/public/hooks/check-unvalidated-sessions'
+      fullPath: '/api/public/hooks/check-unvalidated-sessions'
+      preLoaderRoute: typeof ApiPublicHooksCheckUnvalidatedSessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/dispatch-scheduled-notifications': {
@@ -800,19 +793,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksDispatchScheduledNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/check-unvalidated-sessions': {
-      id: '/api/public/hooks/check-unvalidated-sessions'
-      path: '/api/public/hooks/check-unvalidated-sessions'
-      fullPath: '/api/public/hooks/check-unvalidated-sessions'
-      preLoaderRoute: typeof ApiPublicHooksCheckUnvalidatedSessionsRouteImport
+    '/api/public/hooks/license-expiry-reminders': {
+      id: '/api/public/hooks/license-expiry-reminders'
+      path: '/api/public/hooks/license-expiry-reminders'
+      fullPath: '/api/public/hooks/license-expiry-reminders'
+      preLoaderRoute: typeof ApiPublicHooksLicenseExpiryRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/facturation/$id/pdf': {
-      id: '/_authenticated/facturation/$id/pdf'
-      path: '/pdf'
-      fullPath: '/facturation/$id/pdf'
-      preLoaderRoute: typeof AuthenticatedFacturationIdPdfRouteImport
-      parentRoute: typeof AuthenticatedFacturationIdRoute
+    '/api/public/hooks/relay-inapp-notifications': {
+      id: '/api/public/hooks/relay-inapp-notifications'
+      path: '/api/public/hooks/relay-inapp-notifications'
+      fullPath: '/api/public/hooks/relay-inapp-notifications'
+      preLoaderRoute: typeof ApiPublicHooksRelayInappNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/schedule-daily-reminders': {
+      id: '/api/public/hooks/schedule-daily-reminders'
+      path: '/api/public/hooks/schedule-daily-reminders'
+      fullPath: '/api/public/hooks/schedule-daily-reminders'
+      preLoaderRoute: typeof ApiPublicHooksScheduleDailyRemindersRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
